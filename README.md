@@ -1,36 +1,208 @@
-# HrSystemApp
+# 🏢 HRMS – Human Resource Management System
 
-A .NET 8.0 Web API project following Clean Architecture principles.
+A scalable, multi-tenant HR Management System designed to support structured company hierarchies, approval workflows, payroll management, attendance tracking, and enterprise-level employee operations.
 
-## 📁 Project Structure
+---
 
-```
-HrSystemApp/
-├── HrSystemApp.Domain/          # Entities, enums, value objects
-├── HrSystemApp.Application/     # Services, interfaces, DTOs, CQRS
-├── HrSystemApp.Infrastructure/  # EF Core, repositories, JWT, Identity
-└── HrSystemApp.Api/             # Controllers, Program.cs
-```
+## 🚀 Overview
 
-## 🚀 Getting Started
+HRMS is being built as a complete HR ecosystem that supports:
 
-### Prerequisites
-- .NET 8.0 SDK
-- Docker & Docker Compose (optional)
+- Multi-company architecture
+- Configurable approval hierarchy
+- Role-based access control
+- Leave & attendance management
+- Payroll & salary packages
+- Requests workflow engine
+- Surveys & complaints management
+- Asset & loan management
+- Mobile-first architecture (Flutter)
 
-### Run locally
-```bash
-# Start the database
-docker-compose up -d
+---
 
-# Run the API
-dotnet run --project HrSystemApp.Api
-```
+# 🧩 Roles
 
-### API Documentation
-Open http://localhost:5119/swagger
+### System Role
+- **Super Admin**
 
-## 🔐 Authentication
-1. `POST /api/auth/otp/generate` with `{"phoneNumber": "+1234567890"}`
-2. `POST /api/auth/otp/validate` with `{"phoneNumber": "+1234567890", "otpCode": "123456"}`
-3. Use returned token: `Authorization: Bearer <token>`
+### Company Roles
+- Employee  
+- HR  
+- IT / Asset Custodian *(Optional)*  
+- Team Leader  
+- Unit Leader  
+- Department Manager  
+- Vice President *(Optional)*  
+- CEO  
+
+### Approval Flow
+
+Approval routing is configurable per company.
+
+---
+
+# 🗂 Core Modules
+
+## 👤 Employee Profile
+- Personal & contact information
+- Department / team structure
+- Employment status
+- Medical class (A/B/C)
+- Insurance & salary package reference
+
+---
+
+## 🕒 Attendance
+- Clock in / clock out
+- Attendance status (present / late / absent)
+- Device / location tracking (optional)
+- Monthly history review
+
+---
+
+## 🔔 Notifications
+- Global announcements
+- Targeted notifications
+- Request & survey updates
+- Read/unread tracking
+
+---
+
+## 📝 Surveys
+- Employee submissions
+- Multi-step routing chain
+- Comments per approval level
+- Status tracking (draft → completed/rejected)
+
+---
+
+## ⚠ Complaints
+- Employee complaint submission
+- Attachments support
+- HR assignment & resolution
+- Status tracking
+
+---
+
+## 🔄 Requests Engine
+
+All requests follow a structured approval chain.
+
+### Supported Request Types
+- Leave / Permission
+- Salary Slip
+- HR Letter
+- Resignation / End of Service
+- Purchase Order
+- Asset Request (issue / return / replace / damage)
+- Loan (with repayment schedule)
+- Assignment (انتداب)
+- Others
+
+Each request includes:
+- Approval chain
+- Attachments
+- Status tracking
+- Escalation support
+
+---
+
+## 💰 Salary Package
+- Basic salary
+- Allowances / deductions / tax
+- Effective date ranges
+- Payroll calculation basis
+- Insurance mapping
+
+---
+
+## 🏢 Company Configuration
+- Company info & logo
+- Yearly vacation days
+- Configurable hierarchy levels
+- Ordered approval structure
+
+---
+
+# 🎯 Key Features by Role
+
+### 👑 Super Admin
+- Manage companies
+- Configure hierarchy
+- Manage roles & permissions
+- Monitor system activity
+
+### 👨‍💼 Employee
+- View & update profile
+- Clock in/out
+- Submit requests
+- Submit surveys
+- Submit complaints
+- Track approvals
+- View leave balance & payslips
+
+### 🧑‍💼 HR
+- Employee management
+- Leave balance control
+- Attendance corrections
+- Salary package management
+- Complaint handling
+- Announcements
+- Survey monitoring
+
+### 👨‍👩‍👧 Leadership Roles
+- Approve/reject requests
+- Review & forward surveys
+- View dashboards
+- Escalate exceptions to HR
+
+### 💻 Assets Admin
+- Maintain asset inventory
+- Process issue/return/damage
+- Categorize assets
+- Assign approved asset requests
+
+---
+
+# 📱 Mobile Application
+
+Built with:
+
+- **Flutter**
+- Bloc (State Management)
+- MVVM + Repository Pattern
+- Hive CE (Local Storage)
+- Dio (Networking)
+- GoRouter (Navigation)
+
+### Architecture
+
+---
+
+# 🏗 Backend Architecture
+
+- .NET 8 Web API
+- Clean Architecture
+- JWT Authentication
+- Role-Based Authorization
+- Multi-Tenant Support
+- Configurable Approval Chains
+
+---
+
+# 📌 Project Status
+
+🚧 Currently in Active Development  
+
+Planned improvements:
+- Real-time notifications
+- Advanced reporting
+- KPI dashboards
+- Payroll automation
+- Multi-language support
+
+---
+
+# 📜 License
+
+This project is under development and not yet licensed for production distribution.
