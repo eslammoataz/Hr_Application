@@ -1,12 +1,12 @@
-using TestingProjectSetup.Application.DTOs.Auth;
-using TestingProjectSetup.Application.Features.Auth.Commands.RegisterUser;
-using TestingProjectSetup.Application.Features.Auth.Commands.LoginUser;
-using TestingProjectSetup.Application.Features.Auth.Commands.LogoutUser;
+using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
-using MediatR;
+using TestingProjectSetup.Application.DTOs.Auth;
+using TestingProjectSetup.Application.Features.Auth.Commands.LoginUser;
+using TestingProjectSetup.Application.Features.Auth.Commands.LogoutUser;
+using TestingProjectSetup.Application.Features.Auth.Commands.RegisterUser;
 
 namespace TestingProjectSetup.Api.Controllers;
 
