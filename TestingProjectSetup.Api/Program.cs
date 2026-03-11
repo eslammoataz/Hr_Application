@@ -88,6 +88,12 @@ app.UseSwaggerUI(options =>
     options.RoutePrefix = "swagger";
 });
 
+// Global exception handling (early in pipeline to catch all downstream errors)
+app.UseMiddleware<TestingProjectSetup.Api.Middleware.ExceptionMiddleware>();
+
+// Routing must run before CORS, Auth, and endpoints
+app.UseRouting();
+
 // CORS
 app.UseCors("AllowAll");
 

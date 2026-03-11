@@ -1,69 +1,65 @@
 using TestingProjectSetup.Application.DTOs.Auth;
-using TestingProjectSetup.Application.Interfaces.Services;
+using TestingProjectSetup.Application.Features.Auth.Commands.RegisterUser;
+using TestingProjectSetup.Application.Features.Auth.Commands.LoginUser;
+using TestingProjectSetup.Application.Features.Auth.Commands.LogoutUser;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using MediatR;
 
 namespace TestingProjectSetup.Api.Controllers;
 
 /// <summary>
-/// Authentication controller for OTP-based authentication
+/// Authentication controller for Email/Password
 /// </summary>
 public class AuthController : BaseApiController
 {
-    private readonly IAuthService _authService;
+    private readonly ISender _sender;
     private readonly ILogger<AuthController> _logger;
 
-    public AuthController(IAuthService authService, ILogger<AuthController> logger)
+    public AuthController(ISender sender, ILogger<AuthController> logger)
     {
-        _authService = authService;
+        _sender = sender;
         _logger = logger;
     }
 
     /// <summary>
-    /// Generate OTP for phone number
+    /// Register a new user
     /// </summary>
-    /// <param name="request">Phone number to send OTP to</param>
-    /// <returns>OTP code (in development) or success message</returns>
-    [HttpPost("otp/generate")]
+    /// <param name="request">Registration details</param>
+    /// <returns>Authentication token and user info</returns>
+    [HttpPost("register")]
     [AllowAnonymous]
-    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> GenerateOtp([FromBody] GenerateOtpRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> Register([FromBody] RegisterRequest request, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("OTP generation requested for phone: {PhoneNumber}", request.PhoneNumber);
-        
-        var result = await _authService.GenerateOtpAsync(request.PhoneNumber, cancellationToken);
-        
-        if (result.IsFailure)
-        {
-            return HandleResult(result);
-        }
+        _logger.LogInformation("Registration requested for email: {Email}", request.Email);
 
-        // In development, return the OTP code. In production, just return success.
-        #if DEBUG
-        return Ok(new { Message = "OTP sent successfully", OtpCode = result.Value });
-        #else
-        return Ok(new { Message = "OTP sent successfully" });
-        #endif
+        var command = new RegisterUserCommand(request.Name, request.Email, request.PhoneNumber, request.Password);
+        var result = await _sender.Send(command, cancellationToken);
+
+        return HandleResult(result);
     }
 
     /// <summary>
-    /// Validate OTP and get authentication token
+    /// Login and get authentication token
     /// </summary>
-    /// <param name="request">Phone number and OTP code</param>
+    /// <param name="request">Email and password</param>
     /// <returns>Authentication token and user info</returns>
-    [HttpPost("otp/validate")]
+    [HttpPost("login")]
     [AllowAnonymous]
     [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> ValidateOtp([FromBody] ValidateOtpRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> Login([FromBody] LoginRequest request, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("OTP validation requested for phone: {PhoneNumber}", request.PhoneNumber);
-        
-        var result = await _authService.ValidateOtpAsync(request.PhoneNumber, request.OtpCode, cancellationToken);
-        
+        _logger.LogInformation("Login requested for email: {Email}", request.Email);
+
+        var command = new LoginUserCommand(request.Email, request.Password);
+        var result = await _sender.Send(command, cancellationToken);
+
         return HandleResult(result);
     }
 
@@ -72,12 +68,12 @@ public class AuthController : BaseApiController
     /// </summary>
     /// <returns>Success or error</returns>
     [HttpPost("logout")]
-    [Authorize]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Logout(CancellationToken cancellationToken)
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var userId = User.FindFirstValue("sub");
         var token = HttpContext.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
 
         if (string.IsNullOrEmpty(userId))
@@ -85,25 +81,9 @@ public class AuthController : BaseApiController
             return Unauthorized();
         }
 
-        var result = await _authService.LogoutAsync(userId, token, cancellationToken);
-        
-        return HandleResult(result);
-    }
+        var command = new LogoutUserCommand(userId, token);
+        var result = await _sender.Send(command, cancellationToken);
 
-    /// <summary>
-    /// Refresh authentication token
-    /// </summary>
-    /// <returns>New authentication token</returns>
-    [HttpPost("refresh")]
-    [Authorize]
-    [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> RefreshToken(CancellationToken cancellationToken)
-    {
-        var token = HttpContext.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
-        
-        var result = await _authService.RefreshTokenAsync(token, cancellationToken);
-        
         return HandleResult(result);
     }
 
@@ -112,20 +92,22 @@ public class AuthController : BaseApiController
     /// </summary>
     /// <returns>Current user information</returns>
     [HttpGet("me")]
-    [Authorize]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public IActionResult GetCurrentUser()
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        var phoneNumber = User.FindFirstValue(ClaimTypes.MobilePhone);
-        var name = User.FindFirstValue(ClaimTypes.Name);
+        var userId = User.FindFirstValue("sub");
+        var email = User.FindFirstValue("email");
+        var name = User.FindFirstValue("name");
+        var phone = User.FindFirstValue("phone");
 
         return Ok(new
         {
             UserId = userId,
-            PhoneNumber = phoneNumber,
-            Name = name
+            Email = email,
+            Name = name,
+            Phone = phone
         });
     }
 }

@@ -8,7 +8,7 @@ namespace TestingProjectSetup.Application.Interfaces;
 public interface IUnitOfWork : IAsyncDisposable
 {
     IUserRepository Users { get; }
-    IOtpRepository Otps { get; }
+
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     Task BeginTransactionAsync(CancellationToken cancellationToken = default);

@@ -1,6 +1,7 @@
 using TestingProjectSetup.Application.Common;
 using TestingProjectSetup.Application.DTOs.User;
 using TestingProjectSetup.Application.Interfaces.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -10,7 +11,7 @@ namespace TestingProjectSetup.Api.Controllers;
 /// <summary>
 /// User management controller
 /// </summary>
-[Authorize]
+[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
 public class UsersController : BaseApiController
 {
     private readonly IUserService _userService;
@@ -58,7 +59,7 @@ public class UsersController : BaseApiController
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetProfile(CancellationToken cancellationToken)
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var userId = User.FindFirstValue("sub");
         
         if (string.IsNullOrEmpty(userId))
         {
@@ -80,7 +81,7 @@ public class UsersController : BaseApiController
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> UpdateProfile([FromBody] UpdateUserRequest request, CancellationToken cancellationToken)
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var userId = User.FindFirstValue("sub");
         
         if (string.IsNullOrEmpty(userId))
         {

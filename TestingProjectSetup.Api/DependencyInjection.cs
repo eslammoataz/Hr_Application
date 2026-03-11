@@ -1,6 +1,9 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using System.Text.Json;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using TestingProjectSetup.Application.Common;
+using TestingProjectSetup.Application.Errors;
 
 namespace TestingProjectSetup.Api;
 
@@ -29,6 +32,8 @@ public static class DependencyInjection
         {
             options.SaveToken = true;
             options.RequireHttpsMetadata = false;
+            options.MapInboundClaims = false;
+
             options.TokenValidationParameters = new TokenValidationParameters
             {
                 ValidateIssuerSigningKey = true,
@@ -38,7 +43,41 @@ public static class DependencyInjection
                 ValidateAudience = true,
                 ValidAudience = jwtSettings["Audience"],
                 ValidateLifetime = true,
-                ClockSkew = TimeSpan.Zero
+                ClockSkew = TimeSpan.Zero,
+
+                NameClaimType = "name",
+                RoleClaimType = "role"
+            };
+
+            options.Events = new JwtBearerEvents
+            {
+                OnAuthenticationFailed = context =>
+                {
+                    context.HttpContext.RequestServices.GetService<ILoggerFactory>()
+                        ?.CreateLogger("JwtBearer")
+                        ?.LogWarning(context.Exception, "JWT authentication failed");
+                    return Task.CompletedTask;
+                },
+                OnChallenge = context =>
+                {
+                    context.HandleResponse();
+                    context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                    context.Response.ContentType = "application/json";
+
+                    var error = string.IsNullOrEmpty(context.Error)
+                        ? DomainErrors.Auth.Unauthorized
+                        : new Error("Auth.InvalidToken", context.ErrorDescription ?? context.Error);
+
+                    var result = Result.Failure(error);
+                    var body = JsonSerializer.Serialize(new
+                    {
+                        result.IsSuccess,
+                        result.IsFailure,
+                        Error = new { result.Error.Code, result.Error.Message }
+                    }, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+
+                    return context.Response.WriteAsync(body);
+                }
             };
         });
 

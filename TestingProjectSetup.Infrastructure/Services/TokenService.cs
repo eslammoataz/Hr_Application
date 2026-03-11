@@ -1,7 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
-using System.Security.Claims;
 using System.Text;
 using TestingProjectSetup.Application.Interfaces.Services;
 using TestingProjectSetup.Domain.Models;
@@ -25,11 +24,11 @@ public class TokenService : ITokenService
 
         var claims = new Dictionary<string, object>
         {
-            [JwtRegisteredClaimNames.Sub] = user.Id,
-            [JwtRegisteredClaimNames.Jti] = Guid.NewGuid().ToString(),
-            [ClaimTypes.NameIdentifier] = user.Id,
-            [ClaimTypes.Name] = user.UserName ?? user.PhoneNumber ?? "",
-            [ClaimTypes.MobilePhone] = user.PhoneNumber ?? ""
+            ["sub"] = user.Id,
+            ["jti"] = Guid.NewGuid().ToString(),
+            ["email"] = user.Email ?? "",
+            ["name"] = user.Name ?? user.UserName ?? user.PhoneNumber ?? "",
+            ["phone"] = user.PhoneNumber ?? ""
         };
 
         var tokenDescriptor = new SecurityTokenDescriptor
@@ -73,10 +72,8 @@ public class TokenService : ITokenService
         try
         {
             var jwtToken = handler.ReadJsonWebToken(token);
-
             return jwtToken.Claims
-                .FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier
-                                  || c.Type == JwtRegisteredClaimNames.Sub)?.Value;
+                .FirstOrDefault(c => c.Type == "sub")?.Value;
         }
         catch
         {

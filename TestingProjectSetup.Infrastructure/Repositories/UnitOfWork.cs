@@ -16,7 +16,7 @@ public class UnitOfWork : IUnitOfWork, IAsyncDisposable
     private readonly UserManager<ApplicationUser> _userManager;
     private IDbContextTransaction? _transaction;
     private IUserRepository? _userRepository;
-    private IOtpRepository? _otpRepository;
+
 
     public UnitOfWork(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
     {
@@ -25,7 +25,7 @@ public class UnitOfWork : IUnitOfWork, IAsyncDisposable
     }
 
     public IUserRepository Users => _userRepository ??= new UserRepository(_context, _userManager);
-    public IOtpRepository Otps => _otpRepository ??= new OtpRepository(_context);
+
 
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {

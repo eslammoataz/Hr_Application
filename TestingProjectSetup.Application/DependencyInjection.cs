@@ -1,4 +1,5 @@
 using FluentValidation;
+using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
 using TestingProjectSetup.Application.Interfaces.Services;
@@ -25,8 +26,9 @@ public static class DependencyInjection
         services.AddValidatorsFromAssembly(assembly);
 
         // Application Services
-        services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IUserService, UserService>();
+
+        services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
 
         return services;
     }

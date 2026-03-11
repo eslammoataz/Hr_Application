@@ -14,18 +14,13 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     {
     }
 
-    public DbSet<Otp> Otps => Set<Otp>();
+
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
 
-        // Configure Otp mode;l
-        builder.Entity<Otp>(entity =>
-        {
-            entity.HasIndex(e => e.PhoneNumber);
-            entity.HasIndex(e => new { e.PhoneNumber, e.Code, e.IsUsed });
-        });
+
 
         // Configure ApplicationUser
         builder.Entity<ApplicationUser>(entity =>

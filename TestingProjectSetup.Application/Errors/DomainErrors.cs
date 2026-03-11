@@ -10,13 +10,7 @@ public static class DomainErrors
     public static class Auth
     {
         public static readonly Error InvalidCredentials = new(
-            "Auth.InvalidCredentials", "Invalid phone number or OTP code.");
-        
-        public static readonly Error InvalidPhoneNumber = new(
-            "Auth.InvalidPhoneNumber", "Phone number is invalid or too short.");
-        
-        public static readonly Error InvalidOtp = new(
-            "Auth.InvalidOtp", "OTP code is invalid, expired, or already used.");
+            "Auth.InvalidCredentials", "Invalid email or password.");
         
         public static readonly Error UserNotFound = new(
             "Auth.UserNotFound", "User was not found.");
@@ -37,7 +31,7 @@ public static class DomainErrors
             "User.NotFound", "User was not found.");
         
         public static readonly Error AlreadyExists = new(
-            "User.AlreadyExists", "User with this phone number already exists.");
+            "User.AlreadyExists", "User with this email already exists.");
         
         public static readonly Error UpdateFailed = new(
             "User.UpdateFailed", "Failed to update user.");
