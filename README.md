@@ -1,15 +1,15 @@
-# TestingProjectSetup
+# HrSystemApp
 
 A .NET 8.0 Web API project following Clean Architecture principles.
 
 ## 📁 Project Structure
 
 ```
-TestingProjectSetup/
-├── TestingProjectSetup.Domain/          # Entities, enums, value objects
-├── TestingProjectSetup.Application/     # Services, interfaces, DTOs, CQRS
-├── TestingProjectSetup.Infrastructure/  # EF Core, repositories, JWT, Identity
-└── TestingProjectSetup.Api/             # Controllers, Program.cs
+HrSystemApp/
+├── HrSystemApp.Domain/          # Entities, enums, value objects
+├── HrSystemApp.Application/     # Services, interfaces, DTOs, CQRS
+├── HrSystemApp.Infrastructure/  # EF Core, repositories, JWT, Identity
+└── HrSystemApp.Api/             # Controllers, Program.cs
 ```
 
 ## 🚀 Getting Started
@@ -24,7 +24,7 @@ TestingProjectSetup/
 docker-compose up -d
 
 # Run the API
-dotnet run --project TestingProjectSetup.Api
+dotnet run --project HrSystemApp.Api
 ```
 
 ### API Documentation

@@ -7,17 +7,17 @@ ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 
 # Copy project files
-COPY ["TestingProjectSetup.Domain/TestingProjectSetup.Domain.csproj", "TestingProjectSetup.Domain/"]
-COPY ["TestingProjectSetup.Application/TestingProjectSetup.Application.csproj", "TestingProjectSetup.Application/"]
-COPY ["TestingProjectSetup.Infrastructure/TestingProjectSetup.Infrastructure.csproj", "TestingProjectSetup.Infrastructure/"]
-COPY ["TestingProjectSetup.Api/TestingProjectSetup.Api.csproj", "TestingProjectSetup.Api/"]
+COPY ["HrSystemApp.Domain/HrSystemApp.Domain.csproj", "HrSystemApp.Domain/"]
+COPY ["HrSystemApp.Application/HrSystemApp.Application.csproj", "HrSystemApp.Application/"]
+COPY ["HrSystemApp.Infrastructure/HrSystemApp.Infrastructure.csproj", "HrSystemApp.Infrastructure/"]
+COPY ["HrSystemApp.Api/HrSystemApp.Api.csproj", "HrSystemApp.Api/"]
 
 # Restore
-RUN dotnet restore "TestingProjectSetup.Api/TestingProjectSetup.Api.csproj"
+RUN dotnet restore "HrSystemApp.Api/HrSystemApp.Api.csproj"
 
 # Copy everything and build
 COPY . .
-WORKDIR "/src/TestingProjectSetup.Api"
+WORKDIR "/src/HrSystemApp.Api"
 RUN dotnet build -c $BUILD_CONFIGURATION -o /app/build
 
 FROM build AS publish
@@ -27,4 +27,4 @@ RUN dotnet publish -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
-ENTRYPOINT ["dotnet", "TestingProjectSetup.Api.dll"]
+ENTRYPOINT ["dotnet", "HrSystemApp.Api.dll"]
