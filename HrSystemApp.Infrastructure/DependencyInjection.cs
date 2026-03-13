@@ -1,7 +1,3 @@
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using HrSystemApp.Application.Interfaces;
 using HrSystemApp.Application.Interfaces.Repositories;
 using HrSystemApp.Application.Interfaces.Services;
@@ -9,6 +5,10 @@ using HrSystemApp.Domain.Models;
 using HrSystemApp.Infrastructure.Data;
 using HrSystemApp.Infrastructure.Repositories;
 using HrSystemApp.Infrastructure.Services;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace HrSystemApp.Infrastructure;
 
@@ -45,7 +45,7 @@ public static class DependencyInjection
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         // Services
-        services.AddScoped<ITokenService, TokenService>();
+        //services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
 
         return services;

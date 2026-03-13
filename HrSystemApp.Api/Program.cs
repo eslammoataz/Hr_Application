@@ -80,6 +80,12 @@ if (app.Environment.IsDevelopment())
     await context.Database.MigrateAsync();
 }
 
+// Seed SuperAdmin on every startup (idempotent – skips if already exists)
+using (var scope = app.Services.CreateScope())
+{
+    await SeedData.InitializeAsync(scope.ServiceProvider);
+}
+
 // Swagger UI (available in all environments for now)
 app.UseSwagger();
 app.UseSwaggerUI(options =>

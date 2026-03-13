@@ -2,8 +2,6 @@ using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
-using HrSystemApp.Application.Interfaces.Services;
-using HrSystemApp.Application.Services;
 
 namespace HrSystemApp.Application;
 
@@ -26,7 +24,7 @@ public static class DependencyInjection
         services.AddValidatorsFromAssembly(assembly);
 
         // Application Services
-        services.AddScoped<IUserService, UserService>();
+        //services.AddScoped<IUserService, UserService>();
 
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
 
