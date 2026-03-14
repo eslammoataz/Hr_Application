@@ -1,28 +1,24 @@
+using HrSystemApp.Api.Authorization;
+using HrSystemApp.Application.DTOs.Companies;
+using HrSystemApp.Application.Features.Companies.Commands.CreateCompany;
+using HrSystemApp.Application.Features.Companies.Commands.CreateCompanyLocation;
 using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using HrSystemApp.Application.DTOs.Companies;
-using HrSystemApp.Application.Features.Companies.Commands.CreateCompany;
-using HrSystemApp.Application.Features.Companies.Commands.CreateCompanyLocation;
 
 namespace HrSystemApp.Api.Controllers;
 
-/// <summary>
-/// Company management — SuperAdmin only
-/// </summary>
+[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
 public class CompaniesController : BaseApiController
 {
     private readonly ISender _sender;
 
-    public CompaniesController(ISender sender)
-    {
-        _sender = sender;
-    }
+    public CompaniesController(ISender sender) => _sender = sender;
 
-    /// <summary>Create a new company (SuperAdmin only)</summary>
+    /// <summary>Create a new company.</summary>
     [HttpPost]
-    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "SuperAdmin")]
+    [Authorize(Roles = Roles.SuperAdminOnly)]
     [ProducesResponseType(typeof(CompanyResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -40,9 +36,9 @@ public class CompaniesController : BaseApiController
         return HandleResult(result);
     }
 
-    /// <summary>Add a location to a company (SuperAdmin only)</summary>
+    /// <summary>Add a location to a company.</summary>
     [HttpPost("{companyId:guid}/locations")]
-    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "SuperAdmin")]
+    [Authorize(Roles = Roles.SuperAdminOnly)]
     [ProducesResponseType(typeof(CompanyLocationResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]

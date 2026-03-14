@@ -26,6 +26,9 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<Unit> Units => Set<Unit>();
     public DbSet<Team> Teams => Set<Team>();
 
+    // Phase 4
+    public DbSet<LeaveBalance> LeaveBalances => Set<LeaveBalance>();
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);

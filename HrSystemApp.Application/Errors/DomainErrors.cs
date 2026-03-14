@@ -53,6 +53,51 @@ public static class DomainErrors
 
         public static readonly Error CreationFailed = new(
             "Employee.CreationFailed", "Failed to create employee account. Please try again.");
+
+        public static readonly Error AlreadyInactive = new(
+            "Employee.AlreadyInactive", "Employee is already inactive.");
+    }
+
+    public static class Company
+    {
+        public static readonly Error NotFound = new(
+            "Company.NotFound", "Company was not found.");
+    }
+
+    public static class Department
+    {
+        public static readonly Error NotFound = new(
+            "Department.NotFound", "Department was not found.");
+
+        public static readonly Error AlreadyExists = new(
+            "Department.AlreadyExists", "A department with this name already exists in the company.");
+    }
+
+    public static class Unit
+    {
+        public static readonly Error NotFound = new(
+            "Unit.NotFound", "Unit was not found.");
+
+        public static readonly Error AlreadyExists = new(
+            "Unit.AlreadyExists", "A unit with this name already exists in the department.");
+    }
+
+    public static class Team
+    {
+        public static readonly Error NotFound = new(
+            "Team.NotFound", "Team was not found.");
+
+        public static readonly Error AlreadyExists = new(
+            "Team.AlreadyExists", "A team with this name already exists in the unit.");
+    }
+
+    public static class LeaveBalance
+    {
+        public static readonly Error NotFound = new(
+            "LeaveBalance.NotFound", "Leave balance record was not found.");
+
+        public static readonly Error AlreadyInitialized = new(
+            "LeaveBalance.AlreadyInitialized", "Leave balance for this type and year already exists.");
     }
 
     public static class General

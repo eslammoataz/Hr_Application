@@ -39,15 +39,17 @@ public static class DependencyInjection
         .AddDefaultTokenProviders();
 
 
-        // Repositories
         services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IEmployeeRepository, EmployeeRepository>();
         services.AddScoped<ICompanyRepository, CompanyRepository>();
         services.AddScoped<ICompanyLocationRepository, CompanyLocationRepository>();
+        services.AddScoped<IDepartmentRepository, DepartmentRepository>();
+        services.AddScoped<IUnitRepository, UnitRepository>();
+        services.AddScoped<ITeamRepository, TeamRepository>();
+        services.AddScoped<ILeaveBalanceRepository, LeaveBalanceRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
-        // Services
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
 

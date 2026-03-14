@@ -23,9 +23,6 @@ public static class DependencyInjection
         // FluentValidation
         services.AddValidatorsFromAssembly(assembly);
 
-        // Application Services
-        //services.AddScoped<IUserService, UserService>();
-
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
 
         return services;
