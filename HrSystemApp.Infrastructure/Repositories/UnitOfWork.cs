@@ -15,8 +15,9 @@ public class UnitOfWork : IUnitOfWork, IAsyncDisposable
     private readonly ApplicationDbContext _context;
     private readonly UserManager<ApplicationUser> _userManager;
     private IDbContextTransaction? _transaction;
-    private IUserRepository? _userRepository;
 
+    private IUserRepository? _userRepository;
+    private IEmployeeRepository? _employeeRepository;
 
     public UnitOfWork(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
     {
@@ -24,8 +25,11 @@ public class UnitOfWork : IUnitOfWork, IAsyncDisposable
         _userManager = userManager;
     }
 
-    public IUserRepository Users => _userRepository ??= new UserRepository(_context, _userManager);
+    public IUserRepository Users =>
+        _userRepository ??= new UserRepository(_context, _userManager);
 
+    public IEmployeeRepository Employees =>
+        _employeeRepository ??= new EmployeeRepository(_context);
 
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {

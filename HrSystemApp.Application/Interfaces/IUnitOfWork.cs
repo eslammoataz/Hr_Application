@@ -8,7 +8,7 @@ namespace HrSystemApp.Application.Interfaces;
 public interface IUnitOfWork : IAsyncDisposable
 {
     IUserRepository Users { get; }
-
+    IEmployeeRepository Employees { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     Task BeginTransactionAsync(CancellationToken cancellationToken = default);
