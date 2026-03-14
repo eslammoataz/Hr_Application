@@ -1,5 +1,6 @@
 using HrSystemApp.Domain.Enums;
-using HrSystemApp.Domain.Models;
+
+namespace HrSystemApp.Domain.Models;
 
 public class Company : AuditableEntity
 {

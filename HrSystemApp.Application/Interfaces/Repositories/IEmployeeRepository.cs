@@ -1,3 +1,4 @@
+using HrSystemApp.Domain.Models;
 namespace HrSystemApp.Application.Interfaces.Repositories;
 
 /// <summary>

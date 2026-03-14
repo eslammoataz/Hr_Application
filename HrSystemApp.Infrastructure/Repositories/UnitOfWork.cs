@@ -18,6 +18,8 @@ public class UnitOfWork : IUnitOfWork, IAsyncDisposable
 
     private IUserRepository? _userRepository;
     private IEmployeeRepository? _employeeRepository;
+    private ICompanyRepository? _companyRepository;
+    private ICompanyLocationRepository? _companyLocationRepository;
 
     public UnitOfWork(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
     {
@@ -30,6 +32,12 @@ public class UnitOfWork : IUnitOfWork, IAsyncDisposable
 
     public IEmployeeRepository Employees =>
         _employeeRepository ??= new EmployeeRepository(_context);
+
+    public ICompanyRepository Companies =>
+        _companyRepository ??= new CompanyRepository(_context);
+
+    public ICompanyLocationRepository CompanyLocations =>
+        _companyLocationRepository ??= new CompanyLocationRepository(_context);
 
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {

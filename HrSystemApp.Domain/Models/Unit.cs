@@ -1,4 +1,4 @@
-using HrSystemApp.Domain.Models;
+namespace HrSystemApp.Domain.Models;
 
 public class Unit : AuditableEntity
 {

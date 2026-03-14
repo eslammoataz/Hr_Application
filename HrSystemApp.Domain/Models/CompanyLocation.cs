@@ -1,3 +1,5 @@
+namespace HrSystemApp.Domain.Models;
+
 public class CompanyLocation : BaseEntity
 {
     public Guid CompanyId { get; set; }

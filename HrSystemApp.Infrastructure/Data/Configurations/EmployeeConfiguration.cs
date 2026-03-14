@@ -1,5 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using HrSystemApp.Domain.Models;
+
+namespace HrSystemApp.Infrastructure.Data.Configurations;
+
 public class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
 {
     public void Configure(EntityTypeBuilder<Employee> builder)
@@ -12,7 +16,7 @@ public class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
         builder.HasIndex(e => e.Email);
         builder.HasIndex(e => e.UserId)
             .IsUnique()
-            .HasFilter("[UserId] IS NOT NULL");
+            .HasFilter("\"UserId\" IS NOT NULL");
 
         // Properties
         builder.Property(e => e.EmployeeCode)
