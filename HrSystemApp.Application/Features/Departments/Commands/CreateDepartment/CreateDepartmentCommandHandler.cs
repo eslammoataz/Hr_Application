@@ -24,6 +24,22 @@ public class CreateDepartmentCommandHandler : IRequestHandler<CreateDepartmentCo
         if (nameExists)
             return Result.Failure<DepartmentResponse>(DomainErrors.Department.AlreadyExists);
 
+        // Validate ManagerId exists if provided
+        if (request.ManagerId.HasValue)
+        {
+            var managerExists = await _unitOfWork.Employees.ExistsAsync(e => e.Id == request.ManagerId.Value, cancellationToken);
+            if (!managerExists)
+                return Result.Failure<DepartmentResponse>(DomainErrors.Employee.NotFound);
+        }
+
+        // Validate VicePresidentId exists if provided
+        if (request.VicePresidentId.HasValue)
+        {
+            var vpExists = await _unitOfWork.Employees.ExistsAsync(e => e.Id == request.VicePresidentId.Value, cancellationToken);
+            if (!vpExists)
+                return Result.Failure<DepartmentResponse>(DomainErrors.Employee.NotFound);
+        }
+
         var department = new Department
         {
             CompanyId = request.CompanyId,

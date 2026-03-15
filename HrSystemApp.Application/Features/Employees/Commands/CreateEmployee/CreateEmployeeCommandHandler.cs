@@ -30,6 +30,11 @@ public class CreateEmployeeCommandHandler : IRequestHandler<CreateEmployeeComman
         if (phoneTaken is not null)
             return Result.Failure<CreateEmployeeResponse>(DomainErrors.Employee.AlreadyExists);
 
+        // Check if company exists
+        var companyExists = await _unitOfWork.Companies.ExistsAsync(c => c.Id == request.CompanyId, cancellationToken);
+        if (!companyExists)
+            return Result.Failure<CreateEmployeeResponse>(DomainErrors.Company.NotFound);
+
         var employeeCode = $"EMP-{Guid.NewGuid().ToString("N")[..8].ToUpper()}";
 
         // Both IDs are auto-generated in their constructors,
@@ -62,17 +67,18 @@ public class CreateEmployeeCommandHandler : IRequestHandler<CreateEmployeeComman
         await _unitOfWork.BeginTransactionAsync(cancellationToken);
         try
         {
-            // 1. Save employee record
-            await _unitOfWork.Employees.AddAsync(employee, cancellationToken);
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-            // 2. Create Identity user (password = phone number)
-            var created = await _unitOfWork.Users.CreateUserAsync(user, request.PhoneNumber, cancellationToken);
+            // 1. Create Identity user first (password = phone number)
+            //    The Employee row has a FK on UserId, so the User must exist in the DB first.
+            var created = await _unitOfWork.Users.CreateUserAsync(user, request.PhoneNumber, request.Role, cancellationToken);
             if (!created)
             {
                 await _unitOfWork.RollbackTransactionAsync(cancellationToken);
                 return Result.Failure<CreateEmployeeResponse>(DomainErrors.Employee.CreationFailed);
             }
+
+            // 2. Now save the employee record (UserId FK is satisfied)
+            await _unitOfWork.Employees.AddAsync(employee, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             await _unitOfWork.CommitTransactionAsync(cancellationToken);
         }

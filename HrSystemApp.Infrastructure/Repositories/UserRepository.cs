@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using HrSystemApp.Application.Interfaces.Repositories;
+using HrSystemApp.Domain.Enums;
 using HrSystemApp.Domain.Models;
 using HrSystemApp.Infrastructure.Data;
 
@@ -29,10 +30,15 @@ public class UserRepository : Repository<ApplicationUser>, IUserRepository
         return await _userManager.FindByEmailAsync(email);
     }
 
-    public async Task<bool> CreateUserAsync(ApplicationUser user, string password, CancellationToken cancellationToken = default)
+    public async Task<bool> CreateUserAsync(ApplicationUser user, string password, UserRole role, CancellationToken cancellationToken = default)
     {
         var result = await _userManager.CreateAsync(user, password);
-        return result.Succeeded;
+        if (!result.Succeeded)
+            return false;
+
+        // Add user to Identity role
+        await _userManager.AddToRoleAsync(user, role.ToString());
+        return true;
     }
 
     public async Task<bool> CheckPasswordAsync(ApplicationUser user, string password)

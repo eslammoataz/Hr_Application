@@ -2,8 +2,8 @@ using HrSystemApp.Application.Common;
 using HrSystemApp.Application.DTOs.Units;
 using HrSystemApp.Application.Errors;
 using HrSystemApp.Application.Interfaces;
-using HrSystemApp.Domain.Models;
 using MediatR;
+using Unit = HrSystemApp.Domain.Models.Unit;
 
 namespace HrSystemApp.Application.Features.Units.Commands.CreateUnit;
 

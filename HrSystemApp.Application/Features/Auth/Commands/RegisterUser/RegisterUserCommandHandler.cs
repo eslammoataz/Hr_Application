@@ -41,10 +41,11 @@ public class RegisterUserCommandHandler : IRequestHandler<RegisterUserCommand, R
                 PhoneNumber = request.PhoneNumber,
                 EmailConfirmed = true,
                 CreatedAt = DateTime.UtcNow,
-                IsActive = true
+                IsActive = true,
+                Role = request.Role
             };
 
-            var success = await _unitOfWork.Users.CreateUserAsync(user, request.Password, cancellationToken);
+            var success = await _unitOfWork.Users.CreateUserAsync(user, request.Password, request.Role, cancellationToken);
 
             if (!success)
                 return Result.Failure<AuthResponse>(DomainErrors.General.ServerError);
