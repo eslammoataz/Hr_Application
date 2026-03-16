@@ -1,12 +1,10 @@
 using MediatR;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using HrSystemApp.Application.Common;
 using HrSystemApp.Application.DTOs.Auth;
 using HrSystemApp.Application.Errors;
 using HrSystemApp.Application.Interfaces;
 using HrSystemApp.Application.Interfaces.Services;
-using HrSystemApp.Domain.Models;
 
 namespace HrSystemApp.Application.Features.Auth.Commands.LoginUser;
 
@@ -14,18 +12,15 @@ public class LoginUserCommandHandler : IRequestHandler<LoginUserCommand, Result<
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ITokenService _tokenService;
-    private readonly UserManager<ApplicationUser> _userManager;
     private readonly ILogger<LoginUserCommandHandler> _logger;
 
     public LoginUserCommandHandler(
         IUnitOfWork unitOfWork,
         ITokenService tokenService,
-        UserManager<ApplicationUser> userManager,
         ILogger<LoginUserCommandHandler> logger)
     {
         _unitOfWork = unitOfWork;
         _tokenService = tokenService;
-        _userManager = userManager;
         _logger = logger;
     }
 
@@ -55,8 +50,8 @@ public class LoginUserCommandHandler : IRequestHandler<LoginUserCommand, Result<
             return Result.Failure<AuthResponse>(DomainErrors.Auth.InvalidCredentials);
         }
 
-        // Resolve roles from ASP.NET Identity
-        var roles = await _userManager.GetRolesAsync(user);
+        // Resolve roles from ASP.NET Identity (via repository to keep same UserManager scope)
+        var roles = await _unitOfWork.Users.GetRolesAsync(user);
 
         // Generate JWT
         var (token, expiresAt) = _tokenService.GenerateToken(user, roles);

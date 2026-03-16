@@ -1,5 +1,4 @@
 using MediatR;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using HrSystemApp.Application.Common;
 using HrSystemApp.Application.DTOs.Auth;
@@ -14,18 +13,15 @@ public class RegisterUserCommandHandler : IRequestHandler<RegisterUserCommand, R
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ITokenService _tokenService;
-    private readonly UserManager<ApplicationUser> _userManager;
     private readonly ILogger<RegisterUserCommandHandler> _logger;
 
     public RegisterUserCommandHandler(
         IUnitOfWork unitOfWork,
         ITokenService tokenService,
-        UserManager<ApplicationUser> userManager,
         ILogger<RegisterUserCommandHandler> logger)
     {
         _unitOfWork = unitOfWork;
         _tokenService = tokenService;
-        _userManager = userManager;
         _logger = logger;
     }
 
@@ -54,7 +50,7 @@ public class RegisterUserCommandHandler : IRequestHandler<RegisterUserCommand, R
                 return Result.Failure<AuthResponse>(DomainErrors.General.ServerError);
 
             // Resolve the Identity roles that were just assigned
-            var roles = await _userManager.GetRolesAsync(user);
+            var roles = await _unitOfWork.Users.GetRolesAsync(user);
 
             var (token, expiresAt) = _tokenService.GenerateToken(user, roles);
             await _unitOfWork.Users.SaveTokenAsync(user.Id, token, cancellationToken);
