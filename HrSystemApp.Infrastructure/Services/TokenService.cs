@@ -16,7 +16,7 @@ public class TokenService : ITokenService
         _configuration = configuration;
     }
 
-    public (string Token, DateTime ExpiresAt) GenerateToken(ApplicationUser user)
+    public (string Token, DateTime ExpiresAt) GenerateToken(ApplicationUser user, IEnumerable<string> roles)
     {
         var jwtSettings = _configuration.GetSection("JwtSettings");
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["Secret"]!));
@@ -30,7 +30,7 @@ public class TokenService : ITokenService
             ["jti"] = Guid.NewGuid().ToString(),
             ["email"] = user.Email ?? "",
             ["name"] = user.Name,
-            ["role"] = user.Role.ToString(),
+            ["role"] = roles.FirstOrDefault() ?? string.Empty,
             ["phone"] = user.PhoneNumber ?? ""
         };
 

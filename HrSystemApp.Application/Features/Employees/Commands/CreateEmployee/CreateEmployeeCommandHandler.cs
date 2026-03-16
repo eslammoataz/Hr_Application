@@ -56,7 +56,6 @@ public class CreateEmployeeCommandHandler : IRequestHandler<CreateEmployeeComman
             Name = request.FullName,
             PhoneNumber = request.PhoneNumber,
             EmailConfirmed = true,
-            Role = request.Role,
             IsActive = true,
             MustChangePassword = true,    // Temp password = phone number, must change on first login
             EmployeeId = employee.Id      // employee.Id auto-set by BaseEntity

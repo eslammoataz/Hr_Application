@@ -37,7 +37,6 @@ public static class SeedData
                 Email = superAdminEmail,
                 Name = "Super Admin",
                 EmailConfirmed = true,
-                Role = UserRole.SuperAdmin,
                 IsActive = true,
                 MustChangePassword = false,
                 EmployeeId = null   // SuperAdmin has NO employee record
