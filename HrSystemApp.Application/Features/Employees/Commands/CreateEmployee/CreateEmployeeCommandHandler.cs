@@ -87,15 +87,16 @@ public class CreateEmployeeCommandHandler : IRequestHandler<CreateEmployeeComman
             return Result.Failure<CreateEmployeeResponse>(DomainErrors.General.ServerError);
         }
 
-        return Result.Success(new CreateEmployeeResponse(
-            EmployeeId: employee.Id,
-            UserId: user.Id,
-            FullName: employee.FullName,
-            Email: employee.Email,
-            PhoneNumber: employee.PhoneNumber,
-            EmployeeCode: employee.EmployeeCode,
-            Role: request.Role.ToString(),
-            TemporaryPassword: request.PhoneNumber
-        ));
+        return Result.Success(new CreateEmployeeResponse
+        {
+            EmployeeId = employee.Id,
+            UserId = user.Id,
+            FullName = employee.FullName,
+            Email = employee.Email,
+            PhoneNumber = employee.PhoneNumber,
+            EmployeeCode = employee.EmployeeCode,
+            Role = request.Role.ToString(),
+            TemporaryPassword = request.PhoneNumber
+        });
     }
 }
