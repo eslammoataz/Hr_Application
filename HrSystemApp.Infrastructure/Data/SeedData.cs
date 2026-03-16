@@ -46,7 +46,6 @@ public static class SeedData
 
             if (result.Succeeded)
             {
-                // Add SuperAdmin to Identity role
                 await userManager.AddToRoleAsync(superAdmin, UserRole.SuperAdmin.ToString());
             }
             else
@@ -54,6 +53,13 @@ public static class SeedData
                 var errors = string.Join(", ", result.Errors.Select(e => e.Description));
                 throw new Exception($"Failed to seed SuperAdmin: {errors}");
             }
+        }
+        else
+        {
+            // User already exists — ensure they have the Identity role (handles migration from old Role column)
+            var hasRole = await userManager.IsInRoleAsync(existingAdmin, UserRole.SuperAdmin.ToString());
+            if (!hasRole)
+                await userManager.AddToRoleAsync(existingAdmin, UserRole.SuperAdmin.ToString());
         }
     }
 }
