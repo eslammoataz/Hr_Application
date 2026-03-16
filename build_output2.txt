@@ -1,4 +1,0 @@
-E:\Github Repos\HR System App\HrSystemApp\HrSystemApp.Application\HrSystemApp.Application.csproj : warning NU1903: Package 'AutoMapper' 16.1.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-rvv3-g6hj-g44x [E:\Github Repos\HR System App\HrSystemApp\HrSystemApp.sln]
-E:\Github Repos\HR System App\HrSystemApp\HrSystemApp.Application\HrSystemApp.Application.csproj : warning NU1903: Package 'AutoMapper' 16.1.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-rvv3-g6hj-g44x
-
-Workload updates are available. Run `dotnet workload list` for more information.

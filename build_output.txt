@@ -1,5 +1,0 @@
-E:\Github Repos\HR System App\HrSystemApp\HrSystemApp.Application\HrSystemApp.Application.csproj : warning NU1903: Package 'AutoMapper' 16.1.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-rvv3-g6hj-g44x [E:\Github Repos\HR System App\HrSystemApp\HrSystemApp.sln]
-E:\Github Repos\HR System App\HrSystemApp\HrSystemApp.Application\HrSystemApp.Application.csproj : warning NU1903: Package 'AutoMapper' 16.1.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-rvv3-g6hj-g44x
-E:\Github Repos\HR System App\HrSystemApp\HrSystemApp.Application\Features\Employees\Commands\CreateEmployee\CreateEmployeeCommandHandler.cs(91,13): error CS1739: The best overload for 'CreateEmployeeResponse' does not have a parameter named 'EmployeeId' [E:\Github Repos\HR System App\HrSystemApp\HrSystemApp.Application\HrSystemApp.Application.csproj]
-
-Workload updates are available. Run `dotnet workload list` for more information.
