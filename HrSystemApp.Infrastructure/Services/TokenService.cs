@@ -16,32 +16,38 @@ public class TokenService : ITokenService
         _configuration = configuration;
     }
 
-    public string GenerateToken(ApplicationUser user)
+    public (string Token, DateTime ExpiresAt) GenerateToken(ApplicationUser user, IEnumerable<string> roles)
     {
         var jwtSettings = _configuration.GetSection("JwtSettings");
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["Secret"]!));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+        var expirationMinutes = int.Parse(jwtSettings["ExpirationInMinutes"] ?? "60");
+        var expiresAt = DateTime.UtcNow.AddMinutes(expirationMinutes);
 
         var claims = new Dictionary<string, object>
         {
             ["sub"] = user.Id,
             ["jti"] = Guid.NewGuid().ToString(),
             ["email"] = user.Email ?? "",
-            ["name"] = user.Name ?? user.UserName ?? user.PhoneNumber ?? "",
+            ["name"] = user.Name,
+            ["role"] = roles.FirstOrDefault() ?? string.Empty,
             ["phone"] = user.PhoneNumber ?? ""
         };
+
+        if (user.EmployeeId.HasValue)
+            claims["employeeId"] = user.EmployeeId.Value.ToString();
 
         var tokenDescriptor = new SecurityTokenDescriptor
         {
             Claims = claims,
             Issuer = jwtSettings["Issuer"],
             Audience = jwtSettings["Audience"],
-            Expires = DateTime.UtcNow.AddMinutes(int.Parse(jwtSettings["ExpirationInMinutes"] ?? "60")),
+            Expires = expiresAt,
             SigningCredentials = credentials
         };
 
         var handler = new JsonWebTokenHandler();
-        return handler.CreateToken(tokenDescriptor);
+        return (handler.CreateToken(tokenDescriptor), expiresAt);
     }
 
     public async Task<bool> ValidateTokenAsync(string token)
@@ -68,12 +74,10 @@ public class TokenService : ITokenService
     public string? GetUserIdFromToken(string token)
     {
         var handler = new JsonWebTokenHandler();
-
         try
         {
             var jwtToken = handler.ReadJsonWebToken(token);
-            return jwtToken.Claims
-                .FirstOrDefault(c => c.Type == "sub")?.Value;
+            return jwtToken.Claims.FirstOrDefault(c => c.Type == "sub")?.Value;
         }
         catch
         {

@@ -16,9 +16,13 @@ public class CurrentUserService : ICurrentUserService
         _httpContextAccessor = httpContextAccessor;
     }
 
-    public string? UserId => _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
-    
-    public string? PhoneNumber => _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.MobilePhone);
-    
+    // MapInboundClaims = false in JWT config → claims stay as raw names ("sub", "role")
+    public string? UserId => _httpContextAccessor.HttpContext?.User?.FindFirstValue("sub");
+
+    public string? PhoneNumber => _httpContextAccessor.HttpContext?.User?.FindFirstValue("phone");
+
+    public string? Role => _httpContextAccessor.HttpContext?.User?.FindFirstValue("role");
+
     public bool IsAuthenticated => _httpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated ?? false;
 }
+

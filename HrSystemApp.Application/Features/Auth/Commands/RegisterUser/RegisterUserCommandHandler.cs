@@ -31,9 +31,7 @@ public class RegisterUserCommandHandler : IRequestHandler<RegisterUserCommand, R
         {
             var existingUser = await _unitOfWork.Users.GetByEmailAsync(request.Email, cancellationToken);
             if (existingUser != null)
-            {
                 return Result.Failure<AuthResponse>(DomainErrors.User.AlreadyExists);
-            }
 
             var user = new ApplicationUser
             {
@@ -46,14 +44,16 @@ public class RegisterUserCommandHandler : IRequestHandler<RegisterUserCommand, R
                 IsActive = true
             };
 
-            var success = await _unitOfWork.Users.CreateUserAsync(user, request.Password, cancellationToken);
+            var success = await _unitOfWork.Users.CreateUserAsync(user, request.Password, request.Role, cancellationToken);
 
             if (!success)
-            {
                 return Result.Failure<AuthResponse>(DomainErrors.General.ServerError);
-            }
 
-            var token = _tokenService.GenerateToken(user);
+            // Resolve the Identity roles that were just assigned
+            var roles = await _unitOfWork.Users.GetRolesAsync(user);
+
+            var (token, expiresAt) = _tokenService.GenerateToken(user, roles);
+            await _unitOfWork.Users.SaveTokenAsync(user.Id, token, cancellationToken);
 
             _logger.LogInformation("User {UserId} registered successfully", user.Id);
 
@@ -62,7 +62,10 @@ public class RegisterUserCommandHandler : IRequestHandler<RegisterUserCommand, R
                 user.Id,
                 user.Email!,
                 user.Name,
-                DateTime.UtcNow.AddHours(24)
+                roles.FirstOrDefault() ?? string.Empty,
+                user.EmployeeId,
+                user.MustChangePassword,
+                expiresAt
             ));
         }
         catch (Exception ex)

@@ -2,8 +2,6 @@ using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
-using HrSystemApp.Application.Interfaces.Services;
-using HrSystemApp.Application.Services;
 
 namespace HrSystemApp.Application;
 
@@ -17,16 +15,13 @@ public static class DependencyInjection
         var assembly = Assembly.GetExecutingAssembly();
 
         // AutoMapper
-        services.AddAutoMapper(assembly);
+        services.AddAutoMapper(cfg => cfg.AddMaps(assembly));
 
         // MediatR
         services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(assembly));
 
         // FluentValidation
         services.AddValidatorsFromAssembly(assembly);
-
-        // Application Services
-        services.AddScoped<IUserService, UserService>();
 
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
 

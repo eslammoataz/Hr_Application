@@ -10,11 +10,3 @@ public abstract class BaseEntity
     public string? CreatedBy { get; set; }
     public string? UpdatedBy { get; set; }
 }
-
-/// <summary>
-/// Base entity with Id
-/// </summary>
-public abstract class BaseEntity<TId> : BaseEntity
-{
-    public TId Id { get; set; } = default!;
-}

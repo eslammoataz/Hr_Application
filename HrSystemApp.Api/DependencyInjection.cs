@@ -1,9 +1,9 @@
-using System.Text;
-using System.Text.Json;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using System.Text;
 using HrSystemApp.Application.Common;
 using HrSystemApp.Application.Errors;
+using System.Text.Json;
 
 namespace HrSystemApp.Api;
 

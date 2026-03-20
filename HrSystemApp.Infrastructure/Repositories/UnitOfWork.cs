@@ -15,8 +15,15 @@ public class UnitOfWork : IUnitOfWork, IAsyncDisposable
     private readonly ApplicationDbContext _context;
     private readonly UserManager<ApplicationUser> _userManager;
     private IDbContextTransaction? _transaction;
-    private IUserRepository? _userRepository;
 
+    private IUserRepository? _userRepository;
+    private IEmployeeRepository? _employeeRepository;
+    private ICompanyRepository? _companyRepository;
+    private ICompanyLocationRepository? _companyLocationRepository;
+    private IDepartmentRepository? _departmentRepository;
+    private IUnitRepository? _unitRepository;
+    private ITeamRepository? _teamRepository;
+    private ILeaveBalanceRepository? _leaveBalanceRepository;
 
     public UnitOfWork(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
     {
@@ -24,8 +31,29 @@ public class UnitOfWork : IUnitOfWork, IAsyncDisposable
         _userManager = userManager;
     }
 
-    public IUserRepository Users => _userRepository ??= new UserRepository(_context, _userManager);
+    public IUserRepository Users =>
+        _userRepository ??= new UserRepository(_context, _userManager);
 
+    public IEmployeeRepository Employees =>
+        _employeeRepository ??= new EmployeeRepository(_context);
+
+    public ICompanyRepository Companies =>
+        _companyRepository ??= new CompanyRepository(_context);
+
+    public ICompanyLocationRepository CompanyLocations =>
+        _companyLocationRepository ??= new CompanyLocationRepository(_context);
+
+    public IDepartmentRepository Departments =>
+        _departmentRepository ??= new DepartmentRepository(_context);
+
+    public IUnitRepository Units =>
+        _unitRepository ??= new UnitRepository(_context);
+
+    public ITeamRepository Teams =>
+        _teamRepository ??= new TeamRepository(_context);
+
+    public ILeaveBalanceRepository LeaveBalances =>
+        _leaveBalanceRepository ??= new LeaveBalanceRepository(_context);
 
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {

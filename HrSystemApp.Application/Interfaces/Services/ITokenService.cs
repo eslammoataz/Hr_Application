@@ -7,7 +7,7 @@ namespace HrSystemApp.Application.Interfaces.Services;
 /// </summary>
 public interface ITokenService
 {
-    string GenerateToken(ApplicationUser user);
+    (string Token, DateTime ExpiresAt) GenerateToken(ApplicationUser user, IEnumerable<string> roles);
     Task<bool> ValidateTokenAsync(string token);
     string? GetUserIdFromToken(string token);
 }

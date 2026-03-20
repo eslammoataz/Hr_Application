@@ -1,4 +1,5 @@
 using FluentValidation;
+using HrSystemApp.Domain.Enums;
 
 namespace HrSystemApp.Application.Features.Auth.Commands.RegisterUser;
 
@@ -20,5 +21,9 @@ public class RegisterUserCommandValidator : AbstractValidator<RegisterUserComman
         RuleFor(x => x.Password)
             .NotEmpty().WithMessage("Password is required.")
             .MinimumLength(6).WithMessage("Password must be at least 6 characters.");
+
+        RuleFor(x => x.Role)
+            .IsInEnum().WithMessage("Invalid role specified.")
+            .NotEqual(UserRole.SuperAdmin).WithMessage("Cannot assign SuperAdmin role via registration endpoint.");
     }
 }

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using HrSystemApp.Application.Interfaces.Repositories;
+using HrSystemApp.Domain.Enums;
 using HrSystemApp.Domain.Models;
 using HrSystemApp.Infrastructure.Data;
 
@@ -19,7 +20,8 @@ public class UserRepository : Repository<ApplicationUser>, IUserRepository
         _userManager = userManager;
     }
 
-    public async Task<ApplicationUser?> GetByPhoneNumberAsync(string phoneNumber, CancellationToken cancellationToken = default)
+    public async Task<ApplicationUser?> GetByPhoneNumberAsync(string phoneNumber,
+        CancellationToken cancellationToken = default)
     {
         return await _dbSet.FirstOrDefaultAsync(u => u.PhoneNumber == phoneNumber, cancellationToken);
     }
@@ -29,10 +31,16 @@ public class UserRepository : Repository<ApplicationUser>, IUserRepository
         return await _userManager.FindByEmailAsync(email);
     }
 
-    public async Task<bool> CreateUserAsync(ApplicationUser user, string password, CancellationToken cancellationToken = default)
+    public async Task<bool> CreateUserAsync(ApplicationUser user, string password, UserRole role,
+        CancellationToken cancellationToken = default)
     {
         var result = await _userManager.CreateAsync(user, password);
-        return result.Succeeded;
+        if (!result.Succeeded)
+            return false;
+
+        // Add user to Identity role
+        await _userManager.AddToRoleAsync(user, role.ToString());
+        return true;
     }
 
     public async Task<bool> CheckPasswordAsync(ApplicationUser user, string password)
@@ -74,19 +82,23 @@ public class UserRepository : Repository<ApplicationUser>, IUserRepository
         }
     }
 
-    public async Task<bool> ValidateTokenAsync(string userId, string token, CancellationToken cancellationToken = default)
+    public async Task<bool> ValidateTokenAsync(string userId, string token,
+        CancellationToken cancellationToken = default)
     {
         var savedToken = await GetTokenAsync(userId, cancellationToken);
         return savedToken == token;
     }
 
-    public override async Task<ApplicationUser> AddAsync(ApplicationUser entity, CancellationToken cancellationToken = default)
+    public override async Task<ApplicationUser> AddAsync(ApplicationUser entity,
+        CancellationToken cancellationToken = default)
     {
         var result = await _userManager.CreateAsync(entity);
         if (!result.Succeeded)
         {
-            throw new InvalidOperationException($"Failed to create user: {string.Join(", ", result.Errors.Select(e => e.Description))}");
+            throw new InvalidOperationException(
+                $"Failed to create user: {string.Join(", ", result.Errors.Select(e => e.Description))}");
         }
+
         return entity;
     }
 
@@ -98,5 +110,10 @@ public class UserRepository : Repository<ApplicationUser>, IUserRepository
     public override async Task DeleteAsync(ApplicationUser entity, CancellationToken cancellationToken = default)
     {
         await _userManager.DeleteAsync(entity);
+    }
+
+    public async Task<IList<string>> GetRolesAsync(ApplicationUser user)
+    {
+        return await _userManager.GetRolesAsync(user);
     }
 }
