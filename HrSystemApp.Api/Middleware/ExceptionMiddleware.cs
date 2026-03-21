@@ -46,8 +46,7 @@ public class ExceptionMiddleware
         context.Response.ContentType = "application/json";
         context.Response.StatusCode = (int)statusCode;
 
-        var result = Result.Failure(error);
-        var response = new ResultFailureResponse(result.IsSuccess, result.IsFailure, result.Error);
+        var response = new ApiResponse<object>(false, null, error);
         return context.Response.WriteAsync(JsonSerializer.Serialize(response, JsonOptions));
     }
 
@@ -94,8 +93,4 @@ public class ExceptionMiddleware
             : DomainErrors.General.ValidationError.Message;
     }
 
-    /// <summary>
-    /// Response shape matching Result object (Failure case): IsSuccess, IsFailure, Error.
-    /// </summary>
-    private record ResultFailureResponse(bool IsSuccess, bool IsFailure, Error Error);
 }

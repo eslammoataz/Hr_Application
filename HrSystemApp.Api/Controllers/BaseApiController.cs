@@ -17,7 +17,8 @@ public abstract class BaseApiController : ControllerBase
     {
         if (result.IsSuccess)
         {
-            return result.Value is null ? NoContent() : Ok(result.Value);
+            var successResponse = new ApiResponse<T>(true, result.Value);
+            return result.Value is null ? NoContent() : Ok(successResponse);
         }
 
         return HandleError(result.Error);
@@ -41,13 +42,14 @@ public abstract class BaseApiController : ControllerBase
     /// </summary>
     private IActionResult HandleError(Error error)
     {
+        var errorResponse = new ApiResponse<object>(false, null, error);
+
         return error.Code switch
         {
-            "Auth.InvalidCredentials" or "Auth.InvalidOtp" => Unauthorized(new { error.Code, error.Message }),
+            "Auth.InvalidCredentials" or "Auth.InvalidOtp" => Unauthorized(errorResponse),
             "Auth.Unauthorized" => Forbid(),
-            var code when code.Contains("NotFound") => NotFound(new { error.Code, error.Message }),
-            var code when code.Contains("Validation") => BadRequest(new { error.Code, error.Message }),
-            _ => BadRequest(new { error.Code, error.Message })
+            var code when code.Contains("NotFound") => NotFound(errorResponse),
+            _ => BadRequest(errorResponse)
         };
     }
 }
