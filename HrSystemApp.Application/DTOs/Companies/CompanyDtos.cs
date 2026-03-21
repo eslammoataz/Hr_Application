@@ -1,3 +1,6 @@
+using HrSystemApp.Application.DTOs.Departments;
+using HrSystemApp.Domain.Enums;
+
 namespace HrSystemApp.Application.DTOs.Companies;
 
 public record CreateCompanyRequest(
@@ -5,12 +8,20 @@ public record CreateCompanyRequest(
     string? CompanyLogoUrl,
     int YearlyVacationDays);
 
+public record UpdateCompanyRequest(
+    string CompanyName,
+    string? CompanyLogoUrl,
+    int YearlyVacationDays,
+    CompanyStatus Status);
+
 public record CompanyResponse(
     Guid Id,
     string CompanyName,
     string? CompanyLogoUrl,
     int YearlyVacationDays,
-    string Status);
+    string Status,
+    IReadOnlyList<CompanyLocationResponse> Locations,
+    IReadOnlyList<DepartmentResponse> Departments);
 
 public record CreateCompanyLocationRequest(
     string LocationName,
