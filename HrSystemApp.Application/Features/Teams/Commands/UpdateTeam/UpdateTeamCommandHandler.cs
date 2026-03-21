@@ -1,4 +1,4 @@
-using AutoMapper;
+using Mapster;
 using HrSystemApp.Application.Common;
 using HrSystemApp.Application.DTOs.Teams;
 using HrSystemApp.Application.Errors;
@@ -10,12 +10,10 @@ namespace HrSystemApp.Application.Features.Teams.Commands.UpdateTeam;
 public class UpdateTeamCommandHandler : IRequestHandler<UpdateTeamCommand, Result<TeamResponse>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IMapper _mapper;
 
-    public UpdateTeamCommandHandler(IUnitOfWork unitOfWork, IMapper mapper)
+    public UpdateTeamCommandHandler(IUnitOfWork unitOfWork)
     {
         _unitOfWork = unitOfWork;
-        _mapper = mapper;
     }
 
     public async Task<Result<TeamResponse>> Handle(UpdateTeamCommand request, CancellationToken cancellationToken)
@@ -33,11 +31,11 @@ public class UpdateTeamCommandHandler : IRequestHandler<UpdateTeamCommand, Resul
                 return Result.Failure<TeamResponse>(DomainErrors.Team.AlreadyExists);
         }
 
-        _mapper.Map(request, team);
+        request.Adapt(team);
 
         await _unitOfWork.Teams.UpdateAsync(team, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return Result.Success(_mapper.Map<TeamResponse>(team));
+        return Result.Success(team.Adapt<TeamResponse>());
     }
 }

@@ -1,4 +1,4 @@
-using AutoMapper;
+using Mapster;
 using HrSystemApp.Application.Common;
 using HrSystemApp.Application.DTOs.Departments;
 using HrSystemApp.Application.Errors;
@@ -10,12 +10,10 @@ namespace HrSystemApp.Application.Features.Departments.Commands.UpdateDepartment
 public class UpdateDepartmentCommandHandler : IRequestHandler<UpdateDepartmentCommand, Result<DepartmentResponse>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IMapper _mapper;
 
-    public UpdateDepartmentCommandHandler(IUnitOfWork unitOfWork, IMapper mapper)
+    public UpdateDepartmentCommandHandler(IUnitOfWork unitOfWork)
     {
         _unitOfWork = unitOfWork;
-        _mapper = mapper;
     }
 
     public async Task<Result<DepartmentResponse>> Handle(UpdateDepartmentCommand request, CancellationToken cancellationToken)
@@ -33,11 +31,11 @@ public class UpdateDepartmentCommandHandler : IRequestHandler<UpdateDepartmentCo
                 return Result.Failure<DepartmentResponse>(DomainErrors.Department.AlreadyExists);
         }
 
-        _mapper.Map(request, department);
+        request.Adapt(department);
 
         await _unitOfWork.Departments.UpdateAsync(department, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return Result.Success(_mapper.Map<DepartmentResponse>(department));
+        return Result.Success(department.Adapt<DepartmentResponse>());
     }
 }

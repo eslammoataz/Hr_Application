@@ -1,4 +1,4 @@
-using AutoMapper;
+using Mapster;
 using HrSystemApp.Application.Common;
 using HrSystemApp.Application.DTOs.LeaveBalances;
 using HrSystemApp.Application.Errors;
@@ -11,12 +11,10 @@ namespace HrSystemApp.Application.Features.LeaveBalances.Commands.InitializeLeav
 public class InitializeLeaveBalanceCommandHandler : IRequestHandler<InitializeLeaveBalanceCommand, Result<LeaveBalanceResponse>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IMapper _mapper;
 
-    public InitializeLeaveBalanceCommandHandler(IUnitOfWork unitOfWork, IMapper mapper)
+    public InitializeLeaveBalanceCommandHandler(IUnitOfWork unitOfWork)
     {
         _unitOfWork = unitOfWork;
-        _mapper = mapper;
     }
 
     public async Task<Result<LeaveBalanceResponse>> Handle(InitializeLeaveBalanceCommand request, CancellationToken cancellationToken)
@@ -41,6 +39,6 @@ public class InitializeLeaveBalanceCommandHandler : IRequestHandler<InitializeLe
         await _unitOfWork.LeaveBalances.AddAsync(balance, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return Result.Success(_mapper.Map<LeaveBalanceResponse>(balance));
+        return Result.Success(balance.Adapt<LeaveBalanceResponse>());
     }
 }

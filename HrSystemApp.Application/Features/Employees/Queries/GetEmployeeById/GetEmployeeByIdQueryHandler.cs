@@ -1,4 +1,4 @@
-using AutoMapper;
+using Mapster;
 using HrSystemApp.Application.Common;
 using HrSystemApp.Application.DTOs.Employees;
 using HrSystemApp.Application.Errors;
@@ -10,12 +10,10 @@ namespace HrSystemApp.Application.Features.Employees.Queries.GetEmployeeById;
 public class GetEmployeeByIdQueryHandler : IRequestHandler<GetEmployeeByIdQuery, Result<EmployeeResponse>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IMapper _mapper;
 
-    public GetEmployeeByIdQueryHandler(IUnitOfWork unitOfWork, IMapper mapper)
+    public GetEmployeeByIdQueryHandler(IUnitOfWork unitOfWork)
     {
         _unitOfWork = unitOfWork;
-        _mapper = mapper;
     }
 
     public async Task<Result<EmployeeResponse>> Handle(GetEmployeeByIdQuery request, CancellationToken cancellationToken)
@@ -24,6 +22,6 @@ public class GetEmployeeByIdQueryHandler : IRequestHandler<GetEmployeeByIdQuery,
         if (employee is null)
             return Result.Failure<EmployeeResponse>(DomainErrors.Employee.NotFound);
 
-        return Result.Success(_mapper.Map<EmployeeResponse>(employee));
+        return Result.Success(employee.Adapt<EmployeeResponse>());
     }
 }

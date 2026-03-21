@@ -1,29 +1,38 @@
-using AutoMapper;
-using HrSystemApp.Application.Common;
-using HrSystemApp.Application.DTOs.Departments;
-using HrSystemApp.Application.Errors;
-using HrSystemApp.Application.Interfaces;
-using MediatR;
+using Mapster;
+u
+ng HrSystemApp.Application.Common;
+u
+ng HrSystemApp.Application.DTOs.Departments;
+u
+ng HrSystemApp.Application.Errors;
+u
+ng HrSystemApp.Application.Interfaces;
+u
+ng MediatR;
 
-namespace HrSystemApp.Application.Features.Departments.Queries.GetDepartmentById;
 
-public class GetDepartmentByIdQueryHandler : IRequestHandler<GetDepartmentByIdQuery, Result<DepartmentWithUnitsResponse>>
+
+espace HrSystemApp.Application.Features.Departments.Queries.GetDepartmentById;
+
+
+
+lic class Ge
+    DepartmentByIdQueryHandler : IRequestHandler<GetDepartmentByIdQuery, Result<DepartmentWithUnitsResponse>>
 {
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly IMapper _mapper;
+    private re adonly IUnitOfWork _unitOfWork;
 
-    public GetDepartmentByIdQueryHandler(IUnitOfWork unitOfWork, IMapper mapper)
+    tByIdQueryHandler(IUnitOfWork unitOf public GetDepartmenWork)
     {
         _unitOfWork = unitOfWork;
-        _mapper = mapper;
     }
 
-    public async Task<Result<DepartmentWithUnitsResponse>> Handle(GetDepartmentByIdQuery request, CancellationToken cancellationToken)
+    public async Task<Result<DepartmentWithUnitsResponse>> Handle(GetDepartmentByIdQuery request,
+        CancellationToken cancellationToken)
     {
         var department = await _unitOfWork.Departments.GetWithUnitsAsync(request.Id, cancellationToken);
         if (department is null)
             return Result.Failure<DepartmentWithUnitsResponse>(DomainErrors.Department.NotFound);
 
-        return Result.Success(_mapper.Map<DepartmentWithUnitsResponse>(department));
+        return Result.Success(department.Adapt<DepartmentWithUnitsResponse>());
     }
 }

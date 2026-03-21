@@ -1,4 +1,4 @@
-using AutoMapper;
+using Mapster;
 using HrSystemApp.Application.Common;
 using HrSystemApp.Application.DTOs.Employees;
 using HrSystemApp.Application.Interfaces;
@@ -9,12 +9,10 @@ namespace HrSystemApp.Application.Features.Employees.Queries.GetEmployees;
 public class GetEmployeesQueryHandler : IRequestHandler<GetEmployeesQuery, Result<PagedResult<EmployeeResponse>>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IMapper _mapper;
 
-    public GetEmployeesQueryHandler(IUnitOfWork unitOfWork, IMapper mapper)
+    public GetEmployeesQueryHandler(IUnitOfWork unitOfWork)
     {
         _unitOfWork = unitOfWork;
-        _mapper = mapper;
     }
 
     public async Task<Result<PagedResult<EmployeeResponse>>> Handle(GetEmployeesQuery request, CancellationToken cancellationToken)
@@ -23,7 +21,7 @@ public class GetEmployeesQueryHandler : IRequestHandler<GetEmployeesQuery, Resul
             request.CompanyId, request.TeamId, request.SearchTerm,
             request.PageNumber, request.PageSize, cancellationToken);
 
-        var items = _mapper.Map<List<EmployeeResponse>>(paged.Items);
+        var items = paged.Items.Adapt<List<EmployeeResponse>>();
 
         return Result.Success(PagedResult<EmployeeResponse>.Create(
             items, paged.PageNumber, paged.PageSize, paged.TotalCount));
