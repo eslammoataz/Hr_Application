@@ -1,33 +1,22 @@
 using Mapster;
-u
-ng HrSystemApp.Application.Common;
-u
-ng HrSystemApp.Application.DTOs.Departments;
-u
-ng HrSystemApp.Application.Errors;
-u
-ng HrSystemApp.Application.Interfaces;
-u
-ng MediatR;
+using HrSystemApp.Application.Common;
+using HrSystemApp.Application.DTOs.Departments;
+using HrSystemApp.Application.Errors;
+using HrSystemApp.Application.Interfaces;
+using MediatR;
 
+namespace HrSystemApp.Application.Features.Departments.Queries.GetDepartmentById;
 
-
-espace HrSystemApp.Application.Features.Departments.Queries.GetDepartmentById;
-
-
-
-lic class Ge
-    DepartmentByIdQueryHandler : IRequestHandler<GetDepartmentByIdQuery, Result<DepartmentWithUnitsResponse>>
+public class GetDepartmentByIdQueryHandler : IRequestHandler<GetDepartmentByIdQuery, Result<DepartmentWithUnitsResponse>>
 {
-    private re adonly IUnitOfWork _unitOfWork;
+    private readonly IUnitOfWork _unitOfWork;
 
-    tByIdQueryHandler(IUnitOfWork unitOf public GetDepartmenWork)
+    public GetDepartmentByIdQueryHandler(IUnitOfWork unitOfWork)
     {
         _unitOfWork = unitOfWork;
     }
 
-    public async Task<Result<DepartmentWithUnitsResponse>> Handle(GetDepartmentByIdQuery request,
-        CancellationToken cancellationToken)
+    public async Task<Result<DepartmentWithUnitsResponse>> Handle(GetDepartmentByIdQuery request, CancellationToken cancellationToken)
     {
         var department = await _unitOfWork.Departments.GetWithUnitsAsync(request.Id, cancellationToken);
         if (department is null)
