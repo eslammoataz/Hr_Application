@@ -5,13 +5,15 @@ using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using HrSystemApp.Application.DTOs.Auth;
 using HrSystemApp.Application.Features.Auth.Commands.ChangePassword;
+using HrSystemApp.Application.Features.Auth.Commands.ForceChangePassword;
 using HrSystemApp.Application.Features.Auth.Commands.LoginUser;
 using HrSystemApp.Application.Features.Auth.Commands.LogoutUser;
+
 
 namespace HrSystemApp.Api.Controllers;
 
 /// <summary>
-/// Authentication — Login, Logout, Change Password
+/// Authentication - Login, Logout, Change Password
 /// </summary>
 public class AuthController : BaseApiController
 {
@@ -34,7 +36,13 @@ public class AuthController : BaseApiController
         [FromBody] LoginRequest request, CancellationToken cancellationToken)
     {
         _logger.LogInformation("Login requested for: {Email}", request.Email);
-        var result = await _sender.Send(new LoginUserCommand(request.Email, request.Password), cancellationToken);
+        var command = new LoginUserCommand(
+            request.Email, 
+            request.Password, 
+            request.FcmToken, 
+            request.DeviceType, 
+            request.Language);
+        var result = await _sender.Send(command, cancellationToken);
         return HandleResult(result);
     }
 
@@ -45,7 +53,7 @@ public class AuthController : BaseApiController
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Logout(CancellationToken cancellationToken)
     {
-        var userId = User.FindFirstValue("sub");
+        var userId = HttpContext.User.FindFirstValue("sub");
         var token = HttpContext.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
 
         if (string.IsNullOrEmpty(userId))
@@ -55,21 +63,44 @@ public class AuthController : BaseApiController
         return HandleResult(result);
     }
 
-    /// <summary>Change password (required on first login)</summary>
+    /// <summary>
+    /// For standard users who are already logged in and want to update their password.
+    /// </summary>
     [HttpPost("change-password")]
     [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> ChangePassword(
         [FromBody] ChangePasswordRequest request, CancellationToken cancellationToken)
     {
-        var userId = User.FindFirstValue("sub");
+        var userId = HttpContext.User.FindFirstValue("sub");
+
         if (string.IsNullOrEmpty(userId))
+        {
+            _logger.LogWarning("ChangePassword attempt without valid UserId in token");
             return Unauthorized();
+        }
 
         var result = await _sender.Send(
             new ChangePasswordCommand(userId, request.CurrentPassword, request.NewPassword),
+            cancellationToken);
+
+        return HandleResult(result);
+    }
+
+    /// <summary>
+    /// Specifically for users who must change their default password upon first login.
+    /// </summary>
+    [HttpPost("force-change-password")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ForceChangePassword(
+        [FromBody] FirstTimeChangePasswordRequest request, CancellationToken cancellationToken)
+    {
+        var result = await _sender.Send(
+            new ForceChangePasswordCommand(request.UserId, request.CurrentPassword, request.NewPassword),
             cancellationToken);
 
         return HandleResult(result);
@@ -84,12 +115,12 @@ public class AuthController : BaseApiController
     {
         return Ok(new
         {
-            UserId = User.FindFirstValue("sub"),
-            Email = User.FindFirstValue("email"),
-            Name = User.FindFirstValue("name"),
-            Role = User.FindFirstValue("role"),
-            EmployeeId = User.FindFirstValue("employeeId"),
-            Phone = User.FindFirstValue("phone")
+            UserId = HttpContext.User.FindFirstValue("sub"),
+            Email = HttpContext.User.FindFirstValue("email"),
+            Name = HttpContext.User.FindFirstValue("name"),
+            Role = HttpContext.User.FindFirstValue("role"),
+            EmployeeId = HttpContext.User.FindFirstValue("employeeId"),
+            Phone = HttpContext.User.FindFirstValue("phone")
         });
     }
 }

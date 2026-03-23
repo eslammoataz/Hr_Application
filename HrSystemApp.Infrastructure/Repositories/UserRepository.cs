@@ -116,4 +116,10 @@ public class UserRepository : Repository<ApplicationUser>, IUserRepository
     {
         return await _userManager.GetRolesAsync(user);
     }
+
+    public async Task<(bool Succeeded, IEnumerable<string> Errors)> ChangePasswordAsync(ApplicationUser user, string currentPassword, string newPassword)
+    {
+        var result = await _userManager.ChangePasswordAsync(user, currentPassword, newPassword);
+        return (result.Succeeded, result.Errors.Select(e => e.Description));
+    }
 }

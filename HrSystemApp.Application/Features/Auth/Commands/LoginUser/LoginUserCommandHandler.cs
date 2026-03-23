@@ -53,11 +53,31 @@ public class LoginUserCommandHandler : IRequestHandler<LoginUserCommand, Result<
         // Resolve roles from ASP.NET Identity (via repository to keep same UserManager scope)
         var roles = await _unitOfWork.Users.GetRolesAsync(user);
 
+        // If user must change password, return early without generating a full JWT
+        if (user.MustChangePassword)
+        {
+            _logger.LogInformation("User {UserId} must change password before first login", user.Id);
+            return Result.Success(new AuthResponse(
+                Token: null,
+                UserId: user.Id,
+                Email: user.Email!,
+                Name: user.Name,
+                Role: roles.FirstOrDefault() ?? string.Empty,
+                EmployeeId: user.EmployeeId,
+                MustChangePassword: true,
+                ExpiresAt: null
+            ));
+        }
+
         // Generate JWT
         var (token, expiresAt) = _tokenService.GenerateToken(user, roles);
 
-        // Update last login timestamp
+        // Update user device info and last login timestamp
+        user.FcmToken = request.FcmToken ?? user.FcmToken;
+        user.DeviceType = request.DeviceType ?? user.DeviceType;
+        user.Language = request.Language ?? user.Language;
         user.LastLoginAt = DateTime.UtcNow;
+
         await _unitOfWork.Users.UpdateAsync(user, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
@@ -70,7 +90,7 @@ public class LoginUserCommandHandler : IRequestHandler<LoginUserCommand, Result<
             Name: user.Name,
             Role: roles.FirstOrDefault() ?? string.Empty,
             EmployeeId: user.EmployeeId,
-            MustChangePassword: user.MustChangePassword,
+            MustChangePassword: false,
             ExpiresAt: expiresAt
         ));
     }

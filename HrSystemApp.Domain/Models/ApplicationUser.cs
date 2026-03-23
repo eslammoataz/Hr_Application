@@ -14,6 +14,7 @@ public class ApplicationUser : IdentityUser
     public bool MustChangePassword { get; set; } = false;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? LastLoginAt { get; set; }
+    public string? Language { get; set; }
 
     // Navigation
     public Employee? Employee { get; set; }
