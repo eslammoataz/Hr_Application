@@ -21,8 +21,12 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - ConnectionStrings__DefaultConnection=Host=database;Port=5432;Database=HrSystemApp;Username=admin;Password=Password2024
+      - DataProtection__KeysPath=/var/app/dpkeys
+      - DataProtection__ApplicationName=HrSystemApp
     depends_on:
       - database
+    volumes:
+      - dpkeys:/var/app/dpkeys
 
   seq:
     image: datalust/seq:latest
@@ -38,3 +42,4 @@ services:
 volumes:
   pgdata:
   seqdata:
+  dpkeys:

@@ -5,11 +5,14 @@ using HrSystemApp.Domain.Models;
 using HrSystemApp.Infrastructure.Data;
 using HrSystemApp.Infrastructure.Repositories;
 using HrSystemApp.Infrastructure.Services;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using HrSystemApp.Application.Settings;
+using System;
+using System.IO;
 
 namespace HrSystemApp.Infrastructure;
 
@@ -20,6 +23,18 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
+        var dataProtectionKeysPath = configuration["DataProtection:KeysPath"];
+        var dataProtectionAppName = configuration["DataProtection:ApplicationName"] ?? "HrSystemApp";
+
+        // Persist keys so Identity tokens remain valid across restarts/replicas.
+        var dataProtectionBuilder = services.AddDataProtection()
+            .SetApplicationName(dataProtectionAppName);
+
+        if (!string.IsNullOrWhiteSpace(dataProtectionKeysPath))
+        {
+            dataProtectionBuilder.PersistKeysToFileSystem(new DirectoryInfo(dataProtectionKeysPath));
+        }
+
         // Database
         services.AddDbContext<ApplicationDbContext>(options =>
             options.UseNpgsql(
@@ -38,6 +53,11 @@ public static class DependencyInjection
             })
             .AddEntityFrameworkStores<ApplicationDbContext>()
             .AddDefaultTokenProviders();
+
+        services.Configure<DataProtectionTokenProviderOptions>(options =>
+        {
+            options.TokenLifespan = TimeSpan.FromMinutes(15);
+        });
 
 
         services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
