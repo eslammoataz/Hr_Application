@@ -32,6 +32,14 @@ public class ForgotPasswordCommandHandler : IRequestHandler<ForgotPasswordComman
     public async Task<Result> Handle(ForgotPasswordCommand request, CancellationToken cancellationToken)
     {
         const string otpPurpose = "PasswordReset";
+        var provider = TokenOptions.DefaultPhoneProvider;
+
+        _logger.LogInformation(
+            "Forgot password requested. Email: {Email}, Channel: {Channel}, Provider: {Provider}, Purpose: {Purpose}.",
+            request.Email,
+            request.Channel,
+            provider,
+            otpPurpose);
 
         var user = await _userRepository.GetByEmailAsync(request.Email, cancellationToken);
 
@@ -42,18 +50,19 @@ public class ForgotPasswordCommandHandler : IRequestHandler<ForgotPasswordComman
             return Result.Success();
         }
 
-        // Use an explicit provider so generation/verification stay deterministic across environments.
-        var provider = TokenOptions.DefaultEmailProvider;
-
-
         var otp = await _userRepository.GenerateUserTokenAsync(user, provider, otpPurpose);
-
         // Reset attempts
         user.OtpAttempts = 0;
         await _userRepository.UpdateAsync(user, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        _logger.LogInformation("Generated OTP for user {Email}", request.Email);
+        _logger.LogInformation(
+            "Generated OTP for user {Email}. UserId: {UserId}, Otp: {Otp}, Provider: {Provider}, Purpose: {Purpose}.",
+            request.Email,
+            user.Id,
+            otp,
+            provider,
+            otpPurpose);
 
         // Publish event for delivery
         await _publisher.Publish(new OtpGeneratedEvent(
@@ -61,6 +70,12 @@ public class ForgotPasswordCommandHandler : IRequestHandler<ForgotPasswordComman
             user.PhoneNumber,
             otp,
             request.Channel), cancellationToken);
+
+        _logger.LogInformation(
+            "OTP publish completed for user {Email}. UserId: {UserId}, Channel: {Channel}.",
+            request.Email,
+            user.Id,
+            request.Channel);
 
         return Result.Success();
     }
