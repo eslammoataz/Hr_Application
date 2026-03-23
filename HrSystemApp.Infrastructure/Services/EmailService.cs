@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Mail;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using HrSystemApp.Application.Interfaces.Services;
 using HrSystemApp.Application.Settings;
@@ -9,14 +10,24 @@ namespace HrSystemApp.Infrastructure.Services;
 public class EmailService : IEmailService
 {
     private readonly EmailSettings _settings;
+    private readonly ILogger<EmailService> _logger;
 
-    public EmailService(IOptions<EmailSettings> settings)
+    public EmailService(IOptions<EmailSettings> settings, ILogger<EmailService> logger)
     {
         _settings = settings.Value;
+        _logger = logger;
     }
 
     public async Task SendOtpAsync(string toEmail, string otp, CancellationToken cancellationToken = default)
     {
+        _logger.LogInformation(
+            "Sending OTP email. To: {ToEmail}, Otp: {Otp}, SmtpHost: {SmtpHost}, SmtpPort: {SmtpPort}, Sender: {SenderEmail}.",
+            toEmail,
+            otp,
+            _settings.SmtpHost,
+            _settings.SmtpPort,
+            _settings.SenderEmail);
+
         using var client = new SmtpClient(_settings.SmtpHost, _settings.SmtpPort)
         {
             Credentials = new NetworkCredential(_settings.SenderEmail, _settings.AppPassword),
@@ -44,5 +55,6 @@ public class EmailService : IEmailService
         mailMessage.To.Add(toEmail);
 
         await client.SendMailAsync(mailMessage);
+        _logger.LogInformation("OTP email sent successfully to {ToEmail}.", toEmail);
     }
 }

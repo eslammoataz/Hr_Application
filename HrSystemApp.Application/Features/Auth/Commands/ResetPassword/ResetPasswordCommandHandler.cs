@@ -35,7 +35,14 @@ public class ResetPasswordCommandHandler : IRequestHandler<ResetPasswordCommand,
     public async Task<Result<AuthResponse>> Handle(ResetPasswordCommand request, CancellationToken cancellationToken)
     {
         const string otpPurpose = "PasswordReset";
-        var otpProvider = TokenOptions.DefaultEmailProvider;
+        var otpProvider = TokenOptions.DefaultPhoneProvider;
+
+        _logger.LogInformation(
+            "Reset password request received. Email: {Email}, Otp: {Otp}, Provider: {OtpProvider}, Purpose: {Purpose}.",
+            request.Email,
+            request.Otp,
+            otpProvider,
+            otpPurpose);
 
         var user = await _userRepository.GetByEmailAsync(request.Email, cancellationToken);
 
@@ -45,6 +52,10 @@ public class ResetPasswordCommandHandler : IRequestHandler<ResetPasswordCommand,
         // Check if max attempts reached
         if (user.OtpAttempts >= 3)
         {
+            _logger.LogWarning(
+                "Reset password blocked due to max attempts. UserId: {UserId}, Attempts: {OtpAttempts}.",
+                user.Id,
+                user.OtpAttempts);
             user.OtpAttempts = 0; // Reset for next time if they request a new OTP
             await _userRepository.UpdateAsync(user, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -57,6 +68,12 @@ public class ResetPasswordCommandHandler : IRequestHandler<ResetPasswordCommand,
             otpProvider);
 
         var isValid = await _userRepository.VerifyUserTokenAsync(user, otpProvider, otpPurpose, request.Otp);
+        _logger.LogInformation(
+            "OTP validation result for user {UserId}: {IsValid}. Provider: {OtpProvider}, Purpose: {Purpose}.",
+            user.Id,
+            isValid,
+            otpProvider,
+            otpPurpose);
 
         if (!isValid)
         {
@@ -76,9 +93,17 @@ public class ResetPasswordCommandHandler : IRequestHandler<ResetPasswordCommand,
 
         // Generate Identity reset token
         var resetToken = await _userRepository.GeneratePasswordResetTokenAsync(user);
+        _logger.LogInformation(
+            "Generated reset token for user {UserId}. ResetToken: {ResetToken}.",
+            user.Id,
+            resetToken);
 
         // Perform reset
         var resetResult = await _userRepository.ResetPasswordAsync(user, resetToken, request.NewPassword);
+        _logger.LogInformation(
+            "ResetPasswordAsync result for user {UserId}. Succeeded: {Succeeded}.",
+            user.Id,
+            resetResult.Succeeded);
 
         if (!resetResult.Succeeded)
         {
