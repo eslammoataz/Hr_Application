@@ -31,3 +31,6 @@ public record FirstTimeChangePasswordRequest(
 public record UpdateFcmTokenRequest(
     string FcmToken,
     DeviceType DeviceType);
+
+public record UpdateLanguageRequest(
+    string Language);
