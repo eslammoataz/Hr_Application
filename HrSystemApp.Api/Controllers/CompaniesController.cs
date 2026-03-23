@@ -1,7 +1,11 @@
 using HrSystemApp.Api.Authorization;
+using HrSystemApp.Application.Common;
 using HrSystemApp.Application.DTOs.Companies;
 using HrSystemApp.Application.Features.Companies.Commands.CreateCompany;
 using HrSystemApp.Application.Features.Companies.Commands.CreateCompanyLocation;
+using HrSystemApp.Application.Features.Companies.Commands.UpdateCompany;
+using HrSystemApp.Application.Features.Companies.Queries.GetCompanies;
+using HrSystemApp.Application.Features.Companies.Queries.GetCompanyById;
 using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -55,6 +59,59 @@ public class CompaniesController : BaseApiController
             request.Address,
             request.Latitude,
             request.Longitude);
+
+        var result = await _sender.Send(command, cancellationToken);
+        return HandleResult(result);
+    }
+
+    /// <summary>Get all companies.</summary>
+    [HttpGet]
+    [Authorize(Roles = Roles.SuperAdminOnly)]
+    [ProducesResponseType(typeof(PagedResult<CompanyResponse>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetAll(
+        [FromQuery] string? searchTerm,
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 20,
+        [FromQuery] bool includeLocations = false,
+        [FromQuery] bool includeDepartments = false,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await _sender.Send(new GetCompaniesQuery(searchTerm, pageNumber, pageSize, includeLocations, includeDepartments), cancellationToken);
+        return HandleResult(result);
+    }
+
+    /// <summary>Get a company by ID.</summary>
+    [HttpGet("{id:guid}")]
+    [Authorize(Roles = Roles.SuperAdminOnly)]
+    [ProducesResponseType(typeof(CompanyResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetById(
+        Guid id, 
+        [FromQuery] bool includeLocations = false,
+        [FromQuery] bool includeDepartments = false,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await _sender.Send(new GetCompanyByIdQuery(id, includeLocations, includeDepartments), cancellationToken);
+        return HandleResult(result);
+    }
+
+    /// <summary>Update an existing company.</summary>
+    [HttpPut("{id:guid}")]
+    [Authorize(Roles = Roles.SuperAdminOnly)]
+    [ProducesResponseType(typeof(CompanyResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Update(
+        Guid id,
+        [FromBody] UpdateCompanyRequest request,
+        CancellationToken cancellationToken)
+    {
+        var command = new UpdateCompanyCommand(
+            id,
+            request.CompanyName,
+            request.CompanyLogoUrl,
+            request.YearlyVacationDays,
+            request.Status);
 
         var result = await _sender.Send(command, cancellationToken);
         return HandleResult(result);

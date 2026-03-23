@@ -1,4 +1,4 @@
-using AutoMapper;
+using Mapster;
 using HrSystemApp.Application.Common;
 using HrSystemApp.Application.DTOs.Teams;
 using HrSystemApp.Application.Errors;
@@ -10,12 +10,10 @@ namespace HrSystemApp.Application.Features.Teams.Queries.GetTeams;
 public class GetTeamsQueryHandler : IRequestHandler<GetTeamsQuery, Result<IReadOnlyList<TeamResponse>>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IMapper _mapper;
 
-    public GetTeamsQueryHandler(IUnitOfWork unitOfWork, IMapper mapper)
+    public GetTeamsQueryHandler(IUnitOfWork unitOfWork)
     {
         _unitOfWork = unitOfWork;
-        _mapper = mapper;
     }
 
     public async Task<Result<IReadOnlyList<TeamResponse>>> Handle(GetTeamsQuery request, CancellationToken cancellationToken)
@@ -25,6 +23,6 @@ public class GetTeamsQueryHandler : IRequestHandler<GetTeamsQuery, Result<IReadO
             return Result.Failure<IReadOnlyList<TeamResponse>>(DomainErrors.Unit.NotFound);
 
         var teams = await _unitOfWork.Teams.GetByUnitAsync(request.UnitId, cancellationToken);
-        return Result.Success(_mapper.Map<IReadOnlyList<TeamResponse>>(teams));
+        return Result.Success(teams.Adapt<IReadOnlyList<TeamResponse>>());
     }
 }

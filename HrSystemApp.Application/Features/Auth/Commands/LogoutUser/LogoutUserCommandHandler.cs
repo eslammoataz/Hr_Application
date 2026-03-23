@@ -23,10 +23,22 @@ public class LogoutUserCommandHandler : IRequestHandler<LogoutUserCommand, Resul
     {
         try
         {
-            await _unitOfWork.Users.RemoveTokenAsync(request.UserId, request.Token, cancellationToken);
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            var user = await _unitOfWork.Users.GetByIdAsync(request.UserId, cancellationToken);
+            if (user != null)
+            {
+                user.FcmToken = null;
+                user.DeviceType = null;
+                
+                await _unitOfWork.Users.UpdateAsync(user, cancellationToken);
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
+                
+                _logger.LogInformation("User {UserId} logged out and FCM token cleared", request.UserId);
+            }
+            else
+            {
+                _logger.LogWarning("User {UserId} not found during logout token clearing", request.UserId);
+            }
 
-            _logger.LogInformation("User {UserId} logged out", request.UserId);
             return Result.Success();
         }
         catch (Exception ex)

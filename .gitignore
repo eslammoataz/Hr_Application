@@ -155,3 +155,4 @@ node_modules/
 build_output*.txt
 *.pdf
 HRMS*.pdf
+appsettings.Development.json

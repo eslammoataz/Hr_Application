@@ -1,4 +1,4 @@
-using AutoMapper;
+using Mapster;
 using HrSystemApp.Application.Common;
 using HrSystemApp.Application.DTOs.Departments;
 using HrSystemApp.Application.Errors;
@@ -10,12 +10,10 @@ namespace HrSystemApp.Application.Features.Departments.Queries.GetDepartments;
 public class GetDepartmentsQueryHandler : IRequestHandler<GetDepartmentsQuery, Result<IReadOnlyList<DepartmentResponse>>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IMapper _mapper;
 
-    public GetDepartmentsQueryHandler(IUnitOfWork unitOfWork, IMapper mapper)
+    public GetDepartmentsQueryHandler(IUnitOfWork unitOfWork)
     {
         _unitOfWork = unitOfWork;
-        _mapper = mapper;
     }
 
     public async Task<Result<IReadOnlyList<DepartmentResponse>>> Handle(GetDepartmentsQuery request, CancellationToken cancellationToken)
@@ -25,6 +23,6 @@ public class GetDepartmentsQueryHandler : IRequestHandler<GetDepartmentsQuery, R
             return Result.Failure<IReadOnlyList<DepartmentResponse>>(DomainErrors.Company.NotFound);
 
         var departments = await _unitOfWork.Departments.GetByCompanyAsync(request.CompanyId, cancellationToken);
-        return Result.Success(_mapper.Map<IReadOnlyList<DepartmentResponse>>(departments));
+        return Result.Success(departments.Adapt<IReadOnlyList<DepartmentResponse>>());
     }
 }

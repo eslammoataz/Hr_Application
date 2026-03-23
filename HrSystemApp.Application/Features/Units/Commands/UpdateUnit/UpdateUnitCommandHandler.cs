@@ -1,4 +1,4 @@
-using AutoMapper;
+using Mapster;
 using HrSystemApp.Application.Common;
 using HrSystemApp.Application.DTOs.Units;
 using HrSystemApp.Application.Errors;
@@ -10,12 +10,10 @@ namespace HrSystemApp.Application.Features.Units.Commands.UpdateUnit;
 public class UpdateUnitCommandHandler : IRequestHandler<UpdateUnitCommand, Result<UnitResponse>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IMapper _mapper;
 
-    public UpdateUnitCommandHandler(IUnitOfWork unitOfWork, IMapper mapper)
+    public UpdateUnitCommandHandler(IUnitOfWork unitOfWork)
     {
         _unitOfWork = unitOfWork;
-        _mapper = mapper;
     }
 
     public async Task<Result<UnitResponse>> Handle(UpdateUnitCommand request, CancellationToken cancellationToken)
@@ -33,11 +31,11 @@ public class UpdateUnitCommandHandler : IRequestHandler<UpdateUnitCommand, Resul
                 return Result.Failure<UnitResponse>(DomainErrors.Unit.AlreadyExists);
         }
 
-        _mapper.Map(request, unit);
+        request.Adapt(unit);
 
         await _unitOfWork.Units.UpdateAsync(unit, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return Result.Success(_mapper.Map<UnitResponse>(unit));
+        return Result.Success(unit.Adapt<UnitResponse>());
     }
 }

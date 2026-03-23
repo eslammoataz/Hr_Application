@@ -5,13 +5,20 @@ using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using HrSystemApp.Application.DTOs.Auth;
 using HrSystemApp.Application.Features.Auth.Commands.ChangePassword;
+using HrSystemApp.Application.Features.Auth.Commands.ForceChangePassword;
 using HrSystemApp.Application.Features.Auth.Commands.LoginUser;
 using HrSystemApp.Application.Features.Auth.Commands.LogoutUser;
+using HrSystemApp.Application.Features.Auth.Commands.UpdateFcmToken;
+using HrSystemApp.Application.Features.Auth.Commands.UpdateLanguage;
+using HrSystemApp.Application.Features.Auth.Commands.ForgotPassword;
+using HrSystemApp.Application.Features.Auth.Commands.ResetPassword;
+using HrSystemApp.Domain.Enums;
+
 
 namespace HrSystemApp.Api.Controllers;
 
 /// <summary>
-/// Authentication — Login, Logout, Change Password
+/// Authentication - Login, Logout, Change Password
 /// </summary>
 public class AuthController : BaseApiController
 {
@@ -33,8 +40,26 @@ public class AuthController : BaseApiController
     public async Task<IActionResult> Login(
         [FromBody] LoginRequest request, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Login requested for: {Email}", request.Email);
-        var result = await _sender.Send(new LoginUserCommand(request.Email, request.Password), cancellationToken);
+        _logger.LogInformation("User {Email} is attempting to login. Action: {ActionType}", request.Email, "LoginAttempt");
+        
+        var command = new LoginUserCommand(
+            request.Email,
+            request.Password,
+            request.FcmToken,
+            request.DeviceType,
+            request.Language);
+        var result = await _sender.Send(command, cancellationToken);
+
+        if (result.IsSuccess)
+        {
+            _logger.LogInformation("User {Email} successfully logged in. Action: {ActionType}, UserId: {UserId}", 
+                request.Email, "LoginSuccess", result.Value.UserId);
+        }
+        else
+        {
+            _logger.LogWarning("User {Email} failed to login. Reason: {Error}", request.Email, result.Error.Message);
+        }
+
         return HandleResult(result);
     }
 
@@ -45,7 +70,7 @@ public class AuthController : BaseApiController
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Logout(CancellationToken cancellationToken)
     {
-        var userId = User.FindFirstValue("sub");
+        var userId = HttpContext.User.FindFirstValue("sub");
         var token = HttpContext.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
 
         if (string.IsNullOrEmpty(userId))
@@ -55,21 +80,120 @@ public class AuthController : BaseApiController
         return HandleResult(result);
     }
 
-    /// <summary>Change password (required on first login)</summary>
+    /// <summary>
+    /// For standard users who are already logged in and want to update their password.
+    /// </summary>
     [HttpPost("change-password")]
     [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> ChangePassword(
         [FromBody] ChangePasswordRequest request, CancellationToken cancellationToken)
     {
-        var userId = User.FindFirstValue("sub");
+        var userId = HttpContext.User.FindFirstValue("sub");
+
+        if (string.IsNullOrEmpty(userId))
+        {
+            _logger.LogWarning("ChangePassword attempt without valid UserId in token");
+            return Unauthorized();
+        }
+
+        var result = await _sender.Send(
+            new ChangePasswordCommand(userId, request.CurrentPassword, request.NewPassword),
+            cancellationToken);
+
+        return HandleResult(result);
+    }
+
+    /// <summary>
+    /// Specifically for users who must change their default password upon first login.
+    /// </summary>
+    [HttpPost("force-change-password")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ForceChangePassword(
+        [FromBody] FirstTimeChangePasswordRequest request, CancellationToken cancellationToken)
+    {
+        var result = await _sender.Send(
+            new ForceChangePasswordCommand(request.UserId, request.CurrentPassword, request.NewPassword),
+            cancellationToken);
+
+        return HandleResult(result);
+    }
+
+    /// <summary>
+    /// Update FCM notification token for currently authenticated user.
+    /// </summary>
+    [HttpPost("update-fcm-token")]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> UpdateFcmToken(
+        [FromBody] UpdateFcmTokenRequest request, CancellationToken cancellationToken)
+    {
+        var userId = HttpContext.User.FindFirstValue("sub");
         if (string.IsNullOrEmpty(userId))
             return Unauthorized();
 
         var result = await _sender.Send(
-            new ChangePasswordCommand(userId, request.CurrentPassword, request.NewPassword),
+            new UpdateFcmTokenCommand(userId, request.FcmToken, request.DeviceType),
+            cancellationToken);
+
+        return HandleResult(result);
+    }
+
+    /// <summary>
+    /// Update preferred language for currently authenticated user.
+    /// </summary>
+    [HttpPost("update-language")]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> UpdateLanguage(
+        [FromBody] UpdateLanguageRequest request, CancellationToken cancellationToken)
+    {
+        var userId = HttpContext.User.FindFirstValue("sub");
+        if (string.IsNullOrEmpty(userId))
+            return Unauthorized();
+
+        var result = await _sender.Send(
+            new UpdateLanguageCommand(userId, request.Language),
+            cancellationToken);
+
+        return HandleResult(result);
+    }
+
+    /// <summary>
+    /// Request a password reset OTP.
+    /// </summary>
+    [HttpPost("forgot-password")]
+    [AllowAnonymous]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> ForgotPassword(
+        [FromBody] ForgotPasswordRequest request, CancellationToken cancellationToken)
+    {
+        await _sender.Send(
+            new ForgotPasswordCommand(request.Email, request.Channel),
+            cancellationToken);
+
+        // Always return OK for security
+        return Ok();
+    }
+
+    /// <summary>
+    /// Reset password using OTP.
+    /// </summary>
+    [HttpPost("reset-password")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ResetPassword(
+        [FromBody] ResetPasswordRequest request, CancellationToken cancellationToken)
+    {
+        var result = await _sender.Send(
+            new ResetPasswordCommand(request.Email, request.Otp, request.NewPassword),
             cancellationToken);
 
         return HandleResult(result);
@@ -84,12 +208,12 @@ public class AuthController : BaseApiController
     {
         return Ok(new
         {
-            UserId = User.FindFirstValue("sub"),
-            Email = User.FindFirstValue("email"),
-            Name = User.FindFirstValue("name"),
-            Role = User.FindFirstValue("role"),
-            EmployeeId = User.FindFirstValue("employeeId"),
-            Phone = User.FindFirstValue("phone")
+            UserId = HttpContext.User.FindFirstValue("sub"),
+            Email = HttpContext.User.FindFirstValue("email"),
+            Name = HttpContext.User.FindFirstValue("name"),
+            Role = HttpContext.User.FindFirstValue("role"),
+            EmployeeId = HttpContext.User.FindFirstValue("employeeId"),
+            Phone = HttpContext.User.FindFirstValue("phone")
         });
     }
 }

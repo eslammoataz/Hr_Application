@@ -21,4 +21,13 @@ public interface IUserRepository : IRepository<ApplicationUser>
     Task RemoveTokenAsync(string userId, string token, CancellationToken cancellationToken = default);
     Task<bool> ValidateTokenAsync(string userId, string token, CancellationToken cancellationToken = default);
     Task<IList<string>> GetRolesAsync(ApplicationUser user);
+
+    Task<(bool Succeeded, IEnumerable<string> Errors)> ChangePasswordAsync(ApplicationUser user, string currentPassword,
+        string newPassword);
+
+    Task<string> GenerateUserTokenAsync(ApplicationUser user, string provider, string purpose);
+    Task<bool> VerifyUserTokenAsync(ApplicationUser user, string provider, string purpose, string token);
+    Task<string> GeneratePasswordResetTokenAsync(ApplicationUser user);
+    Task<(bool Succeeded, IEnumerable<string> Errors)> ResetPasswordAsync(ApplicationUser user, string token,
+        string newPassword);
 }

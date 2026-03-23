@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  database:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: "Password2024"
+      POSTGRES_USER: "admin"
+      POSTGRES_DB: "HrSystemApp"
+    ports:
+      - "5444:5432"
+    volumes:
+      - pgdata_dev:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d HrSystemApp"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  seq:
+    image: datalust/seq:latest
+    restart: always
+    environment:
+      - ACCEPT_EULA=Y
+      - SEQ_FIRSTRUN_ADMINPASSWORD=Password2024!
+    ports:
+      - "5341:80"
+    volumes:
+      - seqdata_dev:/data
+
+volumes:
+  pgdata_dev:
+  seqdata_dev:

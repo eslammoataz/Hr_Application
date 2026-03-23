@@ -2,10 +2,28 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using HrSystemApp.Api;
 using HrSystemApp.Application;
-using HrSystemApp.Infrastructure;
 using HrSystemApp.Infrastructure.Data;
+using Serilog;
+using HrSystemApp.Api.Middleware;
+using HrSystemApp.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Configure Serilog
+var loggerConfiguration = new LoggerConfiguration()
+    .ReadFrom.Configuration(builder.Configuration);
+
+// Add Seq if enabled in settings
+var seqEnabled = builder.Configuration.GetValue<bool>("SeqSettings:Enabled");
+if (seqEnabled)
+{
+    var seqUrl = builder.Configuration.GetValue<string>("SeqSettings:ServerUrl") ?? "http://localhost:5341";
+    loggerConfiguration.WriteTo.Seq(seqUrl);
+}
+
+Log.Logger = loggerConfiguration.CreateLogger();
+
+builder.Host.UseSerilog();
 
 // Add Api layer services 
 builder.Services.AddApi(builder.Configuration);
@@ -61,8 +79,8 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowAll", policy =>
     {
         policy.AllowAnyOrigin()
-              .AllowAnyMethod()
-              .AllowAnyHeader();
+            .AllowAnyMethod()
+            .AllowAnyHeader();
     });
 });
 
@@ -93,6 +111,10 @@ app.UseSwaggerUI(options =>
     options.SwaggerEndpoint("/swagger/v1/swagger.json", "HrSystemApp API v1");
     options.RoutePrefix = "swagger";
 });
+
+// Custom Logging Middlewares
+app.UseMiddleware<CorrelationIdMiddleware>();
+app.UseMiddleware<RequestResponseLoggingMiddleware>();
 
 // Global exception handling (early in pipeline to catch all downstream errors)
 app.UseMiddleware<HrSystemApp.Api.Middleware.ExceptionMiddleware>();

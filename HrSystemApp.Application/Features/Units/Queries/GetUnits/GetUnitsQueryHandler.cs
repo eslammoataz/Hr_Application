@@ -1,4 +1,4 @@
-using AutoMapper;
+using Mapster;
 using HrSystemApp.Application.Common;
 using HrSystemApp.Application.DTOs.Units;
 using HrSystemApp.Application.Errors;
@@ -10,12 +10,10 @@ namespace HrSystemApp.Application.Features.Units.Queries.GetUnits;
 public class GetUnitsQueryHandler : IRequestHandler<GetUnitsQuery, Result<IReadOnlyList<UnitResponse>>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IMapper _mapper;
 
-    public GetUnitsQueryHandler(IUnitOfWork unitOfWork, IMapper mapper)
+    public GetUnitsQueryHandler(IUnitOfWork unitOfWork)
     {
         _unitOfWork = unitOfWork;
-        _mapper = mapper;
     }
 
     public async Task<Result<IReadOnlyList<UnitResponse>>> Handle(GetUnitsQuery request, CancellationToken cancellationToken)
@@ -25,6 +23,6 @@ public class GetUnitsQueryHandler : IRequestHandler<GetUnitsQuery, Result<IReadO
             return Result.Failure<IReadOnlyList<UnitResponse>>(DomainErrors.Department.NotFound);
 
         var units = await _unitOfWork.Units.GetByDepartmentAsync(request.DepartmentId, cancellationToken);
-        return Result.Success(_mapper.Map<IReadOnlyList<UnitResponse>>(units));
+        return Result.Success(units.Adapt<IReadOnlyList<UnitResponse>>());
     }
 }

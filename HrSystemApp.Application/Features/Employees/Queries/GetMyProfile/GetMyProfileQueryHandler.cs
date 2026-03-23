@@ -1,4 +1,4 @@
-using AutoMapper;
+using Mapster;
 using HrSystemApp.Application.Common;
 using HrSystemApp.Application.DTOs.Employees;
 using HrSystemApp.Application.Errors;
@@ -10,12 +10,10 @@ namespace HrSystemApp.Application.Features.Employees.Queries.GetMyProfile;
 public class GetMyProfileQueryHandler : IRequestHandler<GetMyProfileQuery, Result<EmployeeResponse>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IMapper _mapper;
 
-    public GetMyProfileQueryHandler(IUnitOfWork unitOfWork, IMapper mapper)
+    public GetMyProfileQueryHandler(IUnitOfWork unitOfWork)
     {
         _unitOfWork = unitOfWork;
-        _mapper = mapper;
     }
 
     public async Task<Result<EmployeeResponse>> Handle(GetMyProfileQuery request, CancellationToken cancellationToken)
@@ -25,6 +23,6 @@ public class GetMyProfileQueryHandler : IRequestHandler<GetMyProfileQuery, Resul
             return Result.Failure<EmployeeResponse>(DomainErrors.Employee.NotFound);
 
         var detailed = await _unitOfWork.Employees.GetWithDetailsAsync(employee.Id, cancellationToken);
-        return Result.Success(_mapper.Map<EmployeeResponse>(detailed!));
+        return Result.Success(detailed!.Adapt<EmployeeResponse>());
     }
 }
