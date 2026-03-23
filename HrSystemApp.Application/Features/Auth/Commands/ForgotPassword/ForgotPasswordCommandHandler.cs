@@ -31,6 +31,8 @@ public class ForgotPasswordCommandHandler : IRequestHandler<ForgotPasswordComman
 
     public async Task<Result> Handle(ForgotPasswordCommand request, CancellationToken cancellationToken)
     {
+        const string otpPurpose = "PasswordReset";
+
         var user = await _userRepository.GetByEmailAsync(request.Email, cancellationToken);
 
         if (user == null)
@@ -40,11 +42,11 @@ public class ForgotPasswordCommandHandler : IRequestHandler<ForgotPasswordComman
             return Result.Success();
         }
 
-        // Generate 6-digit OTP using Identity's specific providers
-        var provider = TokenOptions.DefaultPhoneProvider;
+        // Use an explicit provider so generation/verification stay deterministic across environments.
+        var provider = TokenOptions.DefaultEmailProvider;
 
 
-        var otp = await _userRepository.GenerateUserTokenAsync(user, provider, "PasswordReset");
+        var otp = await _userRepository.GenerateUserTokenAsync(user, provider, otpPurpose);
 
         // Reset attempts
         user.OtpAttempts = 0;

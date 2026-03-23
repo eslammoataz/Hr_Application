@@ -8,6 +8,8 @@ using HrSystemApp.Application.Errors;
 using HrSystemApp.Application.Interfaces;
 using HrSystemApp.Application.Interfaces.Repositories;
 using HrSystemApp.Application.Interfaces.Services;
+using System;
+using System.Linq;
 
 namespace HrSystemApp.Application.Features.Auth.Commands.ResetPassword;
 
@@ -32,6 +34,9 @@ public class ResetPasswordCommandHandler : IRequestHandler<ResetPasswordCommand,
 
     public async Task<Result<AuthResponse>> Handle(ResetPasswordCommand request, CancellationToken cancellationToken)
     {
+        const string otpPurpose = "PasswordReset";
+        var otpProvider = TokenOptions.DefaultEmailProvider;
+
         var user = await _userRepository.GetByEmailAsync(request.Email, cancellationToken);
 
         if (user == null)
@@ -46,16 +51,23 @@ public class ResetPasswordCommandHandler : IRequestHandler<ResetPasswordCommand,
             return Result.Failure<AuthResponse>(DomainErrors.User.OtpMaxAttemptsReached);
         }
 
-        // Verify OTP via Identity
-        var provider = TokenOptions.DefaultPhoneProvider;
+        _logger.LogInformation(
+            "Reset password requested for user {UserId} using OTP provider {OtpProvider}.",
+            user.Id,
+            otpProvider);
 
-        var isValid = await _userRepository.VerifyUserTokenAsync(user, provider, "PasswordReset", request.Otp);
+        var isValid = await _userRepository.VerifyUserTokenAsync(user, otpProvider, otpPurpose, request.Otp);
 
         if (!isValid)
         {
             user.OtpAttempts++;
             await _userRepository.UpdateAsync(user, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
+            _logger.LogWarning(
+                "Invalid OTP for user {UserId}. Attempts: {OtpAttempts}. Provider: {OtpProvider}.",
+                user.Id,
+                user.OtpAttempts,
+                otpProvider);
             return Result.Failure<AuthResponse>(DomainErrors.User.InvalidOtp);
         }
 
@@ -70,8 +82,18 @@ public class ResetPasswordCommandHandler : IRequestHandler<ResetPasswordCommand,
 
         if (!resetResult.Succeeded)
         {
+            var resetErrors = resetResult.Errors.ToArray();
+            var hasInvalidTokenError = resetErrors.Any(e =>
+                e.Contains("Invalid token", StringComparison.OrdinalIgnoreCase));
+
+            _logger.LogWarning(
+                "Password reset failed for user {UserId}. Errors: {ResetErrors}. PossibleConcurrentSubmission: {PossibleConcurrentSubmission}.",
+                user.Id,
+                string.Join(" | ", resetErrors),
+                hasInvalidTokenError);
+
             return Result.Failure<AuthResponse>(new Error("Auth.ResetFailed",
-                string.Join(", ", resetResult.Errors)));
+                string.Join(", ", resetErrors)));
         }
 
         // Update user state if needed (e.g., MustChangePassword = false)
