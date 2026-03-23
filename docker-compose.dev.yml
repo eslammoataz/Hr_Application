@@ -18,5 +18,17 @@ services:
       timeout: 5s
       retries: 5
 
+  seq:
+    image: datalust/seq:latest
+    restart: always
+    environment:
+      - ACCEPT_EULA=Y
+      - SEQ_FIRSTRUN_ADMINPASSWORD=Password2024!
+    ports:
+      - "5341:80"
+    volumes:
+      - seqdata_dev:/data
+
 volumes:
   pgdata_dev:
+  seqdata_dev:
