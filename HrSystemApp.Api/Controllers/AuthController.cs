@@ -40,7 +40,8 @@ public class AuthController : BaseApiController
     public async Task<IActionResult> Login(
         [FromBody] LoginRequest request, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Login requested for: {Email}", request.Email);
+        _logger.LogInformation("User {Email} is attempting to login. Action: {ActionType}", request.Email, "LoginAttempt");
+        
         var command = new LoginUserCommand(
             request.Email,
             request.Password,
@@ -48,6 +49,17 @@ public class AuthController : BaseApiController
             request.DeviceType,
             request.Language);
         var result = await _sender.Send(command, cancellationToken);
+
+        if (result.IsSuccess)
+        {
+            _logger.LogInformation("User {Email} successfully logged in. Action: {ActionType}, UserId: {UserId}", 
+                request.Email, "LoginSuccess", result.Value.UserId);
+        }
+        else
+        {
+            _logger.LogWarning("User {Email} failed to login. Reason: {Error}", request.Email, result.Error.Message);
+        }
+
         return HandleResult(result);
     }
 

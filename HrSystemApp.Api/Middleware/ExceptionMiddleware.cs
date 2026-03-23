@@ -35,7 +35,16 @@ public class ExceptionMiddleware
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Unhandled exception: {Message}", ex.Message);
+            var userId = context.User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "Anonymous";
+            var correlationId = context.Response.Headers["X-Correlation-ID"].ToString();
+
+            _logger.LogError(ex, 
+                "Unhandled exception: {Message}. User: {UserId}, CorrelationId: {CorrelationId}, Path: {Path}", 
+                ex.Message, 
+                userId, 
+                correlationId, 
+                context.Request.Path);
+
             await HandleExceptionAsync(context, ex);
         }
     }
