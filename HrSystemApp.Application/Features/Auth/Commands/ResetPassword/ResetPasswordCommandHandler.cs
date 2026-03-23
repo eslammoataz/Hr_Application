@@ -88,43 +88,30 @@ public class ResetPasswordCommandHandler : IRequestHandler<ResetPasswordCommand,
             return Result.Failure<AuthResponse>(DomainErrors.User.InvalidOtp);
         }
 
-        // Valid OTP - reset attempts
+        // Valid OTP - manually reset password after OTP verification.
         user.OtpAttempts = 0;
+        user.MustChangePassword = false;
 
-        // Generate Identity reset token
-        var resetToken = await _userRepository.GeneratePasswordResetTokenAsync(user);
-        _logger.LogInformation(
-            "Generated reset token for user {UserId}. ResetToken: {ResetToken}.",
-            user.Id,
-            resetToken);
-
-        // Perform reset
-        var resetResult = await _userRepository.ResetPasswordAsync(user, resetToken, request.NewPassword);
-        _logger.LogInformation(
-            "ResetPasswordAsync result for user {UserId}. Succeeded: {Succeeded}.",
-            user.Id,
-            resetResult.Succeeded);
-
-        if (!resetResult.Succeeded)
+        var passwordChangeResult = await _userRepository.SetPasswordAsync(user, request.NewPassword);
+        if (!passwordChangeResult.Succeeded)
         {
-            var resetErrors = resetResult.Errors.ToArray();
-            var hasInvalidTokenError = resetErrors.Any(e =>
-                e.Contains("Invalid token", StringComparison.OrdinalIgnoreCase));
-
+            var passwordErrors = passwordChangeResult.Errors.ToArray();
             _logger.LogWarning(
-                "Password reset failed for user {UserId}. Errors: {ResetErrors}. PossibleConcurrentSubmission: {PossibleConcurrentSubmission}.",
+                "Password change failed for user {UserId}. Errors: {PasswordErrors}.",
                 user.Id,
-                string.Join(" | ", resetErrors),
-                hasInvalidTokenError);
-
+                string.Join(" | ", passwordErrors));
             return Result.Failure<AuthResponse>(new Error("Auth.ResetFailed",
-                string.Join(", ", resetErrors)));
+                string.Join(", ", passwordErrors)));
         }
 
-        // Update user state if needed (e.g., MustChangePassword = false)
-        user.MustChangePassword = false;
+        user.SecurityStamp = Guid.NewGuid().ToString();
+
         await _userRepository.UpdateAsync(user, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation(
+            "Password reset applied manually for user {UserId}. Security stamp rotated.",
+            user.Id);
 
         _logger.LogInformation("Successfully reset password for user: {Email}", request.Email);
 
