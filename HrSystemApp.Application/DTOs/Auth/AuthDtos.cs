@@ -27,3 +27,7 @@ public record FirstTimeChangePasswordRequest(
     string UserId,
     string CurrentPassword,
     string NewPassword);
+
+public record UpdateFcmTokenRequest(
+    string FcmToken,
+    DeviceType DeviceType);

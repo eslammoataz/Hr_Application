@@ -8,6 +8,7 @@ using HrSystemApp.Application.Features.Auth.Commands.ChangePassword;
 using HrSystemApp.Application.Features.Auth.Commands.ForceChangePassword;
 using HrSystemApp.Application.Features.Auth.Commands.LoginUser;
 using HrSystemApp.Application.Features.Auth.Commands.LogoutUser;
+using HrSystemApp.Application.Features.Auth.Commands.UpdateFcmToken;
 
 
 namespace HrSystemApp.Api.Controllers;
@@ -101,6 +102,27 @@ public class AuthController : BaseApiController
     {
         var result = await _sender.Send(
             new ForceChangePasswordCommand(request.UserId, request.CurrentPassword, request.NewPassword),
+            cancellationToken);
+
+        return HandleResult(result);
+    }
+
+    /// <summary>
+    /// Update FCM notification token for currently authenticated user.
+    /// </summary>
+    [HttpPost("update-fcm-token")]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> UpdateFcmToken(
+        [FromBody] UpdateFcmTokenRequest request, CancellationToken cancellationToken)
+    {
+        var userId = HttpContext.User.FindFirstValue("sub");
+        if (string.IsNullOrEmpty(userId))
+            return Unauthorized();
+
+        var result = await _sender.Send(
+            new UpdateFcmTokenCommand(userId, request.FcmToken, request.DeviceType),
             cancellationToken);
 
         return HandleResult(result);
