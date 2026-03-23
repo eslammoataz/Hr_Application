@@ -24,4 +24,10 @@ public interface IUserRepository : IRepository<ApplicationUser>
 
     Task<(bool Succeeded, IEnumerable<string> Errors)> ChangePasswordAsync(ApplicationUser user, string currentPassword,
         string newPassword);
+
+    Task<string> GenerateUserTokenAsync(ApplicationUser user, string provider, string purpose);
+    Task<bool> VerifyUserTokenAsync(ApplicationUser user, string provider, string purpose, string token);
+    Task<string> GeneratePasswordResetTokenAsync(ApplicationUser user);
+    Task<(bool Succeeded, IEnumerable<string> Errors)> ResetPasswordAsync(ApplicationUser user, string token,
+        string newPassword);
 }

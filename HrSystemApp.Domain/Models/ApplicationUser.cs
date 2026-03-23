@@ -15,6 +15,7 @@ public class ApplicationUser : IdentityUser
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? LastLoginAt { get; set; }
     public string? Language { get; set; }
+    public int OtpAttempts { get; set; } = 0;
 
     // Navigation
     public Employee? Employee { get; set; }

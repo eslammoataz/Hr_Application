@@ -34,3 +34,7 @@ public record UpdateFcmTokenRequest(
 
 public record UpdateLanguageRequest(
     string Language);
+
+public record ForgotPasswordRequest(string Email, OtpChannel Channel);
+
+public record ResetPasswordRequest(string Email, string Otp, string NewPassword);

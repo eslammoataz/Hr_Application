@@ -41,6 +41,12 @@ public static class DomainErrors
 
         public static readonly Error DeleteFailed = new(
             "User.DeleteFailed", "Failed to delete user.");
+
+        public static readonly Error InvalidOtp = new(
+            "User.InvalidOtp", "Invalid OTP code provided.");
+
+        public static readonly Error OtpMaxAttemptsReached = new(
+            "User.OtpMaxAttemptsReached", "Maximum OTP attempts reached. Please request a new code.");
     }
 
     public static class Employee

@@ -122,4 +122,25 @@ public class UserRepository : Repository<ApplicationUser>, IUserRepository
         var result = await _userManager.ChangePasswordAsync(user, currentPassword, newPassword);
         return (result.Succeeded, result.Errors.Select(e => e.Description));
     }
+
+    public async Task<string> GenerateUserTokenAsync(ApplicationUser user, string provider, string purpose)
+    {
+        return await _userManager.GenerateUserTokenAsync(user, provider, purpose);
+    }
+
+    public async Task<bool> VerifyUserTokenAsync(ApplicationUser user, string provider, string purpose, string token)
+    {
+        return await _userManager.VerifyUserTokenAsync(user, provider, purpose, token);
+    }
+
+    public async Task<string> GeneratePasswordResetTokenAsync(ApplicationUser user)
+    {
+        return await _userManager.GeneratePasswordResetTokenAsync(user);
+    }
+
+    public async Task<(bool Succeeded, IEnumerable<string> Errors)> ResetPasswordAsync(ApplicationUser user, string token, string newPassword)
+    {
+        var result = await _userManager.ResetPasswordAsync(user, token, newPassword);
+        return (result.Succeeded, result.Errors.Select(e => e.Description));
+    }
 }

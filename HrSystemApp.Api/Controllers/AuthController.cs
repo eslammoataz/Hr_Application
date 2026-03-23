@@ -10,6 +10,9 @@ using HrSystemApp.Application.Features.Auth.Commands.LoginUser;
 using HrSystemApp.Application.Features.Auth.Commands.LogoutUser;
 using HrSystemApp.Application.Features.Auth.Commands.UpdateFcmToken;
 using HrSystemApp.Application.Features.Auth.Commands.UpdateLanguage;
+using HrSystemApp.Application.Features.Auth.Commands.ForgotPassword;
+using HrSystemApp.Application.Features.Auth.Commands.ResetPassword;
+using HrSystemApp.Domain.Enums;
 
 
 namespace HrSystemApp.Api.Controllers;
@@ -39,10 +42,10 @@ public class AuthController : BaseApiController
     {
         _logger.LogInformation("Login requested for: {Email}", request.Email);
         var command = new LoginUserCommand(
-            request.Email, 
-            request.Password, 
-            request.FcmToken, 
-            request.DeviceType, 
+            request.Email,
+            request.Password,
+            request.FcmToken,
+            request.DeviceType,
             request.Language);
         var result = await _sender.Send(command, cancellationToken);
         return HandleResult(result);
@@ -145,6 +148,40 @@ public class AuthController : BaseApiController
 
         var result = await _sender.Send(
             new UpdateLanguageCommand(userId, request.Language),
+            cancellationToken);
+
+        return HandleResult(result);
+    }
+
+    /// <summary>
+    /// Request a password reset OTP.
+    /// </summary>
+    [HttpPost("forgot-password")]
+    [AllowAnonymous]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> ForgotPassword(
+        [FromBody] ForgotPasswordRequest request, CancellationToken cancellationToken)
+    {
+        await _sender.Send(
+            new ForgotPasswordCommand(request.Email, request.Channel),
+            cancellationToken);
+
+        // Always return OK for security
+        return Ok();
+    }
+
+    /// <summary>
+    /// Reset password using OTP.
+    /// </summary>
+    [HttpPost("reset-password")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ResetPassword(
+        [FromBody] ResetPasswordRequest request, CancellationToken cancellationToken)
+    {
+        var result = await _sender.Send(
+            new ResetPasswordCommand(request.Email, request.Otp, request.NewPassword),
             cancellationToken);
 
         return HandleResult(result);
