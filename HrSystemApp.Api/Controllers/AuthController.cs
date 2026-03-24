@@ -12,6 +12,7 @@ using HrSystemApp.Application.Features.Auth.Commands.UpdateFcmToken;
 using HrSystemApp.Application.Features.Auth.Commands.UpdateLanguage;
 using HrSystemApp.Application.Features.Auth.Commands.ForgotPassword;
 using HrSystemApp.Application.Features.Auth.Commands.ResetPassword;
+using HrSystemApp.Application.Features.Auth.Commands.VerifyOtp;
 using HrSystemApp.Domain.Enums;
 
 
@@ -180,6 +181,37 @@ public class AuthController : BaseApiController
 
         // Always return OK for security
         return Ok();
+    }
+
+    /// <summary>
+    /// Verify reset OTP without changing password.
+    /// </summary>
+    [HttpPost("verify-otp")]
+    [AllowAnonymous]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> VerifyOtp(
+        [FromBody] VerifyOtpRequest request, CancellationToken cancellationToken)
+    {
+        var result = await _sender.Send(
+            new VerifyOtpCommand(request.Email, request.Otp),
+            cancellationToken);
+
+        if (result.IsSuccess && result.Value)
+        {
+            return NoContent();
+        }
+
+        return BadRequest(new
+        {
+            isSuccess = false,
+            data = (object?)null,
+            error = new
+            {
+                code = "User.InvalidOtp",
+                message = "Invalid OTP code provided."
+            }
+        });
     }
 
     /// <summary>

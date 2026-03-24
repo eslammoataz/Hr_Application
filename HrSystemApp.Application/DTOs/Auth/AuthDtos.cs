@@ -37,4 +37,6 @@ public record UpdateLanguageRequest(
 
 public record ForgotPasswordRequest(string Email, OtpChannel Channel);
 
+public record VerifyOtpRequest(string Email, string Otp);
+
 public record ResetPasswordRequest(string Email, string Otp, string NewPassword);
