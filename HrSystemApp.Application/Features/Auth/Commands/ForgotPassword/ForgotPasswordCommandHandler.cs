@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using HrSystemApp.Application.Common;
+using HrSystemApp.Application.Errors;
 using HrSystemApp.Domain.Enums;
 using HrSystemApp.Application.Common.Events;
 using HrSystemApp.Application.Interfaces;
@@ -46,8 +47,7 @@ public class ForgotPasswordCommandHandler : IRequestHandler<ForgotPasswordComman
         if (user == null)
         {
             _logger.LogWarning("Forgot password requested for non-existent email: {Email}", request.Email);
-            // Return success for security (prevent email enumeration)
-            return Result.Success();
+            return Result.Failure(DomainErrors.Auth.UserNotFound);
         }
 
         var otp = await _userRepository.GenerateUserTokenAsync(user, provider, otpPurpose);
