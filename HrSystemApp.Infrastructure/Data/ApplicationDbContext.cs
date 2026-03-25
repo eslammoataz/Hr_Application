@@ -21,6 +21,8 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<CompanyHierarchyPosition> CompanyHierarchyPositions => Set<CompanyHierarchyPosition>();
     public DbSet<Employee> Employees => Set<Employee>();
 
+    public DbSet<ContactAdminRequest> ContactAdminRequests => Set<ContactAdminRequest>();
+
     // Phase 2
     public DbSet<Department> Departments => Set<Department>();
     public DbSet<Unit> Units => Set<Unit>();
@@ -34,10 +36,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
         base.OnModelCreating(builder);
 
         // Configure ApplicationUser
-        builder.Entity<ApplicationUser>(entity =>
-        {
-            entity.HasIndex(e => e.PhoneNumber).IsUnique();
-        });
+        builder.Entity<ApplicationUser>(entity => { entity.HasIndex(e => e.PhoneNumber).IsUnique(); });
 
 
         builder.Entity<ApplicationUser>(b => b.ToTable("Users"));
@@ -97,7 +96,4 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             }
         }
     }
-
-
-
 }

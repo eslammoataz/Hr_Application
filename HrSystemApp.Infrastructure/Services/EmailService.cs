@@ -57,4 +57,42 @@ public class EmailService : IEmailService
         await client.SendMailAsync(mailMessage);
         _logger.LogInformation("OTP email sent successfully to {ToEmail}.", toEmail);
     }
+
+    public async Task SendWelcomeEmailAsync(string toEmail, string name, string companyName, string temporaryPassword, CancellationToken cancellationToken = default)
+    {
+        _logger.LogInformation(
+            "Sending Welcome email. To: {ToEmail}, Company: {CompanyName}.",
+            toEmail,
+            companyName);
+
+        using var client = new SmtpClient(_settings.SmtpHost, _settings.SmtpPort)
+        {
+            Credentials = new NetworkCredential(_settings.SenderEmail, _settings.AppPassword),
+            EnableSsl = true
+        };
+
+        using var mailMessage = new MailMessage
+        {
+            From = new MailAddress(_settings.SenderEmail, _settings.SenderName),
+            Subject = "Welcome to HR System",
+            Body = $@"
+                <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px;'>
+                    <h2 style='color: #28a745; text-align: center;'>Welcome, {name}!</h2>
+                    <p>Your request to join the HR System for <strong>{companyName}</strong> has been accepted.</p>
+                    <p>We are excited to have you on board! Use the following credentials to log in to your company admin account:</p>
+                    <ul style='background-color: #f8f9fa; padding: 15px 30px; border-radius: 5px; margin: 20px 0;'>
+                        <li><strong>Email (Login ID):</strong> {toEmail}</li>
+                        <li><strong>Temporary Password:</strong> {temporaryPassword}</li>
+                    </ul>
+                    <p style='color: #dc3545; font-weight: bold;'>Please note: You will be required to change your password upon your first login for security reasons.</p>
+                    <hr style='border: 0; border-top: 1px solid #eeeeee; margin: 20px 0;'>
+                    <p style='font-size: 12px; color: #777; text-align: center;'>&copy; {DateTime.UtcNow.Year} HR System. All rights reserved.</p>
+                </div>",
+            IsBodyHtml = true
+        };
+        mailMessage.To.Add(toEmail);
+
+        await client.SendMailAsync(mailMessage);
+        _logger.LogInformation("Welcome email sent successfully to {ToEmail}.", toEmail);
+    }
 }

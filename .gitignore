@@ -156,3 +156,4 @@ build_output*.txt
 *.pdf
 HRMS*.pdf
 appsettings.Development.json
+PROJECT.md

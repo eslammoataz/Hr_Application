@@ -117,5 +117,28 @@ public static class DomainErrors
         public static readonly Error NotFound = new(
             "General.NotFound", "The requested resource was not found.");
     }
+
+    public static class ContactAdmin
+    {
+        public static readonly Error NotFound = new(
+            "ContactAdmin.NotFound", "Contact admin request was not found.");
+
+        public static readonly Error AlreadyProcessed = new(
+            "ContactAdmin.AlreadyProcessed", "This request has already been processed.");
+
+        public static readonly Error DuplicatePendingRequest = new(
+            "ContactAdmin.DuplicatePendingRequest", "A pending request with this email or company name already exists.");
+
+        public static readonly Error PhoneNumberAlreadyTaken = new(
+            "ContactAdmin.PhoneNumberAlreadyTaken", "This phone number is already taken.");
+
+        public static readonly Error EmailAlreadyTaken = new(
+            "ContactAdmin.EmailAlreadyTaken", "This email is already taken.");
+
+        public static readonly Error CompanyNameAlreadyTaken = new(
+            "ContactAdmin.CompanyNameAlreadyTaken", "This company name is already taken.");
+
+
+    }
 }
 

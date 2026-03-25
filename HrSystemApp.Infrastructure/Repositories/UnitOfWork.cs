@@ -24,6 +24,7 @@ public class UnitOfWork : IUnitOfWork, IAsyncDisposable
     private IUnitRepository? _unitRepository;
     private ITeamRepository? _teamRepository;
     private ILeaveBalanceRepository? _leaveBalanceRepository;
+    private IContactAdminRequestRepository? _contactAdminRequestRepository;
 
     public UnitOfWork(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
     {
@@ -54,6 +55,9 @@ public class UnitOfWork : IUnitOfWork, IAsyncDisposable
 
     public ILeaveBalanceRepository LeaveBalances =>
         _leaveBalanceRepository ??= new LeaveBalanceRepository(_context);
+
+    public IContactAdminRequestRepository ContactAdminRequests =>
+        _contactAdminRequestRepository ??= new ContactAdminRequestRepository(_context);
 
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
