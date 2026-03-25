@@ -1,4 +1,5 @@
 namespace HrSystemApp.Domain.Enums;
+
 public enum UserRole
 {
     SuperAdmin = 0,
@@ -9,5 +10,6 @@ public enum UserRole
     TeamLeader = 5,
     HR = 6,
     AssetAdmin = 7,
-    Employee = 8
+    Employee = 8,
+    CompanyAdmin = 9
 }

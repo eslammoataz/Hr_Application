@@ -15,6 +15,7 @@ public interface IUnitOfWork : IAsyncDisposable
     IUnitRepository Units { get; }
     ITeamRepository Teams { get; }
     ILeaveBalanceRepository LeaveBalances { get; }
+    IContactAdminRequestRepository ContactAdminRequests { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     Task BeginTransactionAsync(CancellationToken cancellationToken = default);
