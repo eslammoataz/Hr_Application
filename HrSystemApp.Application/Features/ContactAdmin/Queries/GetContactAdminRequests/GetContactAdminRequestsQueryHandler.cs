@@ -22,7 +22,9 @@ public class GetContactAdminRequestsQueryHandler : IRequestHandler<GetContactAdm
         CancellationToken cancellationToken)
     {
         var pagedEntities = await _unitOfWork.ContactAdminRequests.GetPagedAsync(
-            request.Status,
+            request.IsAccepted,
+            request.IsPending,
+            request.IsRejected,
             request.PageNumber,
             request.PageSize,
             cancellationToken);
