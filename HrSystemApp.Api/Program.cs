@@ -119,11 +119,11 @@ app.UseMiddleware<RequestResponseLoggingMiddleware>();
 // Global exception handling (early in pipeline to catch all downstream errors)
 app.UseMiddleware<HrSystemApp.Api.Middleware.ExceptionMiddleware>();
 
-// Routing must run before CORS, Auth, and endpoints
-app.UseRouting();
-
 // CORS
 app.UseCors("AllowAll");
+
+// Routing must run before CORS, Auth, and endpoints
+app.UseRouting();
 
 if (!app.Environment.IsDevelopment())
 {
