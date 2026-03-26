@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
+using HrSystemApp.Domain.Enums;
 using HrSystemApp.Application.Common;
 using HrSystemApp.Application.DTOs.Auth;
 using HrSystemApp.Application.Errors;
@@ -26,8 +27,7 @@ public class LoginUserCommandHandler : IRequestHandler<LoginUserCommand, Result<
 
     public async Task<Result<AuthResponse>> Handle(LoginUserCommand request, CancellationToken cancellationToken)
     {
-        // Find user by email
-        var user = await _unitOfWork.Users.GetByEmailAsync(request.Email, cancellationToken);
+        var user = await _unitOfWork.Users.GetByEmailWithDetailsAsync(request.Email, cancellationToken);
 
         if (user is null)
         {
@@ -35,14 +35,7 @@ public class LoginUserCommandHandler : IRequestHandler<LoginUserCommand, Result<
             return Result.Failure<AuthResponse>(DomainErrors.Auth.InvalidCredentials);
         }
 
-        // Check account is active
-        if (!user.IsActive)
-        {
-            _logger.LogWarning("Login attempt for inactive account: {Email}", request.Email);
-            return Result.Failure<AuthResponse>(DomainErrors.Auth.AccountInactive);
-        }
-
-        // Validate password
+        // Validate password before any further checks
         var passwordValid = await _unitOfWork.Users.CheckPasswordAsync(user, request.Password);
         if (!passwordValid)
         {
@@ -50,9 +43,22 @@ public class LoginUserCommandHandler : IRequestHandler<LoginUserCommand, Result<
             return Result.Failure<AuthResponse>(DomainErrors.Auth.InvalidCredentials);
         }
 
+        if (!user.IsActive)
+        {
+            _logger.LogWarning("Login attempt for inactive account: {Email}", request.Email);
+            return Result.Failure<AuthResponse>(DomainErrors.Auth.AccountInactive);
+        }
+
+
+        if (user.Employee?.Company != null && user.Employee.Company.Status != CompanyStatus.Active)
+        {
+            _logger.LogWarning("Login attempt for user linked to inactive company: {Email}, CompanyId: {CompanyId}",
+                request.Email, user.Employee.Company.Id);
+            return Result.Failure<AuthResponse>(DomainErrors.Auth.CompanyInactive);
+        }
+
         // Resolve roles from ASP.NET Identity (via repository to keep same UserManager scope)
         var roles = await _unitOfWork.Users.GetRolesAsync(user);
-
         // If user must change password, return early without generating a full JWT
         if (user.MustChangePassword)
         {
@@ -71,7 +77,6 @@ public class LoginUserCommandHandler : IRequestHandler<LoginUserCommand, Result<
 
         // Generate JWT
         var (token, expiresAt) = _tokenService.GenerateToken(user, roles);
-
         // Update user device info and last login timestamp
         user.FcmToken = request.FcmToken ?? user.FcmToken;
         user.DeviceType = request.DeviceType ?? user.DeviceType;

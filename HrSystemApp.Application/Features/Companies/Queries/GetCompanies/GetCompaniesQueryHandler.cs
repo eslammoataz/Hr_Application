@@ -19,6 +19,7 @@ public class GetCompaniesQueryHandler : IRequestHandler<GetCompaniesQuery, Resul
     {
         var paged = await _unitOfWork.Companies.GetPagedAsync(
             request.SearchTerm, 
+            request.Status,
             request.PageNumber, 
             request.PageSize, 
             request.IncludeLocations, 

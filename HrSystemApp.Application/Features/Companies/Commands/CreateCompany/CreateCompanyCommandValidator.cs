@@ -11,6 +11,6 @@ public class CreateCompanyCommandValidator : AbstractValidator<CreateCompanyComm
             .MaximumLength(200).WithMessage("Company name cannot exceed 200 characters.");
 
         RuleFor(x => x.YearlyVacationDays)
-            .GreaterThan(0).WithMessage("Yearly vacation days must be greater than 0.");
+            .NotNull().WithMessage("Yearly vacation days is required.");
     }
 }

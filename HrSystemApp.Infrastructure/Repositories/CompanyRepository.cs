@@ -1,4 +1,5 @@
 using HrSystemApp.Application.Common;
+using HrSystemApp.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using HrSystemApp.Application.Interfaces.Repositories;
 using HrSystemApp.Domain.Models;
@@ -28,6 +29,7 @@ public class CompanyRepository : Repository<Company>, ICompanyRepository
 
     public async Task<PagedResult<Company>> GetPagedAsync(
         string? searchTerm,
+        CompanyStatus? status,
         int pageNumber,
         int pageSize,
         bool includeLocations = false,
@@ -38,6 +40,11 @@ public class CompanyRepository : Repository<Company>, ICompanyRepository
 
         if (includeLocations) query = query.Include(c => c.Locations);
         if (includeDepartments) query = query.Include(c => c.Departments);
+
+        if (status.HasValue)
+        {
+            query = query.Where(c => c.Status == status.Value);
+        }
 
         if (!string.IsNullOrWhiteSpace(searchTerm))
         {

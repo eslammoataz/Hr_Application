@@ -18,6 +18,9 @@ public static class DomainErrors
         public static readonly Error AccountInactive = new(
             "Auth.AccountInactive", "Your account is inactive. Please contact HR.");
 
+        public static readonly Error CompanyInactive = new(
+            "Auth.CompanyInactive", "Your company's account is currently inactive. Please contact support.");
+
         public static readonly Error TokenNotFound = new(
             "Auth.TokenNotFound", "Authentication token was not found.");
 
