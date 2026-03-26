@@ -1,5 +1,6 @@
 using HrSystemApp.Api.Authorization;
 using HrSystemApp.Application.Common;
+using HrSystemApp.Domain.Enums;
 using HrSystemApp.Application.DTOs.Companies;
 using HrSystemApp.Application.Features.Companies.Commands.CreateCompany;
 using HrSystemApp.Application.Features.Companies.Commands.CreateCompanyLocation;
@@ -70,13 +71,14 @@ public class CompaniesController : BaseApiController
     [ProducesResponseType(typeof(PagedResult<CompanyResponse>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAll(
         [FromQuery] string? searchTerm,
+        [FromQuery] CompanyStatus? status,
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 20,
         [FromQuery] bool includeLocations = false,
         [FromQuery] bool includeDepartments = false,
         CancellationToken cancellationToken = default)
     {
-        var result = await _sender.Send(new GetCompaniesQuery(searchTerm, pageNumber, pageSize, includeLocations, includeDepartments), cancellationToken);
+        var result = await _sender.Send(new GetCompaniesQuery(searchTerm, status, pageNumber, pageSize, includeLocations, includeDepartments), cancellationToken);
         return HandleResult(result);
     }
 
