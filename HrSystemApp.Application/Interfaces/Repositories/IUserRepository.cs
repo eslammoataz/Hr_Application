@@ -28,7 +28,10 @@ public interface IUserRepository : IRepository<ApplicationUser>
     Task<string> GenerateUserTokenAsync(ApplicationUser user, string provider, string purpose);
     Task<bool> VerifyUserTokenAsync(ApplicationUser user, string provider, string purpose, string token);
     Task<string> GeneratePasswordResetTokenAsync(ApplicationUser user);
+
     Task<(bool Succeeded, IEnumerable<string> Errors)> ResetPasswordAsync(ApplicationUser user, string token,
         string newPassword);
+
     Task<(bool Succeeded, IEnumerable<string> Errors)> SetPasswordAsync(ApplicationUser user, string newPassword);
+    Task<ApplicationUser?> GetByEmailWithDetailsAsync(string email, CancellationToken cancellationToken = default);
 }

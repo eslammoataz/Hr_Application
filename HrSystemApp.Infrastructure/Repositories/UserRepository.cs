@@ -117,7 +117,8 @@ public class UserRepository : Repository<ApplicationUser>, IUserRepository
         return await _userManager.GetRolesAsync(user);
     }
 
-    public async Task<(bool Succeeded, IEnumerable<string> Errors)> ChangePasswordAsync(ApplicationUser user, string currentPassword, string newPassword)
+    public async Task<(bool Succeeded, IEnumerable<string> Errors)> ChangePasswordAsync(ApplicationUser user,
+        string currentPassword, string newPassword)
     {
         var result = await _userManager.ChangePasswordAsync(user, currentPassword, newPassword);
         return (result.Succeeded, result.Errors.Select(e => e.Description));
@@ -138,13 +139,15 @@ public class UserRepository : Repository<ApplicationUser>, IUserRepository
         return await _userManager.GeneratePasswordResetTokenAsync(user);
     }
 
-    public async Task<(bool Succeeded, IEnumerable<string> Errors)> ResetPasswordAsync(ApplicationUser user, string token, string newPassword)
+    public async Task<(bool Succeeded, IEnumerable<string> Errors)> ResetPasswordAsync(ApplicationUser user,
+        string token, string newPassword)
     {
         var result = await _userManager.ResetPasswordAsync(user, token, newPassword);
         return (result.Succeeded, result.Errors.Select(e => e.Description));
     }
 
-    public async Task<(bool Succeeded, IEnumerable<string> Errors)> SetPasswordAsync(ApplicationUser user, string newPassword)
+    public async Task<(bool Succeeded, IEnumerable<string> Errors)> SetPasswordAsync(ApplicationUser user,
+        string newPassword)
     {
         var hasPassword = await _userManager.HasPasswordAsync(user);
         if (hasPassword)
@@ -158,5 +161,14 @@ public class UserRepository : Repository<ApplicationUser>, IUserRepository
 
         var addResult = await _userManager.AddPasswordAsync(user, newPassword);
         return (addResult.Succeeded, addResult.Errors.Select(e => e.Description));
+    }
+
+    public async Task<ApplicationUser?> GetByEmailWithDetailsAsync(string email,
+        CancellationToken cancellationToken = default)
+    {
+        return await _dbSet
+            .Include(u => u.Employee)
+            .ThenInclude(e => e.Company)
+            .FirstOrDefaultAsync(u => u.NormalizedEmail == email.ToUpper(), cancellationToken);
     }
 }

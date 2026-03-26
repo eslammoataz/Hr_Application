@@ -14,6 +14,8 @@ public record UpdateCompanyRequest(
     int YearlyVacationDays,
     CompanyStatus Status);
 
+public record ChangeCompanyStatusRequest(CompanyStatus Status);
+
 public record CompanyResponse(
     Guid Id,
     string CompanyName,
