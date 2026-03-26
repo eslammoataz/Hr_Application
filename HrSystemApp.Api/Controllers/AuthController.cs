@@ -41,8 +41,9 @@ public class AuthController : BaseApiController
     public async Task<IActionResult> Login(
         [FromBody] LoginRequest request, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("User {Email} is attempting to login. Action: {ActionType}", request.Email, "LoginAttempt");
-        
+        _logger.LogInformation("User {Email} is attempting to login. Action: {ActionType}", request.Email,
+            "LoginAttempt");
+
         var command = new LoginUserCommand(
             request.Email,
             request.Password,
@@ -53,7 +54,7 @@ public class AuthController : BaseApiController
 
         if (result.IsSuccess)
         {
-            _logger.LogInformation("User {Email} successfully logged in. Action: {ActionType}, UserId: {UserId}", 
+            _logger.LogInformation("User {Email} successfully logged in. Action: {ActionType}, UserId: {UserId}",
                 request.Email, "LoginSuccess", result.Value.UserId);
         }
         else
@@ -175,12 +176,11 @@ public class AuthController : BaseApiController
     public async Task<IActionResult> ForgotPassword(
         [FromBody] ForgotPasswordRequest request, CancellationToken cancellationToken)
     {
-        await _sender.Send(
+        var result = await _sender.Send(
             new ForgotPasswordCommand(request.Email, request.Channel),
             cancellationToken);
 
-        // Always return OK for security
-        return Ok();
+        return HandleResult(result);
     }
 
     /// <summary>
