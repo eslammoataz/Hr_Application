@@ -39,7 +39,7 @@ public class EmployeesController : BaseApiController
     }
 
     /// <summary>Get my own employee profile (any authenticated user).</summary>
-    [HttpGet("me")]
+    [HttpGet("me/profile")]
     public async Task<IActionResult> GetMyProfile(CancellationToken cancellationToken)
     {
         var userId = User.FindFirstValue("sub");

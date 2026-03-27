@@ -4,4 +4,4 @@ using MediatR;
 
 namespace HrSystemApp.Application.Features.Employees.Queries.GetMyProfile;
 
-public record GetMyProfileQuery(string UserId) : IRequest<Result<EmployeeResponse>>;
+public record GetMyProfileQuery(string UserId) : IRequest<Result<EmployeeProfileDto>>;
