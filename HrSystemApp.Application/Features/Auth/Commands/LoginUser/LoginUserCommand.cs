@@ -10,4 +10,5 @@ public record LoginUserCommand(
     string Password,
     string? FcmToken = null,
     DeviceType? DeviceType = null,
-    string? Language = null) : IRequest<Result<AuthResponse>>;
+    string? Language = null,
+    string? IpAddress = null) : IRequest<Result<AuthResponse>>;

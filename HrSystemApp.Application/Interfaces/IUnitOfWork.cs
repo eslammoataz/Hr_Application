@@ -17,6 +17,7 @@ public interface IUnitOfWork : IAsyncDisposable
     ILeaveBalanceRepository LeaveBalances { get; }
     IContactAdminRequestRepository ContactAdminRequests { get; }
     IProfileUpdateRequestRepository ProfileUpdateRequests { get; }
+    IRefreshTokenRepository RefreshTokens { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     Task BeginTransactionAsync(CancellationToken cancellationToken = default);

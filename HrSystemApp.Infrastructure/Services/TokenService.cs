@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
+using System.Security.Cryptography;
 using System.Text;
 using HrSystemApp.Application.Interfaces.Services;
 using HrSystemApp.Domain.Models;
@@ -84,4 +85,22 @@ public class TokenService : ITokenService
             return null;
         }
     }
+
+    public string GenerateRefreshToken()
+    {
+        var randomNumber = new byte[32];
+        using var rng = RandomNumberGenerator.Create();
+        rng.GetBytes(randomNumber);
+        return Convert.ToBase64String(randomNumber);
+    }
+
+    public string HashToken(string token)
+    {
+        using var sha256 = SHA256.Create();
+        var hashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(token));
+        return BitConverter.ToString(hashedBytes).Replace("-", "").ToLower();
+    }
+
+    public int RefreshTokenExpirationInDays => 
+        int.TryParse(_configuration["JwtSettings:RefreshTokenExpirationInDays"], out int days) ? days : 30;
 }

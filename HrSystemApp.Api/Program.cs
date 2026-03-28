@@ -78,7 +78,8 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
     {
-        policy.AllowAnyOrigin()
+        policy.SetIsOriginAllowed(_ => true)
+            .AllowCredentials()
             .AllowAnyMethod()
             .AllowAnyHeader();
     });
@@ -117,7 +118,7 @@ app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseMiddleware<RequestResponseLoggingMiddleware>();
 
 // Global exception handling (early in pipeline to catch all downstream errors)
-app.UseMiddleware<HrSystemApp.Api.Middleware.ExceptionMiddleware>();
+app.UseMiddleware<ExceptionMiddleware>();
 
 // CORS
 app.UseCors("AllowAll");

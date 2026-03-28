@@ -11,6 +11,7 @@ public record LoginRequest(
 
 public record AuthResponse(
     string? Token,
+    string? RefreshToken,
     string UserId,
     string Email,
     string Name,
@@ -40,3 +41,17 @@ public record ForgotPasswordRequest(string Email, OtpChannel Channel);
 public record VerifyOtpRequest(string Email, string Otp);
 
 public record ResetPasswordRequest(string Email, string Otp, string NewPassword);
+
+public record RefreshTokenDto(
+    string TokenHash,
+    DateTime CreatedAt,
+    DateTime ExpiresAt,
+    bool IsExpired,
+    bool IsRevoked,
+    string? CreatedByIp);
+
+public record RefreshTokenRequest(string RefreshToken);
+
+public record RevokeTokenRequest(string RefreshToken);
+
+public record LogoutRequest(string RefreshToken);

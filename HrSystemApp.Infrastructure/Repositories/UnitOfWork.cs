@@ -26,6 +26,8 @@ public class UnitOfWork : IUnitOfWork
     private ILeaveBalanceRepository? _leaveBalanceRepository;
     private IContactAdminRequestRepository? _contactAdminRequestRepository;
     private IProfileUpdateRequestRepository? _profileUpdateRequestRepository;
+    private IRefreshTokenRepository? _refreshTokenRepository;
+
 
     public UnitOfWork(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
     {
@@ -62,6 +64,10 @@ public class UnitOfWork : IUnitOfWork
 
     public IProfileUpdateRequestRepository ProfileUpdateRequests =>
         _profileUpdateRequestRepository ??= new ProfileUpdateRequestRepository(_context);
+
+    public IRefreshTokenRepository RefreshTokens =>
+        _refreshTokenRepository ??= new RefreshTokenRepository(_context);
+
 
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {

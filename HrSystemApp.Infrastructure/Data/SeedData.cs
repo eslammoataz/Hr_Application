@@ -39,7 +39,7 @@ public static class SeedData
                 EmailConfirmed = true,
                 IsActive = true,
                 MustChangePassword = false,
-                EmployeeId = null   // SuperAdmin has NO employee record
+                EmployeeId = null // SuperAdmin has NO employee record
             };
 
             var result = await userManager.CreateAsync(superAdmin, "SuperAdmin@123");

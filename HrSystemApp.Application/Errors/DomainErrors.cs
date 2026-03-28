@@ -29,6 +29,22 @@ public static class DomainErrors
 
         public static readonly Error Unauthorized = new(
             "Auth.Unauthorized", "You are not authorized to perform this action.");
+
+        public static readonly Error EmployeeBlockedStatus = new(
+            "Auth.EmployeeBlockedStatus",
+            "Your account is not active. Please contact HR.");
+
+        public static readonly Error InvalidRefreshToken = new(
+            "Auth.InvalidRefreshToken", "The refresh token is invalid.");
+
+        public static readonly Error RefreshTokenExpired = new(
+            "Auth.RefreshTokenExpired", "The refresh token has expired.");
+
+        public static readonly Error RefreshTokenRevoked = new(
+            "Auth.RefreshTokenRevoked", "The refresh token has been revoked.");
+            
+        public static readonly Error RefreshTokenReused = new(
+            "Auth.RefreshTokenReused", "Suspicious activity detected: Refresh token reuse. All sessions revoked.");
     }
 
     public static class User

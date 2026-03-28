@@ -13,6 +13,10 @@ using HrSystemApp.Application.Features.Auth.Commands.UpdateLanguage;
 using HrSystemApp.Application.Features.Auth.Commands.ForgotPassword;
 using HrSystemApp.Application.Features.Auth.Commands.ResetPassword;
 using HrSystemApp.Application.Features.Auth.Commands.VerifyOtp;
+using HrSystemApp.Application.Features.Auth.Commands.RefreshToken;
+using HrSystemApp.Application.Features.Auth.Commands.RevokeToken;
+using HrSystemApp.Application.Features.Auth.Commands.RevokeAllTokens;
+using HrSystemApp.Application.Features.Auth.Queries.GetUserTokens;
 using HrSystemApp.Domain.Enums;
 
 
@@ -49,7 +53,8 @@ public class AuthController : BaseApiController
             request.Password,
             request.FcmToken,
             request.DeviceType,
-            request.Language);
+            request.Language,
+            HttpContext.Connection.RemoteIpAddress?.ToString());
         var result = await _sender.Send(command, cancellationToken);
 
         if (result.IsSuccess)
@@ -65,20 +70,70 @@ public class AuthController : BaseApiController
         return HandleResult(result);
     }
 
-    /// <summary>Logout and invalidate current token</summary>
+    /// <summary>Logout and invalidate current refresh token</summary>
     [HttpPost("logout")]
     [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> Logout(CancellationToken cancellationToken)
+    public async Task<IActionResult> Logout([FromBody] LogoutRequest request, CancellationToken cancellationToken)
     {
         var userId = HttpContext.User.FindFirstValue("sub");
-        var token = HttpContext.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
-
         if (string.IsNullOrEmpty(userId))
             return Unauthorized();
 
-        var result = await _sender.Send(new LogoutUserCommand(userId, token), cancellationToken);
+        var result = await _sender.Send(new LogoutUserCommand(userId, request.RefreshToken, HttpContext.Connection.RemoteIpAddress?.ToString()), cancellationToken);
+        return HandleResult(result);
+    }
+
+    /// <summary>Refresh access token using a refresh token</summary>
+    [HttpPost("refresh")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> Refresh([FromBody] RefreshTokenRequest request, CancellationToken cancellationToken)
+    {
+        var result = await _sender.Send(new RefreshTokenCommand(request.RefreshToken, HttpContext.Connection.RemoteIpAddress?.ToString()), cancellationToken);
+        return HandleResult(result);
+    }
+
+    /// <summary>Revoke a specific refresh token</summary>
+    [HttpPost("revoke")]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> Revoke([FromBody] RevokeTokenRequest request, CancellationToken cancellationToken)
+    {
+        var result = await _sender.Send(new RevokeTokenCommand(request.RefreshToken, HttpContext.Connection.RemoteIpAddress?.ToString()), cancellationToken);
+        return HandleResult(result);
+    }
+
+    /// <summary>Revoke all refresh tokens for the current user</summary>
+    [HttpPost("revoke-all")]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> RevokeAll(CancellationToken cancellationToken)
+    {
+        var userId = HttpContext.User.FindFirstValue("sub");
+        if (string.IsNullOrEmpty(userId))
+            return Unauthorized();
+
+        var result = await _sender.Send(new RevokeAllTokensCommand(userId, HttpContext.Connection.RemoteIpAddress?.ToString()), cancellationToken);
+        return HandleResult(result);
+    }
+
+    /// <summary>Get all active refresh tokens for the current user</summary>
+    [HttpGet("tokens")]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+    [ProducesResponseType(typeof(List<RefreshTokenDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> GetTokens(CancellationToken cancellationToken)
+    {
+        var userId = HttpContext.User.FindFirstValue("sub");
+        if (string.IsNullOrEmpty(userId))
+            return Unauthorized();
+
+        var result = await _sender.Send(new GetUserTokensQuery(userId), cancellationToken);
         return HandleResult(result);
     }
 

@@ -58,14 +58,15 @@ public class RegisterUserCommandHandler : IRequestHandler<RegisterUserCommand, R
             _logger.LogInformation("User {UserId} registered successfully", user.Id);
 
             return Result.Success(new AuthResponse(
-                token,
-                user.Id,
-                user.Email!,
-                user.Name,
-                roles.FirstOrDefault() ?? string.Empty,
-                user.EmployeeId,
-                user.MustChangePassword,
-                expiresAt
+                Token: token,
+                RefreshToken: null,
+                UserId: user.Id,
+                Email: user.Email!,
+                Name: user.Name,
+                Role: roles.FirstOrDefault() ?? string.Empty,
+                EmployeeId: user.EmployeeId,
+                MustChangePassword: user.MustChangePassword,
+                ExpiresAt: expiresAt
             ));
         }
         catch (Exception ex)

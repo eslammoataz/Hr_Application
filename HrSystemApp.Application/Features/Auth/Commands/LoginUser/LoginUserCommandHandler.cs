@@ -6,6 +6,7 @@ using HrSystemApp.Application.DTOs.Auth;
 using HrSystemApp.Application.Errors;
 using HrSystemApp.Application.Interfaces;
 using HrSystemApp.Application.Interfaces.Services;
+using HrSystemApp.Domain.Models;
 
 namespace HrSystemApp.Application.Features.Auth.Commands.LoginUser;
 
@@ -57,6 +58,25 @@ public class LoginUserCommandHandler : IRequestHandler<LoginUserCommand, Result<
             return Result.Failure<AuthResponse>(DomainErrors.Auth.CompanyInactive);
         }
 
+        if (user.Employee != null)
+        {
+            var blockedStatuses = new[]
+            {
+                EmploymentStatus.Terminated,
+                EmploymentStatus.Inactive,
+                EmploymentStatus.Suspended
+            };
+
+            if (blockedStatuses.Contains(user.Employee.EmploymentStatus))
+            {
+                _logger.LogWarning(
+                    "Login attempt for employee with blocked status {Status}: {Email}, EmployeeId: {EmployeeId}",
+                    user.Employee.EmploymentStatus, request.Email, user.Employee.Id);
+
+                return Result.Failure<AuthResponse>(DomainErrors.Auth.EmployeeBlockedStatus);
+            }
+        }
+
         // Resolve roles from ASP.NET Identity (via repository to keep same UserManager scope)
         var roles = await _unitOfWork.Users.GetRolesAsync(user);
         // If user must change password, return early without generating a full JWT
@@ -65,6 +85,7 @@ public class LoginUserCommandHandler : IRequestHandler<LoginUserCommand, Result<
             _logger.LogInformation("User {UserId} must change password before first login", user.Id);
             return Result.Success(new AuthResponse(
                 Token: null,
+                RefreshToken: null,
                 UserId: user.Id,
                 Email: user.Email!,
                 Name: user.Name,
@@ -77,6 +98,19 @@ public class LoginUserCommandHandler : IRequestHandler<LoginUserCommand, Result<
 
         // Generate JWT
         var (token, expiresAt) = _tokenService.GenerateToken(user, roles);
+        
+        // Generate Refresh Token
+        var refreshToken = _tokenService.GenerateRefreshToken();
+        var refreshTokenHash = _tokenService.HashToken(refreshToken);
+        
+        await _unitOfWork.RefreshTokens.AddAsync(new HrSystemApp.Domain.Models.RefreshToken
+        {
+            UserId = user.Id,
+            TokenHash = refreshTokenHash,
+            ExpiresAt = DateTime.UtcNow.AddDays(_tokenService.RefreshTokenExpirationInDays),
+            CreatedByIp = request.IpAddress
+        }, cancellationToken);
+
         // Update user device info and last login timestamp
         user.FcmToken = request.FcmToken ?? user.FcmToken;
         user.DeviceType = request.DeviceType ?? user.DeviceType;
@@ -90,6 +124,7 @@ public class LoginUserCommandHandler : IRequestHandler<LoginUserCommand, Result<
 
         return Result.Success(new AuthResponse(
             Token: token,
+            RefreshToken: refreshToken,
             UserId: user.Id,
             Email: user.Email!,
             Name: user.Name,
