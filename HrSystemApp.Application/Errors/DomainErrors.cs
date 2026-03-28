@@ -29,6 +29,10 @@ public static class DomainErrors
 
         public static readonly Error Unauthorized = new(
             "Auth.Unauthorized", "You are not authorized to perform this action.");
+
+        public static readonly Error EmployeeBlockedStatus = new(
+            "Auth.EmployeeBlockedStatus",
+            "Your account is not active. Please contact HR.");
     }
 
     public static class User

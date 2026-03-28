@@ -57,6 +57,25 @@ public class LoginUserCommandHandler : IRequestHandler<LoginUserCommand, Result<
             return Result.Failure<AuthResponse>(DomainErrors.Auth.CompanyInactive);
         }
 
+        if (user.Employee != null)
+        {
+            var blockedStatuses = new[]
+            {
+                EmploymentStatus.Terminated,
+                EmploymentStatus.Inactive,
+                EmploymentStatus.Suspended
+            };
+
+            if (blockedStatuses.Contains(user.Employee.EmploymentStatus))
+            {
+                _logger.LogWarning(
+                    "Login attempt for employee with blocked status {Status}: {Email}, EmployeeId: {EmployeeId}",
+                    user.Employee.EmploymentStatus, request.Email, user.Employee.Id);
+
+                return Result.Failure<AuthResponse>(DomainErrors.Auth.EmployeeBlockedStatus);
+            }
+        }
+
         // Resolve roles from ASP.NET Identity (via repository to keep same UserManager scope)
         var roles = await _unitOfWork.Users.GetRolesAsync(user);
         // If user must change password, return early without generating a full JWT
