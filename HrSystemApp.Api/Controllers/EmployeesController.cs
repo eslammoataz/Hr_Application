@@ -7,6 +7,11 @@ using HrSystemApp.Application.Features.Employees.Commands.UpdateEmployee;
 using HrSystemApp.Application.Features.Employees.Queries.GetEmployeeById;
 using HrSystemApp.Application.Features.Employees.Queries.GetEmployees;
 using HrSystemApp.Application.Features.Employees.Queries.GetMyProfile;
+using HrSystemApp.Application.Features.ProfileUpdateRequests.Commands.CreateProfileUpdateRequest;
+using HrSystemApp.Application.Features.ProfileUpdateRequests.Commands.HandleProfileUpdateRequest;
+using HrSystemApp.Application.Features.ProfileUpdateRequests.Queries.GetAllProfileUpdateRequests;
+using HrSystemApp.Application.Features.ProfileUpdateRequests.Queries.GetMyProfileUpdateRequests;
+using HrSystemApp.Application.DTOs.Employees.ProfileUpdateRequests;
 using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -20,7 +25,10 @@ public class EmployeesController : BaseApiController
 {
     private readonly ISender _sender;
 
-    public EmployeesController(ISender sender) => _sender = sender;
+    public EmployeesController(ISender sender)
+    {
+        _sender = sender;
+    }
 
     /// <summary>Get all employees (paginated).</summary>
     [HttpGet]
@@ -98,6 +106,63 @@ public class EmployeesController : BaseApiController
     public async Task<IActionResult> Deactivate(Guid id, CancellationToken cancellationToken)
     {
         var result = await _sender.Send(new DeactivateEmployeeCommand(id), cancellationToken);
+        return HandleResult(result);
+    }
+
+    // ── Profile Update Requests (Employee) ──────────────────────────────
+
+    /// <summary>Submit a new profile update request.</summary>
+    [HttpPost("me/profile-update-requests")]
+    public async Task<IActionResult> CreateProfileUpdateRequest([FromBody] CreateProfileUpdateRequestDto request, CancellationToken cancellationToken)
+    {
+        var userId = User.FindFirstValue("sub");
+        if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+        var result = await _sender.Send(new CreateProfileUpdateRequestCommand(userId, request), cancellationToken);
+        return HandleResult(result);
+    }
+
+    /// <summary>Get my own profile update requests.</summary>
+    [HttpGet("me/profile-update-requests")]
+    public async Task<IActionResult> GetMyProfileUpdateRequests(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        CancellationToken cancellationToken = default)
+    {
+        var userId = User.FindFirstValue("sub");
+        if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+        var result = await _sender.Send(new GetMyProfileUpdateRequestsQuery(userId, page, pageSize), cancellationToken);
+        return HandleResult(result);
+    }
+
+    // ── Profile Update Requests (HR) ────────────────────────────────────
+
+    /// <summary>Get all profile update requests (HR only).</summary>
+    [HttpGet("profile-update-requests")]
+    [Authorize(Roles = Roles.HR)]
+    public async Task<IActionResult> GetAllProfileUpdateRequests(
+        [FromQuery] string? status, 
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        CancellationToken cancellationToken = default)
+    {
+        var hrUserId = User.FindFirstValue("sub");
+        if (string.IsNullOrEmpty(hrUserId)) return Unauthorized();
+
+        var result = await _sender.Send(new GetAllProfileUpdateRequestsQuery(hrUserId, status, page, pageSize), cancellationToken);
+        return HandleResult(result);
+    }
+
+    /// <summary>Handle a profile update request (HR only).</summary>
+    [HttpPatch("profile-update-requests/{id:guid}/handle")]
+    [Authorize(Roles = Roles.HR)]
+    public async Task<IActionResult> HandleProfileUpdateRequest(Guid id, [FromBody] HandleProfileUpdateRequestDto request, CancellationToken cancellationToken)
+    {
+        var hrUserId = User.FindFirstValue("sub");
+        if (string.IsNullOrEmpty(hrUserId)) return Unauthorized();
+
+        var result = await _sender.Send(new HandleProfileUpdateRequestCommand(id, hrUserId, request), cancellationToken);
         return HandleResult(result);
     }
 }
