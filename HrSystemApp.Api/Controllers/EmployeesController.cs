@@ -17,6 +17,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using HrSystemApp.Domain.Enums;
 
 namespace HrSystemApp.Api.Controllers;
 
@@ -69,7 +70,8 @@ public class EmployeesController : BaseApiController
     /// <summary>Create a new employee and login account.</summary>
     [HttpPost]
     [Authorize(Roles = Roles.HierarchyManagers)]
-    public async Task<IActionResult> Create([FromBody] CreateEmployeeRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> Create([FromBody] CreateEmployeeRequest request,
+        CancellationToken cancellationToken)
     {
         var command = new CreateEmployeeCommand(
             request.FullName, request.Email, request.PhoneNumber,
@@ -81,7 +83,8 @@ public class EmployeesController : BaseApiController
     /// <summary>Update employee details.</summary>
     [HttpPut("{id:guid}")]
     [Authorize(Roles = Roles.HierarchyManagers)]
-    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateEmployeeRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateEmployeeRequest request,
+        CancellationToken cancellationToken)
     {
         var command = new UpdateEmployeeCommand(
             id, request.FullName, request.PhoneNumber, request.Address,
@@ -94,7 +97,8 @@ public class EmployeesController : BaseApiController
     /// <summary>Assign employee to a team.</summary>
     [HttpPut("{id:guid}/assign-team")]
     [Authorize(Roles = Roles.UnitManagers)]
-    public async Task<IActionResult> AssignToTeam(Guid id, [FromBody] AssignEmployeeToTeamRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> AssignToTeam(Guid id, [FromBody] AssignEmployeeToTeamRequest request,
+        CancellationToken cancellationToken)
     {
         var result = await _sender.Send(new AssignEmployeeToTeamCommand(id, request.TeamId), cancellationToken);
         return HandleResult(result);
@@ -113,7 +117,8 @@ public class EmployeesController : BaseApiController
 
     /// <summary>Submit a new profile update request.</summary>
     [HttpPost("me/profile-update-requests")]
-    public async Task<IActionResult> CreateProfileUpdateRequest([FromBody] CreateProfileUpdateRequestDto request, CancellationToken cancellationToken)
+    public async Task<IActionResult> CreateProfileUpdateRequest([FromBody] CreateProfileUpdateRequestDto request,
+        CancellationToken cancellationToken)
     {
         var userId = User.FindFirstValue("sub");
         if (string.IsNullOrEmpty(userId)) return Unauthorized();
@@ -142,7 +147,7 @@ public class EmployeesController : BaseApiController
     [HttpGet("profile-update-requests")]
     [Authorize(Roles = Roles.HR)]
     public async Task<IActionResult> GetAllProfileUpdateRequests(
-        [FromQuery] string? status, 
+        [FromQuery] ProfileUpdateRequestStatus? status,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
         CancellationToken cancellationToken = default)
@@ -150,19 +155,22 @@ public class EmployeesController : BaseApiController
         var hrUserId = User.FindFirstValue("sub");
         if (string.IsNullOrEmpty(hrUserId)) return Unauthorized();
 
-        var result = await _sender.Send(new GetAllProfileUpdateRequestsQuery(hrUserId, status, page, pageSize), cancellationToken);
+        var result = await _sender.Send(new GetAllProfileUpdateRequestsQuery(hrUserId, status, page, pageSize),
+            cancellationToken);
         return HandleResult(result);
     }
 
     /// <summary>Handle a profile update request (HR only).</summary>
     [HttpPatch("profile-update-requests/{id:guid}/handle")]
     [Authorize(Roles = Roles.HR)]
-    public async Task<IActionResult> HandleProfileUpdateRequest(Guid id, [FromBody] HandleProfileUpdateRequestDto request, CancellationToken cancellationToken)
+    public async Task<IActionResult> HandleProfileUpdateRequest(Guid id,
+        [FromBody] HandleProfileUpdateRequestDto request, CancellationToken cancellationToken)
     {
         var hrUserId = User.FindFirstValue("sub");
         if (string.IsNullOrEmpty(hrUserId)) return Unauthorized();
 
-        var result = await _sender.Send(new HandleProfileUpdateRequestCommand(id, hrUserId, request), cancellationToken);
+        var result = await _sender.Send(new HandleProfileUpdateRequestCommand(id, hrUserId, request),
+            cancellationToken);
         return HandleResult(result);
     }
 }

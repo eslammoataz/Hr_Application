@@ -1,6 +1,7 @@
 using HrSystemApp.Application.Common;
 using HrSystemApp.Application.DTOs.Employees.ProfileUpdateRequests;
 using HrSystemApp.Application.Interfaces.Repositories;
+using HrSystemApp.Domain.Enums;
 using HrSystemApp.Domain.Models;
 using HrSystemApp.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -13,15 +14,16 @@ public class ProfileUpdateRequestRepository : Repository<ProfileUpdateRequest>, 
     {
     }
 
-    public async Task<PagedResult<ProfileUpdateRequestDto>> GetPagedRequestsByCompanyAsync(Guid companyId, string? status, int pageNumber, int pageSize, CancellationToken cancellationToken = default)
+    public async Task<PagedResult<ProfileUpdateRequestDto>> GetPagedRequestsByCompanyAsync(Guid companyId, ProfileUpdateRequestStatus? status, int pageNumber, int pageSize, CancellationToken cancellationToken = default)
     {
         var query = _context.ProfileUpdateRequests
             .AsNoTracking()
             .Where(r => r.Employee.CompanyId == companyId);
 
-        if (!string.IsNullOrEmpty(status))
+        if (status.HasValue)
         {
-            query = query.Where(r => r.Status == status);
+            var statusString = status.Value.ToString();
+            query = query.Where(r => r.Status == statusString);
         }
 
         var totalCount = await query.CountAsync(cancellationToken);

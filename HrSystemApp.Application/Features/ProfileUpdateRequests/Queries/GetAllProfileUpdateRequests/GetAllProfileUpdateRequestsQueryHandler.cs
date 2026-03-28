@@ -2,6 +2,7 @@ using HrSystemApp.Application.Common;
 using HrSystemApp.Application.DTOs.Employees.ProfileUpdateRequests;
 using HrSystemApp.Application.Errors;
 using HrSystemApp.Application.Interfaces;
+using HrSystemApp.Domain.Enums;
 using MediatR;
 
 namespace HrSystemApp.Application.Features.ProfileUpdateRequests.Queries.GetAllProfileUpdateRequests;
