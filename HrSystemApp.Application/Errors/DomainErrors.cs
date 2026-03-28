@@ -130,7 +130,8 @@ public static class DomainErrors
             "ContactAdmin.AlreadyProcessed", "This request has already been processed.");
 
         public static readonly Error DuplicatePendingRequest = new(
-            "ContactAdmin.DuplicatePendingRequest", "A pending request with this email or company name already exists.");
+            "ContactAdmin.DuplicatePendingRequest",
+            "A pending request with this email or company name already exists.");
 
         public static readonly Error PhoneNumberAlreadyTaken = new(
             "ContactAdmin.PhoneNumberAlreadyTaken", "This phone number is already taken.");
@@ -140,8 +141,51 @@ public static class DomainErrors
 
         public static readonly Error CompanyNameAlreadyTaken = new(
             "ContactAdmin.CompanyNameAlreadyTaken", "This company name is already taken.");
+    }
 
+    public static class Hr
+    {
+        public static readonly Error EmployeeNotFound = new(
+            "Hr.EmployeeNotFound", "The acting user has no employee record.");
+    }
 
+    public static class ProfileUpdate
+    {
+        public static readonly Error NotFound = new(
+            "ProfileUpdate.NotFound", "Request not found.");
+
+        public static readonly Error NotPending = new(
+            "ProfileUpdate.NotPending", "Only pending requests can be handled.");
+
+        public static readonly Error EmployeeNotFound = new(
+            "ProfileUpdate.EmployeeNotFound", "Employee not found. Data may be corrupted.");
+
+        public static readonly Error EmptyChanges = new(
+            "ProfileUpdate.EmptyChanges", "ChangesJson is empty for approved request. Cannot apply changes.");
+
+        public static readonly Error DeserializationFailed = new(
+            "ProfileUpdate.DeserializationFailed", "Failed to deserialize ChangesJson for request.");
+
+        public static readonly Error UnknownField = new(
+            "ProfileUpdate.UnknownField", "Unknown field in ChangesJson.");
+
+        public static readonly Error HasPending = new(
+            "ProfileUpdate.HasPending", "You already have a pending profile update request.");
+
+        public static readonly Error InvalidField = new(
+            "ProfileUpdate.InvalidField", "Field is not allowed for update.");
+
+        public static readonly Error NoChanges = new(
+            "ProfileUpdate.NoChanges",
+            "No new or valid changes provided. The entered values map to your existing profile.");
+
+        public static readonly Error MalformedChanges = new(
+            "ProfileUpdate.MalformedChanges",
+            "One or more fields in the changes payload are missing the required 'newValue' key.");
+
+        public static readonly Error InvalidLocationId = new(
+            "ProfileUpdate.InvalidLocationId",
+            "Invalid CompanyLocationId provided.");
     }
 }
 

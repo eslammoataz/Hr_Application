@@ -70,6 +70,7 @@ public static class DependencyInjection
         services.AddScoped<ITeamRepository, TeamRepository>();
         services.AddScoped<ILeaveBalanceRepository, LeaveBalanceRepository>();
         services.AddScoped<IContactAdminRequestRepository, ContactAdminRequestRepository>();
+        services.AddScoped<IProfileUpdateRequestRepository, ProfileUpdateRequestRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         services.Configure<EmailSettings>(configuration.GetSection("EmailSettings"));

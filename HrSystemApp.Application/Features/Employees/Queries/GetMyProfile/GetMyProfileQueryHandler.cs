@@ -1,4 +1,3 @@
-using Mapster;
 using HrSystemApp.Application.Common;
 using HrSystemApp.Application.DTOs.Employees;
 using HrSystemApp.Application.Errors;
@@ -7,7 +6,7 @@ using MediatR;
 
 namespace HrSystemApp.Application.Features.Employees.Queries.GetMyProfile;
 
-public class GetMyProfileQueryHandler : IRequestHandler<GetMyProfileQuery, Result<EmployeeResponse>>
+public class GetMyProfileQueryHandler : IRequestHandler<GetMyProfileQuery, Result<EmployeeProfileDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
 
@@ -16,13 +15,13 @@ public class GetMyProfileQueryHandler : IRequestHandler<GetMyProfileQuery, Resul
         _unitOfWork = unitOfWork;
     }
 
-    public async Task<Result<EmployeeResponse>> Handle(GetMyProfileQuery request, CancellationToken cancellationToken)
+    public async Task<Result<EmployeeProfileDto>> Handle(GetMyProfileQuery request, CancellationToken cancellationToken)
     {
-        var employee = await _unitOfWork.Employees.GetByUserIdAsync(request.UserId, cancellationToken);
-        if (employee is null)
-            return Result.Failure<EmployeeResponse>(DomainErrors.Employee.NotFound);
+        var profile = await _unitOfWork.Employees.GetProfileByUserIdAsync(request.UserId, cancellationToken);
+        
+        if (profile is null)
+            return Result.Failure<EmployeeProfileDto>(DomainErrors.Employee.NotFound);
 
-        var detailed = await _unitOfWork.Employees.GetWithDetailsAsync(employee.Id, cancellationToken);
-        return Result.Success(detailed!.Adapt<EmployeeResponse>());
+        return Result.Success(profile);
     }
 }

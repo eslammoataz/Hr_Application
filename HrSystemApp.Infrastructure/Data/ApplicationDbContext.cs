@@ -30,6 +30,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 
     // Phase 4
     public DbSet<LeaveBalance> LeaveBalances => Set<LeaveBalance>();
+    public DbSet<ProfileUpdateRequest> ProfileUpdateRequests => Set<ProfileUpdateRequest>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

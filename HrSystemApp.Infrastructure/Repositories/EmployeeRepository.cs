@@ -1,4 +1,5 @@
 using HrSystemApp.Application.Common;
+using HrSystemApp.Application.DTOs.Employees;
 using HrSystemApp.Application.Interfaces.Repositories;
 using HrSystemApp.Domain.Models;
 using HrSystemApp.Infrastructure.Data;
@@ -8,7 +9,9 @@ namespace HrSystemApp.Infrastructure.Repositories;
 
 public class EmployeeRepository : Repository<Employee>, IEmployeeRepository
 {
-    public EmployeeRepository(ApplicationDbContext context) : base(context) { }
+    public EmployeeRepository(ApplicationDbContext context) : base(context)
+    {
+    }
 
     public async Task<Employee?> GetByUserIdAsync(string userId, CancellationToken cancellationToken = default)
         => await _dbSet.FirstOrDefaultAsync(e => e.UserId == userId, cancellationToken);
@@ -22,6 +25,32 @@ public class EmployeeRepository : Repository<Employee>, IEmployeeRepository
             .Include(e => e.User)
             .FirstOrDefaultAsync(e => e.Id == id && !e.IsDeleted, cancellationToken);
 
+    public async Task<EmployeeProfileDto?> GetProfileByUserIdAsync(string userId,
+        CancellationToken cancellationToken = default)
+    {
+        return await _dbSet.AsQueryable()
+            .Where(e => e.UserId == userId && !e.IsDeleted)
+            .Select(e => new EmployeeProfileDto
+            {
+                Id = e.Id,
+                EmployeeCode = e.EmployeeCode,
+                FullName = e.FullName,
+                Email = e.Email,
+                PhoneNumber = e.PhoneNumber,
+                Address = e.Address,
+                DepartmentName = e.Department != null ? e.Department.Name : string.Empty,
+                UnitName = e.Unit != null ? e.Unit.Name : string.Empty,
+                TeamName = e.Team != null ? e.Team.Name : string.Empty,
+                ManagerName = e.Manager != null ? e.Manager.FullName : string.Empty,
+                EmploymentStatus = e.EmploymentStatus.ToString(),
+                MedicalClass = e.MedicalClass.HasValue ? e.MedicalClass.Value.ToString() : null,
+                CompanyLocationName = e.CompanyLocation != null ? e.CompanyLocation.LocationName : string.Empty,
+                ContractEndDate = e.ContractEndDate
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
+// for me "needs some query optimization"  
     public async Task<PagedResult<Employee>> GetPagedAsync(
         Guid? companyId, Guid? teamId, string? searchTerm,
         int pageNumber, int pageSize, CancellationToken cancellationToken = default)

@@ -10,7 +10,7 @@ namespace HrSystemApp.Infrastructure.Repositories;
 /// <summary>
 /// Unit of Work implementation
 /// </summary>
-public class UnitOfWork : IUnitOfWork, IAsyncDisposable
+public class UnitOfWork : IUnitOfWork
 {
     private readonly ApplicationDbContext _context;
     private readonly UserManager<ApplicationUser> _userManager;
@@ -25,6 +25,7 @@ public class UnitOfWork : IUnitOfWork, IAsyncDisposable
     private ITeamRepository? _teamRepository;
     private ILeaveBalanceRepository? _leaveBalanceRepository;
     private IContactAdminRequestRepository? _contactAdminRequestRepository;
+    private IProfileUpdateRequestRepository? _profileUpdateRequestRepository;
 
     public UnitOfWork(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
     {
@@ -58,6 +59,9 @@ public class UnitOfWork : IUnitOfWork, IAsyncDisposable
 
     public IContactAdminRequestRepository ContactAdminRequests =>
         _contactAdminRequestRepository ??= new ContactAdminRequestRepository(_context);
+
+    public IProfileUpdateRequestRepository ProfileUpdateRequests =>
+        _profileUpdateRequestRepository ??= new ProfileUpdateRequestRepository(_context);
 
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
