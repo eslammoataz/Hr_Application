@@ -157,3 +157,7 @@ build_output*.txt
 HRMS*.pdf
 appsettings.Development.json
 PROJECT.md
+# ═══════════════════════════════════════
+# Scratch & Test Folder
+# ═══════════════════════════════════════
+tests/

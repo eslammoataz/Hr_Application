@@ -71,6 +71,7 @@ public static class DependencyInjection
         services.AddScoped<ILeaveBalanceRepository, LeaveBalanceRepository>();
         services.AddScoped<IContactAdminRequestRepository, ContactAdminRequestRepository>();
         services.AddScoped<IProfileUpdateRequestRepository, ProfileUpdateRequestRepository>();
+        services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         services.Configure<EmailSettings>(configuration.GetSection("EmailSettings"));

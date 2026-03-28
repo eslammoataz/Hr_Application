@@ -67,6 +67,7 @@ public class ForceChangePasswordCommandHandler : IRequestHandler<ForceChangePass
 
         return Result.Success(new AuthResponse(
             Token: token,
+            RefreshToken: null,
             UserId: user.Id,
             Email: user.Email!,
             Name: user.Name,
