@@ -1,5 +1,6 @@
 using System.Text.Json;
 using HrSystemApp.Application.Common;
+using HrSystemApp.Application.Errors;
 using HrSystemApp.Application.Features.Requests.Strategies;
 using HrSystemApp.Application.Interfaces;
 using HrSystemApp.Application.Interfaces.Services;
@@ -41,13 +42,13 @@ public class CreateRequestCommandHandler : IRequestHandler<CreateRequestCommand,
     {
         var userId = _currentUserService.UserId;
         if (string.IsNullOrEmpty(userId))
-            return Result.Failure<Guid>(new Error("Auth.Unauthorized", "User not authenticated."));
+            return Result.Failure<Guid>(DomainErrors.Auth.Unauthorized);
 
         var employee = await _unitOfWork.Employees.GetByUserIdAsync(userId, cancellationToken);
         if (employee == null)
         {
             _logger.LogWarning("CreateRequest failed: Employee profile not found for UserId {UserId}", userId);
-            return Result.Failure<Guid>(new Error("Employee.NotFound", "Employee profile not found."));
+            return Result.Failure<Guid>(DomainErrors.Employee.NotFound);
         }
 
         _logger.LogInformation("Employee {EmployeeId} ({FullName}) found. Company: {CompanyId}",
@@ -65,8 +66,7 @@ public class CreateRequestCommandHandler : IRequestHandler<CreateRequestCommand,
         {
             _logger.LogWarning("{RequestType} is disabled or missing definition for company {CompanyId}", request.RequestType,
                 employee.CompanyId);
-            return Result.Failure<Guid>(new Error("Request.TypeDisabled",
-                $"The {request.RequestType} request type is not available for your company."));
+            return Result.Failure<Guid>(DomainErrors.Requests.TypeDisabled);
         }
 
         // 2. Structural Schema Validation
@@ -97,8 +97,7 @@ public class CreateRequestCommandHandler : IRequestHandler<CreateRequestCommand,
         if (approvalPath.Count == 0)
         {
             _logger.LogWarning("Workflow resolution failed for {RequestType}: No active path found.", request.RequestType);
-            return Result.Failure<Guid>(new Error("Workflow.NotFound",
-                "No approval workflow defined for this request type."));
+            return Result.Failure<Guid>(DomainErrors.Workflows.NotFound);
         }
 
         // 5. Persist Unified Request

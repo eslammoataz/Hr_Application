@@ -1,5 +1,6 @@
 using HrSystemApp.Application.Interfaces;
 using HrSystemApp.Application.Common;
+using HrSystemApp.Application.Errors;
 using HrSystemApp.Domain.Enums;
 using HrSystemApp.Application.Interfaces.Services;
 using MediatR;
@@ -27,34 +28,34 @@ public class UpdateRequestCommandHandler : IRequestHandler<UpdateRequestCommand,
     {
         var userId = _currentUserService.UserId;
         if (string.IsNullOrEmpty(userId))
-            return Result.Failure<Guid>(new Error("Auth.Unauthorized", "User not authenticated."));
+            return Result.Failure<Guid>(DomainErrors.Auth.Unauthorized);
 
         var employee = await _unitOfWork.Employees.GetByUserIdAsync(userId, cancellationToken);
         if (employee == null)
-            return Result.Failure<Guid>(new Error("Employee.NotFound", "Employee profile not found."));
+            return Result.Failure<Guid>(DomainErrors.Employee.NotFound);
 
         var existingRequest = await _unitOfWork.Requests.GetByIdWithHistoryAsync(request.Id, cancellationToken);
         if (existingRequest == null)
-            return Result.Failure<Guid>(new Error("Request.NotFound", "Request not found."));
+            return Result.Failure<Guid>(DomainErrors.Requests.NotFound);
 
         // 1. Security: Only owner can edit
         if (existingRequest.EmployeeId != employee.Id)
         {
             _logger.LogWarning("Unauthorized edit attempt for request {RequestId} by user {UserId}", request.Id, userId);
-            return Result.Failure<Guid>(new Error("Request.Unauthorized", "You can only edit your own requests."));
+            return Result.Failure<Guid>(DomainErrors.Auth.Unauthorized);
         }
 
         // 2. Status check: No actions must have been taken
         if (existingRequest.ApprovalHistory.Any())
         {
             _logger.LogWarning("Edit attempt failed: Request {RequestId} already has approval history and is locked.", request.Id);
-            return Result.Failure<Guid>(new Error("Request.Locked", "Request cannot be edited because the approval process has already started."));
+            return Result.Failure<Guid>(DomainErrors.Requests.ModificationLocked);
         }
 
         if (existingRequest.Status != RequestStatus.Submitted)
         {
             _logger.LogWarning("Edit attempt failed: Request {RequestId} status is {Status} and cannot be edited.", request.Id, existingRequest.Status);
-            return Result.Failure<Guid>(new Error("Request.Locked", $"Request in status {existingRequest.Status} cannot be edited."));
+            return Result.Failure<Guid>(DomainErrors.Requests.NotPending);
         }
 
         // 3. Apply updates

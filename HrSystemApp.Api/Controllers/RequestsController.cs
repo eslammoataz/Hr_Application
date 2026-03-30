@@ -10,7 +10,6 @@ using HrSystemApp.Application.Features.Requests.Queries.GetCompanyRequests;
 using HrSystemApp.Application.Features.Requests.Queries.GetRequestById;
 using HrSystemApp.Application.Features.Requests.Queries.GetUserRequests;
 using HrSystemApp.Application.Features.Requests.Queries.GetRequestTypes;
-using HrSystemApp.Application.Features.Requests.Queries.GetMyLeaveBalances;
 using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -47,15 +46,6 @@ public class RequestsController : BaseApiController
     public async Task<IActionResult> GetMyRequests([FromQuery] GetUserRequestsQuery query)
     {
         return HandleResult(await _sender.Send(query));
-    }
-
-    /// <summary>
-    /// Get current user's active leave balances (current year)
-    /// </summary>
-    [HttpGet("me/balances")]
-    public async Task<IActionResult> GetMyBalances()
-    {
-        return HandleResult(await _sender.Send(new GetMyLeaveBalancesQuery()));
     }
 
     /// <summary>
