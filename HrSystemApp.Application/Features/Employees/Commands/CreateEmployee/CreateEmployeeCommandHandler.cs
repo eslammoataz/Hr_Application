@@ -20,14 +20,12 @@ public class CreateEmployeeCommandHandler : IRequestHandler<CreateEmployeeComman
     public async Task<Result<CreateEmployeeResponse>> Handle(
         CreateEmployeeCommand request, CancellationToken cancellationToken)
     {
-        // Check for duplicate email
-        var emailTaken = await _unitOfWork.Users.GetByEmailAsync(request.Email, cancellationToken);
-        if (emailTaken is not null)
-            return Result.Failure<CreateEmployeeResponse>(DomainErrors.Employee.AlreadyExists);
+        // Check for duplicate email || duplicate phone
+        var existingUser = await _unitOfWork.Users.FindAsync(
+            u => u.Email == request.Email || u.PhoneNumber == request.PhoneNumber,
+            cancellationToken);
 
-        // Check for duplicate phone
-        var phoneTaken = await _unitOfWork.Users.GetByPhoneNumberAsync(request.PhoneNumber, cancellationToken);
-        if (phoneTaken is not null)
+        if (existingUser.Any())
             return Result.Failure<CreateEmployeeResponse>(DomainErrors.Employee.AlreadyExists);
 
         // Check if company exists and get its settings
@@ -57,18 +55,19 @@ public class CreateEmployeeCommandHandler : IRequestHandler<CreateEmployeeComman
             PhoneNumber = request.PhoneNumber,
             EmailConfirmed = true,
             IsActive = true,
-            MustChangePassword = true,    // Temp password = phone number, must change on first login
-            EmployeeId = employee.Id      // employee.Id auto-set by BaseEntity
+            MustChangePassword = true, // Temp password = phone number, must change on first login
+            EmployeeId = employee.Id // employee.Id auto-set by BaseEntity
         };
 
-        employee.UserId = user.Id;        // user.Id auto-set by IdentityUser
+        employee.UserId = user.Id; // user.Id auto-set by IdentityUser
 
         await _unitOfWork.BeginTransactionAsync(cancellationToken);
         try
         {
             // 1. Create Identity user first (password = phone number)
             //    The Employee row has a FK on UserId, so the User must exist in the DB first.
-            var created = await _unitOfWork.Users.CreateUserAsync(user, request.PhoneNumber, request.Role, cancellationToken);
+            var created =
+                await _unitOfWork.Users.CreateUserAsync(user, request.PhoneNumber, request.Role, cancellationToken);
             if (!created)
             {
                 await _unitOfWork.RollbackTransactionAsync(cancellationToken);
@@ -77,7 +76,7 @@ public class CreateEmployeeCommandHandler : IRequestHandler<CreateEmployeeComman
 
             // 2. Now save the employee record (UserId FK is satisfied)
             await _unitOfWork.Employees.AddAsync(employee, cancellationToken);
-            
+
             // 3. Automatically initialize annual leave balance for the new employee (Full Amount)
             var initialBalance = new LeaveBalance
             {
@@ -87,7 +86,7 @@ public class CreateEmployeeCommandHandler : IRequestHandler<CreateEmployeeComman
                 TotalDays = company.YearlyVacationDays,
                 UsedDays = 0
             };
-            
+
             await _unitOfWork.LeaveBalances.AddAsync(initialBalance, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 

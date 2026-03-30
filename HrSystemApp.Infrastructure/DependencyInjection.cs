@@ -11,8 +11,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using HrSystemApp.Application.Settings;
-using System;
-using System.IO;
+using HrSystemApp.Application.Settings;
 
 namespace HrSystemApp.Infrastructure;
 
@@ -74,6 +73,7 @@ public static class DependencyInjection
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
         services.AddScoped<IRequestDefinitionRepository, RequestDefinitionRepository>();
         services.AddScoped<IRequestRepository, RequestRepository>();
+        services.AddScoped<ICompanyHierarchyPositionRepository, CompanyHierarchyPositionRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         services.Configure<EmailSettings>(configuration.GetSection("EmailSettings"));
@@ -84,6 +84,7 @@ public static class DependencyInjection
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<IWorkflowService, WorkflowService>();
         services.AddScoped<IRequestSchemaValidator, RequestSchemaValidator>();
+        services.AddScoped<IHierarchyService, HierarchyService>();
 
         return services;
     }

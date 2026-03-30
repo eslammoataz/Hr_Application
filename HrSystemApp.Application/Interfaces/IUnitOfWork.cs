@@ -20,6 +20,7 @@ public interface IUnitOfWork : IAsyncDisposable
     IRefreshTokenRepository RefreshTokens { get; }
     IRequestDefinitionRepository RequestDefinitions { get; }
     IRequestRepository Requests { get; }
+    ICompanyHierarchyPositionRepository HierarchyPositions { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     Task BeginTransactionAsync(CancellationToken cancellationToken = default);

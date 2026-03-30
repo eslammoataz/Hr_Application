@@ -1,7 +1,9 @@
+using HrSystemApp.Domain.Common;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using HrSystemApp.Domain.Models;
 using Microsoft.AspNetCore.Identity;
+using BaseEntity = HrSystemApp.Domain.Models.BaseEntity;
 
 namespace HrSystemApp.Infrastructure.Data;
 
@@ -89,6 +91,8 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
                     break;
 
                 case EntityState.Deleted:
+                    if (entry.Entity is IHardDelete)
+                        break;
                     entry.State = EntityState.Modified;
                     entry.Entity.IsDeleted = true;
                     entry.Entity.UpdatedAt = DateTime.UtcNow;

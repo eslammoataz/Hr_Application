@@ -1,3 +1,4 @@
+using HrSystemApp.Domain.Common;
 using HrSystemApp.Domain.Enums;
 
 namespace HrSystemApp.Domain.Models;
@@ -6,7 +7,7 @@ namespace HrSystemApp.Domain.Models;
 /// Defines a role's position in the company hierarchy.
 /// e.g. CEO (SortOrder=1), VP (SortOrder=2), DepartmentManager (SortOrder=3) ...
 /// </summary>
-public class CompanyHierarchyPosition : BaseEntity
+public class CompanyHierarchyPosition : BaseEntity, IHardDelete
 {
     public Guid CompanyId { get; set; }
 
@@ -19,6 +20,6 @@ public class CompanyHierarchyPosition : BaseEntity
     /// <summary>1 = top of hierarchy, higher numbers = lower levels</summary>
     public int SortOrder { get; set; }
 
-    // Navigation
+// Navigation
     public Company Company { get; set; } = null!;
 }
