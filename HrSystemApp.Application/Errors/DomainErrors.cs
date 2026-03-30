@@ -236,5 +236,23 @@ public static class DomainErrors
             "ProfileUpdate.InvalidLocationId",
             "Invalid CompanyLocationId provided.");
     }
+
+    public static class Hierarchy
+    {
+        public static readonly Error NotConfigured = new(
+            "Hierarchy.NotConfigured", "The company hierarchy has not been configured yet.");
+
+        public static readonly Error InvalidRole = new(
+            "Hierarchy.InvalidRole", "One or more roles are not valid for the company hierarchy. SuperAdmin is not allowed.");
+
+        public static readonly Error DuplicateRole = new(
+            "Hierarchy.DuplicateRole", "Each role can only appear once in the hierarchy configuration.");
+
+        public static readonly Error MultipleCeos = new(
+            "Hierarchy.MultipleCeos", "Only one CEO position can be configured per company.");
+
+        public static readonly Error WorkflowRoleNotInHierarchy = new(
+            "Hierarchy.WorkflowRoleNotInHierarchy", "One or more workflow step roles are not configured in the company hierarchy.");
+    }
 }
 

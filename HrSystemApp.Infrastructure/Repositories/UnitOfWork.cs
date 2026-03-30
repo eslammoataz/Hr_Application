@@ -29,6 +29,7 @@ public class UnitOfWork : IUnitOfWork
     private IRefreshTokenRepository? _refreshTokenRepository;
     private IRequestDefinitionRepository? _requestDefinitionRepository;
     private IRequestRepository? _requestRepository;
+    private ICompanyHierarchyPositionRepository? _hierarchyPositionRepository;
 
 
     public UnitOfWork(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
@@ -75,6 +76,9 @@ public class UnitOfWork : IUnitOfWork
 
     public IRequestRepository Requests =>
         _requestRepository ??= new RequestRepository(_context);
+
+    public ICompanyHierarchyPositionRepository HierarchyPositions =>
+        _hierarchyPositionRepository ??= new CompanyHierarchyPositionRepository(_context);
 
 
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

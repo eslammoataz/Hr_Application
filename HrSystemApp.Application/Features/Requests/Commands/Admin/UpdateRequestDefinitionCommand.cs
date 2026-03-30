@@ -3,6 +3,7 @@ using HrSystemApp.Application.Interfaces.Services;
 using HrSystemApp.Application.Common;
 using HrSystemApp.Domain.Enums;
 using HrSystemApp.Domain.Models;
+using HrSystemApp.Application.Errors;
 using MediatR;
 
 using Microsoft.Extensions.Logging;
@@ -20,12 +21,18 @@ public class UpdateRequestDefinitionCommandHandler : IRequestHandler<UpdateReque
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IHierarchyService _hierarchyService;
     private readonly ILogger<UpdateRequestDefinitionCommandHandler> _logger;
 
-    public UpdateRequestDefinitionCommandHandler(IUnitOfWork unitOfWork, ICurrentUserService currentUserService, ILogger<UpdateRequestDefinitionCommandHandler> logger)
+    public UpdateRequestDefinitionCommandHandler(
+        IUnitOfWork unitOfWork,
+        ICurrentUserService currentUserService,
+        IHierarchyService hierarchyService,
+        ILogger<UpdateRequestDefinitionCommandHandler> logger)
     {
         _unitOfWork = unitOfWork;
         _currentUserService = currentUserService;
+        _hierarchyService = hierarchyService;
         _logger = logger;
     }
 
@@ -57,7 +64,16 @@ public class UpdateRequestDefinitionCommandHandler : IRequestHandler<UpdateReque
             return Result.Failure<Guid>(new Error("Auth.Forbidden", "You are not authorized to update definitions for this company."));
         }
 
-        // 2. Update
+        // 3. Validate hierarchy roles
+        var roles = request.Steps.Select(s => s.Role).ToList();
+        var isValidHierarchy = await _hierarchyService.AreRolesValidForCompanyAsync(definition.CompanyId, roles, cancellationToken);
+        if (!isValidHierarchy)
+        {
+            _logger.LogWarning("UpdateRequestDefinition failed: Invalid hierarchy roles for Company {CompanyId}.", definition.CompanyId);
+            return Result.Failure<Guid>(DomainErrors.Hierarchy.WorkflowRoleNotInHierarchy);
+        }
+
+        // 4. Update
         definition.IsActive = request.IsActive;
         definition.WorkflowSteps = request.Steps.Select(s => new RequestWorkflowStep
         {

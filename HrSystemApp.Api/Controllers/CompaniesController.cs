@@ -12,6 +12,8 @@ using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using HrSystemApp.Application.Features.Hierarchy.Commands.ConfigureHierarchyPositions;
+using HrSystemApp.Application.Features.Hierarchy.Queries.GetCompanyHierarchy;
 
 namespace HrSystemApp.Api.Controllers;
 
@@ -138,6 +140,28 @@ public class CompaniesController : BaseApiController
     {
         var command = new ChangeCompanyStatusCommand(id, request.Status);
         var result = await _sender.Send(command, cancellationToken);
+        return HandleResult(result);
+    }
+
+    /// <summary>
+    /// Gets the full organizational hierarchy for the current user's company.
+    /// </summary>
+    [HttpGet("hierarchy")]
+    public async Task<IActionResult> GetHierarchy(CancellationToken ct)
+    {
+        var result = await _sender.Send(new GetCompanyHierarchyQuery(), ct);
+        return HandleResult(result);
+    }
+
+    /// <summary>
+    /// Configures the allowed roles and their order in the company hierarchy.
+    /// Typically performed by a Company Admin or HR.
+    /// </summary>
+    [HttpPost("hierarchy/positions")]
+    public async Task<IActionResult> ConfigurePositions([FromBody] List<HierarchyPositionInputDto> positions,
+        CancellationToken ct)
+    {
+        var result = await _sender.Send(new ConfigureHierarchyPositionsCommand(positions), ct);
         return HandleResult(result);
     }
 }
