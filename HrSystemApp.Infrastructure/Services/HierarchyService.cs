@@ -3,7 +3,6 @@ using HrSystemApp.Application.Interfaces.Services;
 using HrSystemApp.Domain.Enums;
 using HrSystemApp.Domain.Models;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 
 namespace HrSystemApp.Infrastructure.Services;
 
@@ -24,7 +23,8 @@ public class HierarchyService : IHierarchyService
         return positions.Select(p => p.Role).ToList();
     }
 
-    public async Task<bool> AreRolesValidForCompanyAsync(Guid companyId, IEnumerable<UserRole> roles, CancellationToken ct = default)
+    public async Task<bool> AreRolesValidForCompanyAsync(Guid companyId, IEnumerable<UserRole> roles,
+        CancellationToken ct = default)
     {
         var availableRoles = await GetAvailableRolesAsync(companyId, ct);
         return roles.All(r => availableRoles.Contains(r));
@@ -80,9 +80,10 @@ public class HierarchyService : IHierarchyService
         var ceoUsers = await _userManager.GetUsersInRoleAsync(UserRole.CEO.ToString());
         var ceoUserIds = ceoUsers.Select(u => u.Id).ToHashSet();
         var ceoEmployees = await _unitOfWork.Employees.FindAsync(
-            e => e.CompanyId == employee.CompanyId && !e.IsDeleted && e.UserId != null && ceoUserIds.Contains(e.UserId!),
+            e => e.CompanyId == employee.CompanyId && !e.IsDeleted && e.UserId != null &&
+                 ceoUserIds.Contains(e.UserId!),
             ct);
-        
+
         var ceo = ceoEmployees.FirstOrDefault();
         if (ceo != null && ceo.Id != employeeId && !path.Any(e => e.Id == ceo.Id))
         {
