@@ -72,6 +72,8 @@ public static class DependencyInjection
         services.AddScoped<IContactAdminRequestRepository, ContactAdminRequestRepository>();
         services.AddScoped<IProfileUpdateRequestRepository, ProfileUpdateRequestRepository>();
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+        services.AddScoped<IRequestDefinitionRepository, RequestDefinitionRepository>();
+        services.AddScoped<IRequestRepository, RequestRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         services.Configure<EmailSettings>(configuration.GetSection("EmailSettings"));
@@ -80,6 +82,8 @@ public static class DependencyInjection
 
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
+        services.AddScoped<IWorkflowService, WorkflowService>();
+        services.AddScoped<IRequestSchemaValidator, RequestSchemaValidator>();
 
         return services;
     }

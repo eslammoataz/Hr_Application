@@ -30,9 +30,9 @@ public class CreateEmployeeCommandHandler : IRequestHandler<CreateEmployeeComman
         if (phoneTaken is not null)
             return Result.Failure<CreateEmployeeResponse>(DomainErrors.Employee.AlreadyExists);
 
-        // Check if company exists
-        var companyExists = await _unitOfWork.Companies.ExistsAsync(c => c.Id == request.CompanyId, cancellationToken);
-        if (!companyExists)
+        // Check if company exists and get its settings
+        var company = await _unitOfWork.Companies.GetByIdAsync(request.CompanyId, cancellationToken);
+        if (company == null)
             return Result.Failure<CreateEmployeeResponse>(DomainErrors.Company.NotFound);
 
         var employeeCode = $"EMP-{Guid.NewGuid().ToString("N")[..8].ToUpper()}";
@@ -77,6 +77,18 @@ public class CreateEmployeeCommandHandler : IRequestHandler<CreateEmployeeComman
 
             // 2. Now save the employee record (UserId FK is satisfied)
             await _unitOfWork.Employees.AddAsync(employee, cancellationToken);
+            
+            // 3. Automatically initialize annual leave balance for the new employee (Full Amount)
+            var initialBalance = new LeaveBalance
+            {
+                EmployeeId = employee.Id,
+                LeaveType = LeaveType.Annual,
+                Year = DateTime.UtcNow.Year,
+                TotalDays = company.YearlyVacationDays,
+                UsedDays = 0
+            };
+            
+            await _unitOfWork.LeaveBalances.AddAsync(initialBalance, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             await _unitOfWork.CommitTransactionAsync(cancellationToken);

@@ -3,6 +3,7 @@ using System;
 using HrSystemApp.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace HrSystemApp.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260328132154_AddRequestsFeature")]
+    partial class AddRequestsFeature
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -549,6 +552,45 @@ namespace HrSystemApp.Infrastructure.Migrations
                     b.ToTable("ProfileUpdateRequests");
                 });
 
+            modelBuilder.Entity("HrSystemApp.Domain.Models.PurchaseOrderItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("ItemName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Justification")
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("PurchaseOrderId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("UnitPrice")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PurchaseOrderId");
+
+                    b.ToTable("PurchaseOrderItems", (string)null);
+                });
+
             modelBuilder.Entity("HrSystemApp.Domain.Models.RefreshToken", b =>
                 {
                     b.Property<Guid>("Id")
@@ -616,15 +658,14 @@ namespace HrSystemApp.Infrastructure.Migrations
                     b.Property<Guid?>("CurrentApproverId")
                         .HasColumnType("uuid");
 
-                    b.Property<string>("Data")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("text")
-                        .HasDefaultValue("{}");
-
                     b.Property<string>("Details")
                         .HasMaxLength(2000)
                         .HasColumnType("character varying(2000)");
+
+                    b.Property<string>("Discriminator")
+                        .IsRequired()
+                        .HasMaxLength(13)
+                        .HasColumnType("character varying(13)");
 
                     b.Property<Guid>("EmployeeId")
                         .HasColumnType("uuid");
@@ -655,6 +696,10 @@ namespace HrSystemApp.Infrastructure.Migrations
                     b.HasIndex("EmployeeId");
 
                     b.ToTable("Requests", (string)null);
+
+                    b.HasDiscriminator().HasValue("Request");
+
+                    b.UseTphMappingStrategy();
                 });
 
             modelBuilder.Entity("HrSystemApp.Domain.Models.RequestApprovalHistory", b =>
@@ -739,9 +784,6 @@ namespace HrSystemApp.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("CreatedById")
-                        .HasColumnType("text");
-
-                    b.Property<string>("FormSchemaJson")
                         .HasColumnType("text");
 
                     b.Property<bool>("IsActive")
@@ -1025,6 +1067,121 @@ namespace HrSystemApp.Infrastructure.Migrations
                     b.ToTable("UserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("HrSystemApp.Domain.Models.AssetRequest", b =>
+                {
+                    b.HasBaseType("HrSystemApp.Domain.Models.Request");
+
+                    b.Property<int>("Action")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("AssetCode")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("AssetStatus")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("AssetType")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasDiscriminator().HasValue("Asset");
+                });
+
+            modelBuilder.Entity("HrSystemApp.Domain.Models.AssignmentRequest", b =>
+                {
+                    b.HasBaseType("HrSystemApp.Domain.Models.Request");
+
+                    b.Property<string>("Destination")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("EndDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal?>("PerDiem")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<string>("Purpose")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasDiscriminator().HasValue("Assignment");
+                });
+
+            modelBuilder.Entity("HrSystemApp.Domain.Models.EndOfServiceRequest", b =>
+                {
+                    b.HasBaseType("HrSystemApp.Domain.Models.Request");
+
+                    b.HasDiscriminator().HasValue("EndOfService");
+                });
+
+            modelBuilder.Entity("HrSystemApp.Domain.Models.HrLetterRequest", b =>
+                {
+                    b.HasBaseType("HrSystemApp.Domain.Models.Request");
+
+                    b.HasDiscriminator().HasValue("HrLetter");
+                });
+
+            modelBuilder.Entity("HrSystemApp.Domain.Models.LeaveRequest", b =>
+                {
+                    b.HasBaseType("HrSystemApp.Domain.Models.Request");
+
+                    b.Property<decimal>("Duration")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<DateTime>("EndDateTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsHourly")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("LeaveSubType")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("StartDateTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasDiscriminator().HasValue("Leave");
+                });
+
+            modelBuilder.Entity("HrSystemApp.Domain.Models.OtherRequest", b =>
+                {
+                    b.HasBaseType("HrSystemApp.Domain.Models.Request");
+
+                    b.HasDiscriminator().HasValue("Other");
+                });
+
+            modelBuilder.Entity("HrSystemApp.Domain.Models.PurchaseOrderRequest", b =>
+                {
+                    b.HasBaseType("HrSystemApp.Domain.Models.Request");
+
+                    b.Property<decimal>("TotalEstimate")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.HasDiscriminator().HasValue("PurchaseOrder");
+                });
+
+            modelBuilder.Entity("HrSystemApp.Domain.Models.ResignationRequest", b =>
+                {
+                    b.HasBaseType("HrSystemApp.Domain.Models.Request");
+
+                    b.HasDiscriminator().HasValue("Resignation");
+                });
+
+            modelBuilder.Entity("HrSystemApp.Domain.Models.SalarySlipRequest", b =>
+                {
+                    b.HasBaseType("HrSystemApp.Domain.Models.Request");
+
+                    b.HasDiscriminator().HasValue("SalarySlip");
+                });
+
             modelBuilder.Entity("HrSystemApp.Domain.Models.CompanyHierarchyPosition", b =>
                 {
                     b.HasOne("HrSystemApp.Domain.Models.Company", "Company")
@@ -1151,6 +1308,17 @@ namespace HrSystemApp.Infrastructure.Migrations
                     b.Navigation("Employee");
 
                     b.Navigation("HandledByHr");
+                });
+
+            modelBuilder.Entity("HrSystemApp.Domain.Models.PurchaseOrderItem", b =>
+                {
+                    b.HasOne("HrSystemApp.Domain.Models.PurchaseOrderRequest", "PurchaseOrder")
+                        .WithMany("Items")
+                        .HasForeignKey("PurchaseOrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("PurchaseOrder");
                 });
 
             modelBuilder.Entity("HrSystemApp.Domain.Models.RefreshToken", b =>
@@ -1367,6 +1535,11 @@ namespace HrSystemApp.Infrastructure.Migrations
             modelBuilder.Entity("HrSystemApp.Domain.Models.Unit", b =>
                 {
                     b.Navigation("Teams");
+                });
+
+            modelBuilder.Entity("HrSystemApp.Domain.Models.PurchaseOrderRequest", b =>
+                {
+                    b.Navigation("Items");
                 });
 #pragma warning restore 612, 618
         }

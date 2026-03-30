@@ -27,6 +27,8 @@ public class UnitOfWork : IUnitOfWork
     private IContactAdminRequestRepository? _contactAdminRequestRepository;
     private IProfileUpdateRequestRepository? _profileUpdateRequestRepository;
     private IRefreshTokenRepository? _refreshTokenRepository;
+    private IRequestDefinitionRepository? _requestDefinitionRepository;
+    private IRequestRepository? _requestRepository;
 
 
     public UnitOfWork(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
@@ -67,6 +69,12 @@ public class UnitOfWork : IUnitOfWork
 
     public IRefreshTokenRepository RefreshTokens =>
         _refreshTokenRepository ??= new RefreshTokenRepository(_context);
+
+    public IRequestDefinitionRepository RequestDefinitions =>
+        _requestDefinitionRepository ??= new RequestDefinitionRepository(_context);
+
+    public IRequestRepository Requests =>
+        _requestRepository ??= new RequestRepository(_context);
 
 
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

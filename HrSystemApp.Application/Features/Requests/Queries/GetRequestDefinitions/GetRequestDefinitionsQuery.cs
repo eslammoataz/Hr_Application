@@ -1,0 +1,75 @@
+using HrSystemApp.Application.Interfaces;
+using HrSystemApp.Application.Common;
+using HrSystemApp.Domain.Enums;
+using HrSystemApp.Application.Interfaces.Services;
+using MediatR;
+
+namespace HrSystemApp.Application.Features.Requests.Queries.GetRequestDefinitions;
+
+public record GetRequestDefinitionsQuery(Guid? CompanyId = null, RequestType? Type = null) : IRequest<Result<List<RequestDefinitionDto>>>;
+
+public record RequestDefinitionDto
+{
+    public Guid Id { get; set; }
+    public RequestType RequestType { get; set; }
+    public bool IsActive { get; set; }
+    public List<WorkflowStepDto> Steps { get; set; } = new();
+    public object? Schema { get; set; }
+}
+
+public record WorkflowStepDto(UserRole Role, int SortOrder);
+
+public class GetRequestDefinitionsQueryHandler : IRequestHandler<GetRequestDefinitionsQuery, Result<List<RequestDefinitionDto>>>
+{
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly ICurrentUserService _currentUserService;
+
+    private readonly IRequestSchemaValidator _validator;
+
+    public GetRequestDefinitionsQueryHandler(IUnitOfWork unitOfWork, ICurrentUserService currentUserService, IRequestSchemaValidator validator)
+    {
+        _unitOfWork = unitOfWork;
+        _currentUserService = currentUserService;
+        _validator = validator;
+    }
+
+    public async Task<Result<List<RequestDefinitionDto>>> Handle(GetRequestDefinitionsQuery request, CancellationToken cancellationToken)
+    {
+        Guid targetCompanyId;
+
+        // 1. Resolve Company ID (SuperAdmin can specify, CompanyAdmin uses their own)
+        if (_currentUserService.Role == "SuperAdmin" && request.CompanyId.HasValue)
+        {
+            targetCompanyId = request.CompanyId.Value;
+        }
+        else
+        {
+            var userId = _currentUserService.UserId;
+            if (string.IsNullOrEmpty(userId))
+                return Result.Failure<List<RequestDefinitionDto>>(new Error("Auth.Unauthorized", "User not authenticated."));
+
+            var employee = await _unitOfWork.Employees.GetByUserIdAsync(userId, cancellationToken);
+            if (employee == null)
+                return Result.Failure<List<RequestDefinitionDto>>(new Error("Employee.NotFound", "Employee profile not found."));
+
+            targetCompanyId = employee.CompanyId;
+        }
+
+        // 2. Fetch Definitions
+        var definitions = await _unitOfWork.RequestDefinitions.GetByCompanyAsync(targetCompanyId, request.Type, cancellationToken);
+
+        // 3. Map to DTO
+        var dtos = definitions.Select(d => new RequestDefinitionDto
+        {
+            Id = d.Id,
+            RequestType = d.RequestType,
+            IsActive = d.IsActive,
+            Steps = d.WorkflowSteps.Select(s => new WorkflowStepDto(s.RequiredRole, s.SortOrder)).ToList(),
+            Schema = string.IsNullOrEmpty(d.FormSchemaJson) 
+                ? _validator.GetSchema(d.RequestType) 
+                : System.Text.Json.JsonSerializer.Deserialize<object>(d.FormSchemaJson)
+        }).ToList();
+
+        return Result.Success(dtos);
+    }
+}
