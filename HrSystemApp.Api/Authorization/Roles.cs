@@ -11,15 +11,16 @@ namespace HrSystemApp.Api.Authorization;
 public static class Roles
 {
     // ── Individual roles ────────────────────────────────────────────────
-    public const string SuperAdmin        = nameof(UserRole.SuperAdmin);
-    public const string CEO               = nameof(UserRole.CEO);
-    public const string VicePresident     = nameof(UserRole.VicePresident);
+    public const string SuperAdmin = nameof(UserRole.SuperAdmin);
+    public const string CEO = nameof(UserRole.CEO);
+    public const string VicePresident = nameof(UserRole.VicePresident);
     public const string DepartmentManager = nameof(UserRole.DepartmentManager);
-    public const string UnitLeader        = nameof(UserRole.UnitLeader);
-    public const string TeamLeader        = nameof(UserRole.TeamLeader);
-    public const string HR                = nameof(UserRole.HR);
-    public const string AssetAdmin        = nameof(UserRole.AssetAdmin);
-    public const string Employee          = nameof(UserRole.Employee);
+    public const string UnitLeader = nameof(UserRole.UnitLeader);
+    public const string TeamLeader = nameof(UserRole.TeamLeader);
+    public const string HR = nameof(UserRole.HR);
+    public const string AssetAdmin = nameof(UserRole.AssetAdmin);
+    public const string Employee = nameof(UserRole.Employee);
+    public const string CompanyAdmin = nameof(UserRole.CompanyAdmin);
 
     // ── Composite role sets (comma-separated — ASP.NET Core OR logic) ──
     public const string SuperAdminOnly =
@@ -51,4 +52,7 @@ public static class Roles
 
     public const string Viewers =
         $"{SuperAdmin},{CEO},{VicePresident},{DepartmentManager},{UnitLeader},{TeamLeader},{HR}";
+
+    public const string CompanyAdmins =
+        $"{SuperAdmin},{CompanyAdmin}";
 }

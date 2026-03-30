@@ -1,0 +1,67 @@
+using HrSystemApp.Domain.Enums;
+
+namespace HrSystemApp.Domain.Models;
+
+/// <summary>
+/// Entity for all requests. 
+/// Specific types (Leave, Asset, etc.) store their unique data in the Data (JSON) column.
+/// </summary>
+public class Request : AuditableEntity
+{
+    public Guid EmployeeId { get; set; }
+    public RequestType RequestType { get; set; }
+    
+    /// <summary>
+    /// Type-specific data (e.g. { "startDate": "...", "duration": 5 })
+    /// </summary>
+    public string Data { get; set; } = "{}";
+
+    public RequestStatus Status { get; set; } = RequestStatus.Submitted;
+    
+    public string? Details { get; set; }
+    
+    /// <summary>
+    /// Current pending approver ID. 
+    /// If null and status is Approved, the process is complete.
+    /// </summary>
+    public Guid? CurrentApproverId { get; set; }
+    
+    /// <summary>
+    /// Snapshotted approval path at the time of submission.
+    /// </summary>
+    public string? PlannedChainJson { get; set; }
+
+    // Navigation
+    public Employee Employee { get; set; } = null!;
+    public Employee? CurrentApprover { get; set; }
+    public ICollection<RequestApprovalHistory> ApprovalHistory { get; set; } = new List<RequestApprovalHistory>();
+    public ICollection<RequestAttachment> Attachments { get; set; } = new List<RequestAttachment>();
+}
+
+/// <summary>
+/// Historical record of approvals/rejections.
+/// </summary>
+public class RequestApprovalHistory : BaseEntity
+{
+    public Guid RequestId { get; set; }
+    public Guid ApproverId { get; set; }
+    public RequestStatus Status { get; set; } // Approved or Rejected
+    public string? Comment { get; set; }
+
+    // Navigation
+    public Request Request { get; set; } = null!;
+    public Employee Approver { get; set; } = null!;
+}
+
+/// <summary>
+/// Simple attachment record (DB only).
+/// </summary>
+public class RequestAttachment : BaseEntity
+{
+    public Guid RequestId { get; set; }
+    public string FileName { get; set; } = string.Empty;
+    public string FilePath { get; set; } = string.Empty;
+
+    // Navigation
+    public Request Request { get; set; } = null!;
+}

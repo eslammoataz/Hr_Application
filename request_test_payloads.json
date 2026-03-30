@@ -1,0 +1,132 @@
+{
+  "testRequests": [
+    {
+      "name": "Leave Request (Annual)",
+      "payload": {
+        "requestType": 0,
+        "details": "Annual vacation for summer",
+        "data": {
+          "leaveSubType": 0,
+          "startDateTime": "2026-06-01T09:00:00",
+          "endDateTime": "2026-06-15T17:00:00",
+          "duration": 14,
+          "isHourly": false
+        }
+      }
+    },
+    {
+      "name": "Permission (Hourly)",
+      "payload": {
+        "requestType": 1,
+        "details": "School run",
+        "data": {
+          "permissionDate": "2026-04-10",
+          "startTime": "08:00",
+          "endTime": "10:00",
+          "duration": 2
+        }
+      }
+    },
+    {
+      "name": "Salary Slip Request",
+      "payload": {
+        "requestType": 2,
+        "details": "For bank loan application",
+        "data": {
+          "month": 3,
+          "year": 2026
+        }
+      }
+    },
+    {
+      "name": "HR Letter",
+      "payload": {
+        "requestType": 3,
+        "details": "Embassy documentation",
+        "data": {
+          "addressedTo": "Schengen Embassy",
+          "purpose": "Tourist Visa Application"
+        }
+      }
+    },
+    {
+      "name": "Resignation",
+      "payload": {
+        "requestType": 4,
+        "details": "Exploring new opportunities",
+        "data": {
+          "lastWorkingDay": "2026-05-31",
+          "reason": "Personal growth and closer commute"
+        }
+      }
+    },
+    {
+      "name": "End Of Service",
+      "payload": {
+        "requestType": 5,
+        "details": "Completion of contract",
+        "data": {
+          "lastWorkingDay": "2026-04-30",
+          "notes": "Returning all office equipment on last day"
+        }
+      }
+    },
+    {
+      "name": "Purchase Order",
+      "payload": {
+        "requestType": 6,
+        "details": "Office supplies replenishment",
+        "data": {
+          "totalEstimate": 550.75,
+          "items": "10x Reams of A4 Paper, 5x Toner Cartridges"
+        }
+      }
+    },
+    {
+      "name": "Asset Request (Laptop)",
+      "payload": {
+        "requestType": 7,
+        "details": "New workstation for specialized dev work",
+        "data": {
+          "assetType": "MacBook Pro M3",
+          "assetCode": "MBP-2026-XYZ",
+          "action": 0
+        }
+      }
+    },
+    {
+      "name": "Loan Request",
+      "payload": {
+        "requestType": 8,
+        "details": "Personal renovation loan",
+        "data": {
+          "amount": 5000,
+          "installments": 12
+        }
+      }
+    },
+    {
+      "name": "Assignment / Travel",
+      "payload": {
+        "requestType": 9,
+        "details": "Business trip to Dubai branch",
+        "data": {
+          "destination": "Dubai, UAE",
+          "startDate": "2026-05-10",
+          "endDate": "2026-05-20",
+          "purpose": "Annual Branch Audit"
+        }
+      }
+    },
+    {
+      "name": "Misc / Other Request",
+      "payload": {
+        "requestType": 10,
+        "details": "General inquiry",
+        "data": {
+          "description": "Please provide an update on the updated remote work policy."
+        }
+      }
+    }
+  ]
+}

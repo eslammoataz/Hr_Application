@@ -116,13 +116,46 @@ public static class DomainErrors
             "Team.AlreadyExists", "A team with this name already exists in the unit.");
     }
 
-    public static class LeaveBalance
+    public static class LeaveBalances
     {
         public static readonly Error NotFound = new(
-            "LeaveBalance.NotFound", "Leave balance record was not found.");
+            "LeaveBalance.NotFound", "Leave balance record was not found for this employee and year.");
 
         public static readonly Error AlreadyInitialized = new(
             "LeaveBalance.AlreadyInitialized", "Leave balance for this type and year already exists.");
+
+        public static readonly Error Insufficient = new(
+            "LeaveBalance.Insufficient", "Insufficient leave balance for the requested duration.");
+            
+        public static readonly Error InvalidDuration = new(
+            "LeaveBalance.InvalidDuration", "Duration must be positive.");
+    }
+
+    public static class Requests
+    {
+        public static readonly Error NotFound = new(
+            "Request.NotFound", "Request was not found.");
+
+        public static readonly Error TypeDisabled = new(
+            "Request.TypeDisabled", "The requested type is not available for your company.");
+
+        public static readonly Error NotPending = new(
+            "Request.NotPending", "Only pending requests can be modified or deleted.");
+
+        public static readonly Error ModificationLocked = new(
+            "Request.ModificationLocked", "Request is locked once approval process has started.");
+            
+        public static readonly Error DefinitionNotFound = new(
+            "Request.DefinitionNotFound", "Request configuration for this type was not found.");
+    }
+
+    public static class Workflows
+    {
+        public static readonly Error NotFound = new(
+            "Workflow.NotFound", "No approval workflow defined for this request type.");
+
+        public static readonly Error InvalidStep = new(
+            "Workflow.InvalidStep", "The workflow step is no longer valid or has changed.");
     }
 
     public static class General

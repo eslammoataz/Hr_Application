@@ -33,6 +33,13 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<ProfileUpdateRequest> ProfileUpdateRequests => Set<ProfileUpdateRequest>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
+    // Requests Feature
+    public DbSet<RequestDefinition> RequestDefinitions => Set<RequestDefinition>();
+    public DbSet<RequestWorkflowStep> RequestWorkflowSteps => Set<RequestWorkflowStep>();
+    public DbSet<Request> Requests => Set<Request>();
+    public DbSet<RequestApprovalHistory> RequestApprovalHistory => Set<RequestApprovalHistory>();
+    public DbSet<RequestAttachment> RequestAttachments => Set<RequestAttachment>();
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);

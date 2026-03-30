@@ -1,0 +1,135 @@
+{
+  "admin_setup_examples": [
+    {
+      "name": "Leave Workflow Setup",
+      "payload": {
+        "companyId": "94e16c9e-de85-4bc0-9da5-980bcb013b94",
+        "requestType": 0,
+        "steps": [
+          { "role": 5, "sortOrder": 1 },
+          { "role": 6, "sortOrder": 2 }
+        ]
+      },
+      "description": "2-Step: Team Leader (5) then HR (6)"
+    },
+    {
+      "name": "Permission Workflow Setup",
+      "payload": {
+        "companyId": "94e16c9e-de85-4bc0-9da5-980bcb013b94",
+        "requestType": 1,
+        "steps": [
+          { "role": 5, "sortOrder": 1 }
+        ]
+      },
+      "description": "1-Step: Only Team Leader (5)"
+    },
+    {
+      "name": "Salary Slip Workflow Setup",
+      "payload": {
+        "companyId": "94e16c9e-de85-4bc0-9da5-980bcb013b94",
+        "requestType": 2,
+        "steps": [
+          { "role": 6, "sortOrder": 1 }
+        ]
+      },
+      "description": "1-Step: Auto-approved by HR (6)"
+    },
+    {
+      "name": "HR Letter Workflow Setup",
+      "payload": {
+        "companyId": "94e16c9e-de85-4bc0-9da5-980bcb013b94",
+        "requestType": 3,
+        "steps": [
+          { "role": 6, "sortOrder": 1 }
+        ]
+      },
+      "description": "1-Step: Handled by HR (6)"
+    },
+    {
+      "name": "Resignation Workflow Setup",
+      "payload": {
+        "companyId": "94e16c9e-de85-4bc0-9da5-980bcb013b94",
+        "requestType": 4,
+        "steps": [
+          { "role": 5, "sortOrder": 1 },
+          { "role": 3, "sortOrder": 2 },
+          { "role": 6, "sortOrder": 3 },
+          { "role": 1, "sortOrder": 4 }
+        ]
+      },
+      "description": "Full Chain: TL -> Dept Manager -> HR -> CEO"
+    },
+    {
+      "name": "EndOfService Workflow Setup",
+      "payload": {
+        "companyId": "94e16c9e-de85-4bc0-9da5-980bcb013b94",
+        "requestType": 5,
+        "steps": [
+          { "role": 6, "sortOrder": 1 },
+          { "role": 1, "sortOrder": 2 }
+        ]
+      },
+      "description": "2-Step: HR (6) then CEO (1)"
+    },
+    {
+      "name": "Purchase Order Workflow Setup",
+      "payload": {
+        "companyId": "94e16c9e-de85-4bc0-9da5-980bcb013b94",
+        "requestType": 6,
+        "steps": [
+          { "role": 5, "sortOrder": 1 },
+          { "role": 3, "sortOrder": 2 },
+          { "role": 6, "sortOrder": 3 }
+        ]
+      },
+      "description": "3-Step: TL -> Dept Manager -> HR Finance"
+    },
+    {
+      "name": "Asset Workflow Setup",
+      "payload": {
+        "companyId": "94e16c9e-de85-4bc0-9da5-980bcb013b94",
+        "requestType": 7,
+        "steps": [
+          { "role": 5, "sortOrder": 1 },
+          { "role": 7, "sortOrder": 2 }
+        ]
+      },
+      "description": "2-Step: TL (5) then Asset Admin (7)"
+    },
+    {
+      "name": "Loan Workflow Setup",
+      "payload": {
+        "companyId": "94e16c9e-de85-4bc0-9da5-980bcb013b94",
+        "requestType": 8,
+        "steps": [
+          { "role": 6, "sortOrder": 1 },
+          { "role": 1, "sortOrder": 2 }
+        ]
+      },
+      "description": "2-Step: HR (6) then CEO (1)"
+    },
+    {
+      "name": "Assignment Workflow Setup",
+      "payload": {
+        "companyId": "94e16c9e-de85-4bc0-9da5-980bcb013b94",
+        "requestType": 9,
+        "steps": [
+          { "role": 5, "sortOrder": 1 },
+          { "role": 3, "sortOrder": 2 }
+        ]
+      },
+      "description": "2-Step: TL (5) then Dept Manager (3)"
+    },
+    {
+      "name": "Other Requests Workflow Setup",
+      "payload": {
+        "companyId": "94e16c9e-de85-4bc0-9da5-980bcb013b94",
+        "requestType": 10,
+        "steps": [
+          { "role": 6, "sortOrder": 1 }
+        ]
+      },
+      "description": "1-Step: HR (6)"
+    }
+  ]
+}

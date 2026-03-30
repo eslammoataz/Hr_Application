@@ -11,6 +11,7 @@ using HrSystemApp.Application.Features.ProfileUpdateRequests.Commands.CreateProf
 using HrSystemApp.Application.Features.ProfileUpdateRequests.Commands.HandleProfileUpdateRequest;
 using HrSystemApp.Application.Features.ProfileUpdateRequests.Queries.GetAllProfileUpdateRequests;
 using HrSystemApp.Application.Features.ProfileUpdateRequests.Queries.GetMyProfileUpdateRequests;
+using HrSystemApp.Application.Features.Requests.Queries.GetMyLeaveBalances;
 using HrSystemApp.Application.DTOs.Employees.ProfileUpdateRequests;
 using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -56,6 +57,13 @@ public class EmployeesController : BaseApiController
 
         var result = await _sender.Send(new GetMyProfileQuery(userId), cancellationToken);
         return HandleResult(result);
+    }
+
+    /// <summary>Get my own leave balance (Total, Used, Remaining).</summary>
+    [HttpGet("me/balances")]
+    public async Task<IActionResult> GetMyBalances()
+    {
+        return HandleResult(await _sender.Send(new GetMyLeaveBalancesQuery()));
     }
 
     /// <summary>Get employee by ID.</summary>

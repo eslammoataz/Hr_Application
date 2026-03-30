@@ -4,6 +4,7 @@ using MapsterMapper;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
+using HrSystemApp.Application.Features.Requests.Strategies;
 
 namespace HrSystemApp.Application;
 
@@ -31,6 +32,9 @@ public static class DependencyInjection
 
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
 
+        // Request Strategies
+        services.AddScoped<IRequestStrategyFactory, RequestStrategyFactory>();
+        services.AddScoped<IRequestBusinessStrategy, LeaveRequestStrategy>();
 
         return services;
     }
