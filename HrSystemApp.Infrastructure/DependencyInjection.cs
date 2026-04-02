@@ -10,8 +10,9 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using HrSystemApp.Application.Settings;
-using HrSystemApp.Application.Settings;
+using Minio;
 
 namespace HrSystemApp.Infrastructure;
 
@@ -77,6 +78,27 @@ public static class DependencyInjection
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         services.Configure<EmailSettings>(configuration.GetSection("EmailSettings"));
+        services.Configure<MinioSettings>(configuration.GetSection("Minio"));
+
+        services.AddSingleton<IMinioClient>(sp =>
+        {
+            var settings = sp.GetRequiredService<IOptions<MinioSettings>>().Value;
+            if (string.IsNullOrWhiteSpace(settings.Endpoint) ||
+                string.IsNullOrWhiteSpace(settings.AccessKey) ||
+                string.IsNullOrWhiteSpace(settings.SecretKey))
+            {
+                throw new InvalidOperationException(
+                    "Minio:Endpoint, Minio:AccessKey, and Minio:SecretKey must be configured.");
+            }
+
+            return new MinioClient()
+                .WithEndpoint(settings.Endpoint)
+                .WithCredentials(settings.AccessKey, settings.SecretKey)
+                .WithSSL(settings.UseSsl)
+                .Build();
+        });
+        services.AddScoped<IMinioService, MinioService>();
+
         services.AddScoped<IEmailService, EmailService>();
         services.AddScoped<ISmsService, SmsService>();
 

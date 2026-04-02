@@ -185,6 +185,27 @@ public static class DomainErrors
             "Workflow.InvalidStep", "The workflow step is no longer valid or has changed.");
     }
 
+    public static class Storage
+    {
+        public static readonly Error BucketNotFound = new(
+            "Storage.BucketNotFound", "The storage bucket was not found.");
+
+        public static readonly Error ObjectNotFound = new(
+            "Storage.ObjectNotFound", "The object was not found in storage.");
+
+        public static readonly Error UploadFailed = new(
+            "Storage.UploadFailed", "Failed to upload the file to storage.");
+
+        public static readonly Error DeleteFailed = new(
+            "Storage.DeleteFailed", "Failed to delete the object from storage.");
+
+        public static readonly Error ListFailed = new(
+            "Storage.ListFailed", "Failed to list objects in storage.");
+
+        public static readonly Error PresignedUrlFailed = new(
+            "Storage.PresignedUrlFailed", "Failed to generate a download URL.");
+    }
+
     public static class General
     {
         public static readonly Error ServerError = new(
