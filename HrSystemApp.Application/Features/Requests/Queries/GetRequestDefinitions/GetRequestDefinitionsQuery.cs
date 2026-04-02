@@ -1,5 +1,6 @@
 using HrSystemApp.Application.Interfaces;
 using HrSystemApp.Application.Common;
+using HrSystemApp.Application.Errors;
 using HrSystemApp.Domain.Enums;
 using HrSystemApp.Application.Interfaces.Services;
 using MediatR;
@@ -46,11 +47,11 @@ public class GetRequestDefinitionsQueryHandler : IRequestHandler<GetRequestDefin
         {
             var userId = _currentUserService.UserId;
             if (string.IsNullOrEmpty(userId))
-                return Result.Failure<List<RequestDefinitionDto>>(new Error("Auth.Unauthorized", "User not authenticated."));
+                return Result.Failure<List<RequestDefinitionDto>>(DomainErrors.Auth.Unauthorized);
 
             var employee = await _unitOfWork.Employees.GetByUserIdAsync(userId, cancellationToken);
             if (employee == null)
-                return Result.Failure<List<RequestDefinitionDto>>(new Error("Employee.NotFound", "Employee profile not found."));
+                return Result.Failure<List<RequestDefinitionDto>>(DomainErrors.Employee.NotFound);
 
             targetCompanyId = employee.CompanyId;
         }

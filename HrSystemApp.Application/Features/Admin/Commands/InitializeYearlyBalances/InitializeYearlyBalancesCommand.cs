@@ -1,4 +1,5 @@
 using HrSystemApp.Application.Common;
+using HrSystemApp.Application.Errors;
 using HrSystemApp.Application.Interfaces;
 using HrSystemApp.Application.Interfaces.Services;
 using HrSystemApp.Domain.Enums;
@@ -30,15 +31,15 @@ public class InitializeYearlyBalancesCommandHandler : IRequestHandler<Initialize
     {
         var adminUserId = _currentUserService.UserId;
         if (string.IsNullOrEmpty(adminUserId))
-            return Result.Failure<int>(new Error("Auth.Unauthorized", "User not authenticated."));
+            return Result.Failure<int>(DomainErrors.Auth.Unauthorized);
 
         var admin = await _unitOfWork.Employees.GetByUserIdAsync(adminUserId, cancellationToken);
         if (admin == null)
-            return Result.Failure<int>(new Error("Employee.NotFound", "Admin profile not found."));
+            return Result.Failure<int>(DomainErrors.Employee.NotFound);
 
         var company = await _unitOfWork.Companies.GetByIdAsync(admin.CompanyId, cancellationToken);
         if (company == null)
-            return Result.Failure<int>(new Error("Company.NotFound", "Company context missing."));
+            return Result.Failure<int>(DomainErrors.Company.NotFound);
 
         // 1. Get all active employees in this company
         var employees = await _unitOfWork.Employees.FindAsync(e => 

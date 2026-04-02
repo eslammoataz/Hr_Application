@@ -106,7 +106,7 @@ public class ConfigureHierarchyPositionsCommandHandler
             if (isInUse)
             {
                 _logger.LogWarning("ConfigureHierarchy failed: Role {Role} is in use by a Request Definition for Company {CompanyId}.", role, companyId);
-                return Result.Failure<int>(new Error("Hierarchy.RoleInUse", 
+                return Result.Failure<int>(new Error(DomainErrors.Hierarchy.RoleInUse.Code, 
                     $"Cannot remove role '{role}' because it is currently being used in one or more active Request Definitions. Please update your Request Definitions before removing this role."));
             }
         }

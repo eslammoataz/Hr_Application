@@ -100,7 +100,7 @@ public class ResetPasswordCommandHandler : IRequestHandler<ResetPasswordCommand,
                 "Password change failed for user {UserId}. Errors: {PasswordErrors}.",
                 user.Id,
                 string.Join(" | ", passwordErrors));
-            return Result.Failure<AuthResponse>(new Error("Auth.ResetFailed",
+            return Result.Failure<AuthResponse>(new Error(DomainErrors.Auth.ResetFailed.Code,
                 string.Join(", ", passwordErrors)));
         }
 

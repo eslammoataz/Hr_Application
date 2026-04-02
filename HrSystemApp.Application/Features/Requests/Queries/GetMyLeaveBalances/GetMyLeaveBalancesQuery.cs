@@ -1,4 +1,5 @@
 using HrSystemApp.Application.Common;
+using HrSystemApp.Application.Errors;
 using HrSystemApp.Application.Interfaces;
 using HrSystemApp.Application.Interfaces.Services;
 using HrSystemApp.Domain.Enums;
@@ -32,11 +33,11 @@ public class GetMyLeaveBalancesQueryHandler : IRequestHandler<GetMyLeaveBalances
     {
         var userId = _currentUserService.UserId;
         if (string.IsNullOrEmpty(userId))
-            return Result.Failure<List<LeaveBalanceDto>>(new Error("Auth.Unauthorized", "User not authenticated."));
+            return Result.Failure<List<LeaveBalanceDto>>(DomainErrors.Auth.Unauthorized);
 
         var employee = await _unitOfWork.Employees.GetByUserIdAsync(userId, cancellationToken);
         if (employee == null)
-            return Result.Failure<List<LeaveBalanceDto>>(new Error("Employee.NotFound", "Employee profile not found."));
+            return Result.Failure<List<LeaveBalanceDto>>(DomainErrors.Employee.NotFound);
 
         var currentYear = DateTime.UtcNow.Year;
         var balances = await _unitOfWork.LeaveBalances.GetByEmployeeAsync(employee.Id, currentYear, cancellationToken);

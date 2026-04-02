@@ -45,6 +45,15 @@ public static class DomainErrors
             
         public static readonly Error RefreshTokenReused = new(
             "Auth.RefreshTokenReused", "Suspicious activity detected: Refresh token reuse. All sessions revoked.");
+
+        public static readonly Error ResetFailed = new(
+            "Auth.ResetFailed", "Failed to reset password.");
+
+        public static readonly Error PasswordChangeFailed = new(
+            "Auth.PasswordChangeFailed", "Failed to change password.");
+
+        public static readonly Error ForcedChangeNotRequired = new(
+            "Auth.ForcedChangeNotRequired", "User is not required to change their password via this endpoint.");
     }
 
     public static class User
@@ -147,6 +156,24 @@ public static class DomainErrors
             
         public static readonly Error DefinitionNotFound = new(
             "Request.DefinitionNotFound", "Request configuration for this type was not found.");
+
+        public static readonly Error Unauthorized = new(
+            "Request.Unauthorized", "You are not the designated approver for this request at this stage.");
+
+        public static readonly Error Locked = new(
+            "Request.Locked", "Request is not in a state that can be approved or handled.");
+
+        public static readonly Error InvalidDuration = new(
+            "Request.InvalidDuration", "Duration must be positive.");
+    }
+
+    public static class LeaveBalance
+    {
+        public static readonly Error NotFound = new(
+            "LeaveBalance.NotFound", "No leave balance found for this employee and year.");
+
+        public static readonly Error Insufficient = new(
+            "LeaveBalance.Insufficient", "Insufficient leave balance.");
     }
 
     public static class Workflows
@@ -253,6 +280,12 @@ public static class DomainErrors
 
         public static readonly Error WorkflowRoleNotInHierarchy = new(
             "Hierarchy.WorkflowRoleNotInHierarchy", "One or more workflow step roles are not configured in the company hierarchy.");
+
+        public static readonly Error InvalidStepOrder = new(
+            "Hierarchy.InvalidStepOrder", "Workflow steps must strictly escalate in authority order.");
+
+        public static readonly Error RoleInUse = new(
+            "Hierarchy.RoleInUse", "Cannot remove role because it is currently being used in one or more active Request Definitions.");
     }
 }
 

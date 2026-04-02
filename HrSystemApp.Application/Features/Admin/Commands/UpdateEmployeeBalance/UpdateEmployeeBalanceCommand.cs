@@ -1,4 +1,5 @@
 using HrSystemApp.Application.Common;
+using HrSystemApp.Application.Errors;
 using HrSystemApp.Application.Interfaces;
 using HrSystemApp.Application.Interfaces.Services;
 using HrSystemApp.Domain.Enums;
@@ -33,11 +34,11 @@ public class UpdateEmployeeBalanceCommandHandler : IRequestHandler<UpdateEmploye
     {
         var adminUserId = _currentUserService.UserId;
         if (string.IsNullOrEmpty(adminUserId))
-            return Result.Failure<bool>(new Error("Auth.Unauthorized", "User not authenticated."));
+            return Result.Failure<bool>(DomainErrors.Auth.Unauthorized);
 
         var admin = await _unitOfWork.Employees.GetByUserIdAsync(adminUserId, cancellationToken);
         if (admin == null)
-            return Result.Failure<bool>(new Error("Employee.NotFound", "Admin profile not found."));
+            return Result.Failure<bool>(DomainErrors.Employee.NotFound);
 
         // 1. Security check: Only CompanyAdmin or HR
         // Note: For simplicity here we check CompanyId match. Role check is handled at Controller layer via [Authorize]
@@ -46,7 +47,7 @@ public class UpdateEmployeeBalanceCommandHandler : IRequestHandler<UpdateEmploye
         {
             _logger.LogWarning("Admin {AdminId} attempted to update balance for employee {EmployeeId} in a different company.", 
                 admin.Id, request.EmployeeId);
-            return Result.Failure<bool>(new Error("Request.Unauthorized", "You are not authorized to update this employee's balance."));
+            return Result.Failure<bool>(DomainErrors.Requests.Unauthorized);
         }
 
         // 2. Fetch/Update Balance

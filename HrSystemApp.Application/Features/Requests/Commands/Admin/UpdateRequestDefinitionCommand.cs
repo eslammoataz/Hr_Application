@@ -1,7 +1,7 @@
 using HrSystemApp.Application.Interfaces;
 using HrSystemApp.Application.Interfaces.Services;
 using HrSystemApp.Application.Common;
-using HrSystemApp.Domain.Enums;
+using HrSystemApp.Application.Errors;
 using HrSystemApp.Domain.Models;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -37,30 +37,32 @@ public class UpdateRequestDefinitionCommandHandler : IRequestHandler<UpdateReque
 
         var userId = _currentUserService.UserId;
         if (string.IsNullOrEmpty(userId))
-            return Result.Failure<Guid>(new Error("Auth.Unauthorized", "User not authenticated."));
+            return Result.Failure<Guid>(DomainErrors.Auth.Unauthorized);
 
         var employee = await _unitOfWork.Employees.GetByUserIdAsync(userId, cancellationToken);
         if (employee == null)
-            return Result.Failure<Guid>(new Error("Employee.NotFound", "Employee profile not found."));
+            return Result.Failure<Guid>(DomainErrors.Employee.NotFound);
 
         // 1. Find the definition
         var definition = await _unitOfWork.RequestDefinitions.GetByIdAsync(request.Id, cancellationToken);
-        if (definition == null) 
+        if (definition == null)
         {
             _logger.LogWarning("UpdateRequestDefinition failed: Definition ID {DefinitionId} not found.", request.Id);
-            return Result.Failure<Guid>(new Error("Definition.NotFound", "Request Definition not found."));
+            return Result.Failure<Guid>(DomainErrors.Requests.DefinitionNotFound);
         }
 
         // 2. Security: Does this user belong to the company and have admin rights?
         if (definition.CompanyId != employee.CompanyId)
         {
-            _logger.LogWarning("Unauthorized update attempt for Definition {DefinitionId} by user {UserId} from different company {CompanyId}.", 
+            _logger.LogWarning(
+                "Unauthorized update attempt for Definition {DefinitionId} by user {UserId} from different company {CompanyId}.",
                 request.Id, userId, employee.CompanyId);
-            return Result.Failure<Guid>(new Error("Auth.Forbidden", "You are not authorized to update definitions for this company."));
+            return Result.Failure<Guid>(DomainErrors.Auth.Unauthorized);
         }
 
         // 3. Validate hierarchy roles and sort order
-        var hierarchyPositions = await _unitOfWork.HierarchyPositions.GetByCompanyAsync(definition.CompanyId, cancellationToken);
+        var hierarchyPositions =
+            await _unitOfWork.HierarchyPositions.GetByCompanyAsync(definition.CompanyId, cancellationToken);
         var validationResult = WorkflowValidationHelper.ValidateWorkflowSteps(request.Steps, hierarchyPositions);
         if (validationResult.IsFailure)
         {
@@ -79,7 +81,8 @@ public class UpdateRequestDefinitionCommandHandler : IRequestHandler<UpdateReque
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        _logger.LogInformation("Successfully updated Request Definition ID {DefinitionId} (Type: {Type}). New step count: {StepCount}", 
+        _logger.LogInformation(
+            "Successfully updated Request Definition ID {DefinitionId} (Type: {Type}). New step count: {StepCount}",
             definition.Id, definition.RequestType, definition.WorkflowSteps.Count);
 
         return Result.Success(definition.Id);

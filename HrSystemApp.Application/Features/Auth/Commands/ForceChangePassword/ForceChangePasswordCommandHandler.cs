@@ -39,7 +39,7 @@ public class ForceChangePasswordCommandHandler : IRequestHandler<ForceChangePass
         if (!user.MustChangePassword)
         {
             _logger.LogWarning("User {UserId} attempted forced password change but is not flagged for it", user.Id);
-            return Result.Failure<AuthResponse>(new Error("Auth.ForcedChangeNotRequired", "User is not required to change their password via this endpoint"));
+            return Result.Failure<AuthResponse>(DomainErrors.Auth.ForcedChangeNotRequired);
         }
 
         // Change password using Identity
@@ -49,7 +49,7 @@ public class ForceChangePasswordCommandHandler : IRequestHandler<ForceChangePass
         {
             var errorMessage = string.Join(". ", errors);
             _logger.LogWarning("Forced password change failed for user {UserId}: {Errors}", user.Id, errorMessage);
-            return Result.Failure<AuthResponse>(new Error("Auth.PasswordChangeFailed", errorMessage));
+            return Result.Failure<AuthResponse>(new Error(DomainErrors.Auth.PasswordChangeFailed.Code, errorMessage));
         }
 
         // Clear the forced-change flag and update the login state

@@ -1,4 +1,5 @@
 using HrSystemApp.Application.Common;
+using HrSystemApp.Application.Errors;
 using HrSystemApp.Domain.Enums;
 using HrSystemApp.Domain.Models;
 
@@ -27,7 +28,7 @@ internal static class WorkflowValidationHelper
             .ToList();
 
         if (missingRoles.Any())
-            return Result.Failure<bool>(new Error("Hierarchy.WorkflowRoleNotInHierarchy",
+            return Result.Failure<bool>(new Error(DomainErrors.Hierarchy.WorkflowRoleNotInHierarchy.Code,
                 $"The following roles must be added to your company hierarchy before they can be used in a workflow: [{string.Join(", ", missingRoles)}]"));
 
         // 2. Steps must escalate authority (each step's role must have lower SortOrder = higher authority)
@@ -38,7 +39,7 @@ internal static class WorkflowValidationHelper
             var currHierarchyOrder = hierarchySortMap[orderedSteps[i].Role];
 
             if (currHierarchyOrder >= prevHierarchyOrder)
-                return Result.Failure<bool>(new Error("Hierarchy.InvalidStepOrder",
+                return Result.Failure<bool>(new Error(DomainErrors.Hierarchy.InvalidStepOrder.Code,
                     $"Step {i + 1} role '{orderedSteps[i].Role}' must have higher authority than step {i} role '{orderedSteps[i - 1].Role}'. Approval must escalate up the hierarchy."));
         }
 

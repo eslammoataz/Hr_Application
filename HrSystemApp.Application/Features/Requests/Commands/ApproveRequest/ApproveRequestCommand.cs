@@ -1,5 +1,6 @@
 using HrSystemApp.Application.Interfaces;
 using HrSystemApp.Application.Common;
+using HrSystemApp.Application.Errors;
 using HrSystemApp.Domain.Enums;
 using HrSystemApp.Domain.Models;
 using HrSystemApp.Application.Interfaces.Services;
@@ -31,13 +32,13 @@ public class ApproveRequestCommandHandler : IRequestHandler<ApproveRequestComman
     {
         var userId = _currentUserService.UserId;
         if (string.IsNullOrEmpty(userId)) 
-            return Result.Failure<bool>(new Error("Auth.Unauthorized", "User not authenticated."));
+            return Result.Failure<bool>(DomainErrors.Auth.Unauthorized);
 
         var employee = await _unitOfWork.Employees.GetByUserIdAsync(userId, cancellationToken);
         if (employee == null)
         {
             _logger.LogWarning("ApproveRequest failed: Employee profile not found for UserId {UserId}", userId);
-            return Result.Failure<bool>(new Error("Employee.NotFound", "Employee profile not found."));
+            return Result.Failure<bool>(DomainErrors.Employee.NotFound);
         }
 
         _logger.LogInformation("Approver {EmployeeId} ({FullName}) attempting to approve request {RequestId}", 
@@ -45,19 +46,19 @@ public class ApproveRequestCommandHandler : IRequestHandler<ApproveRequestComman
 
         var existingRequest = await _unitOfWork.Requests.GetByIdWithHistoryAsync(request.RequestId, cancellationToken);
         if (existingRequest == null) 
-            return Result.Failure<bool>(new Error("Request.NotFound", "Request not found."));
+            return Result.Failure<bool>(DomainErrors.Requests.NotFound);
 
         // 1. Security: Is this the current approver?
         if (existingRequest.CurrentApproverId != employee.Id)
         {
             _logger.LogWarning("Unauthorized approval attempt for request {RequestId} by {EmployeeId}. Current expected approver: {ExpectedId}", 
                 request.RequestId, employee.Id, existingRequest.CurrentApproverId);
-            return Result.Failure<bool>(new Error("Request.Unauthorized", "You are not the designated approver for this request at this stage."));
+            return Result.Failure<bool>(DomainErrors.Requests.Unauthorized);
         }
 
         // 2. Status: Is it in-progress or submitted?
         if (existingRequest.Status != RequestStatus.Submitted && existingRequest.Status != RequestStatus.InProgress)
-            return Result.Failure<bool>(new Error("Request.Locked", "Request is not in a state that can be approved."));
+            return Result.Failure<bool>(DomainErrors.Requests.Locked);
 
         // 3. Current history entry
         var history = new RequestApprovalHistory

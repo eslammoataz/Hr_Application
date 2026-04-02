@@ -1,5 +1,6 @@
 using System.Text.Json;
 using HrSystemApp.Application.Common;
+using HrSystemApp.Application.Errors;
 using HrSystemApp.Application.Interfaces;
 using HrSystemApp.Domain.Enums;
 using HrSystemApp.Domain.Models;
@@ -29,14 +30,14 @@ public class LeaveRequestStrategy : IRequestBusinessStrategy
         var isHourly = data.TryGetProperty("isHourly", out var ih) && ih.GetBoolean();
 
         if (duration <= 0)
-            return Result.Failure(new Error("Request.InvalidDuration", "Duration must be positive."));
+            return Result.Failure(DomainErrors.Requests.InvalidDuration);
 
         // 2. Validate Balance (Only for full-day leaves)
         if (!isHourly)
         {
             var balance = await _unitOfWork.LeaveBalances.GetAsync(employeeId, leaveSubType, startDateTime.Year, ct);
             if (balance == null)
-                return Result.Failure(new Error("LeaveBalance.NotFound", "No leave balance found for this employee and year."));
+                return Result.Failure(DomainErrors.LeaveBalance.NotFound);
 
             var allPendingLeave = await _unitOfWork.Requests.FindAsync(r =>
                 r.EmployeeId == employeeId &&
@@ -60,7 +61,7 @@ public class LeaveRequestStrategy : IRequestBusinessStrategy
             {
                 var msg = $"Insufficient leave balance. Available: {balance.RemainingDays}, Pending: {pendingDuration}. Requested: {duration}.";
                 _logger.LogWarning("Insufficient balance for Employee {EmployeeId}. {Msg}", employeeId, msg);
-                return Result.Failure(new Error("LeaveBalance.Insufficient", msg));
+                return Result.Failure(new Error(DomainErrors.LeaveBalance.Insufficient.Code, msg));
             }
             
             _logger.LogInformation("Balance check passed for Employee {EmployeeId}. Available: {Available}, Pending: {Pending}, Net: {Net}, Requested: {Requested}",

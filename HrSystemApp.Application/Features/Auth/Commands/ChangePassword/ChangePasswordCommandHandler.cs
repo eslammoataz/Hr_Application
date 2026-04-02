@@ -42,7 +42,7 @@ public class ChangePasswordCommandHandler : IRequestHandler<ChangePasswordComman
         {
             var errorMessage = string.Join(". ", errors);
             _logger.LogWarning("Password change failed for user {UserId}: {Errors}", user.Id, errorMessage);
-            return Result.Failure<AuthResponse>(new Error("Auth.PasswordChangeFailed", errorMessage));
+            return Result.Failure<AuthResponse>(new Error(DomainErrors.Auth.PasswordChangeFailed.Code, errorMessage));
         }
 
         await _unitOfWork.Users.UpdateAsync(user, cancellationToken);

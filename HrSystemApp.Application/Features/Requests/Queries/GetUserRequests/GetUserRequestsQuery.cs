@@ -1,6 +1,7 @@
 using HrSystemApp.Application.Interfaces;
 using HrSystemApp.Application.Interfaces.Services;
 using HrSystemApp.Application.Common;
+using HrSystemApp.Application.Errors;
 using HrSystemApp.Domain.Enums;
 using MediatR;
 
@@ -39,11 +40,11 @@ public class GetUserRequestsQueryHandler : IRequestHandler<GetUserRequestsQuery,
     {
         var userId = _currentUserService.UserId;
         if (string.IsNullOrEmpty(userId)) 
-            return Result.Failure<PagedResult<RequestDto>>(new Error("Auth.Unauthorized", "User not authenticated."));
+            return Result.Failure<PagedResult<RequestDto>>(DomainErrors.Auth.Unauthorized);
 
         var employee = await _unitOfWork.Employees.GetByUserIdAsync(userId, cancellationToken);
         if (employee == null) 
-            return Result.Failure<PagedResult<RequestDto>>(new Error("Employee.NotFound", "Employee profile not found."));
+            return Result.Failure<PagedResult<RequestDto>>(DomainErrors.Employee.NotFound);
 
         var requests = await _unitOfWork.Requests.FindAsync(r => r.EmployeeId == employee.Id, cancellationToken);
         var queryable = requests.AsQueryable();
