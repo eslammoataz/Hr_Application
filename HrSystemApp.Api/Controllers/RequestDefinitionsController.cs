@@ -46,6 +46,15 @@ public class RequestDefinitionsController : BaseApiController
     }
 
     /// <summary>
+    /// Delete a workflow definition
+    /// </summary>
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> Delete(Guid id)
+    {
+        return HandleResult(await _sender.Send(new DeleteRequestDefinitionCommand(id)));
+    }
+
+    /// <summary>
     /// Get all workflow definitions for the company
     /// </summary>
     [HttpGet]

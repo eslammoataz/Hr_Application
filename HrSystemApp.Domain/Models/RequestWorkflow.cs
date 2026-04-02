@@ -1,3 +1,4 @@
+using HrSystemApp.Domain.Common;
 using HrSystemApp.Domain.Enums;
 
 namespace HrSystemApp.Domain.Models;
@@ -5,7 +6,7 @@ namespace HrSystemApp.Domain.Models;
 /// <summary>
 /// Defines the specific settings and existence of a request type for a company.
 /// </summary>
-public class RequestDefinition : AuditableEntity
+public class RequestDefinition : AuditableEntity, IHardDelete
 {
     public Guid CompanyId { get; set; }
     public RequestType RequestType { get; set; }
@@ -29,13 +30,13 @@ public class RequestDefinition : AuditableEntity
 public class RequestWorkflowStep : BaseEntity
 {
     public Guid RequestDefinitionId { get; set; }
-    
+
     /// <summary>
     /// The role required at this step. 
     /// The system will find the specific employee occupying this role for the requester.
     /// </summary>
     public UserRole RequiredRole { get; set; }
-    
+
     /// <summary>
     /// Sequence order (1, 2, 3...)
     /// </summary>

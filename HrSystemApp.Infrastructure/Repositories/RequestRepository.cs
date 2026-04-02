@@ -37,27 +37,3 @@ public class RequestRepository : Repository<Request>, IRequestRepository
             .ToListAsync(cancellationToken);
     }
 }
-
-public class RequestDefinitionRepository : Repository<RequestDefinition>, IRequestDefinitionRepository
-{
-    public RequestDefinitionRepository(ApplicationDbContext context) : base(context) { }
-
-    public async Task<RequestDefinition?> GetByTypeAsync(Guid companyId, RequestType requestType, CancellationToken cancellationToken = default)
-    {
-        return await _dbSet
-            .Include(x => x.WorkflowSteps.OrderBy(s => s.SortOrder))
-            .FirstOrDefaultAsync(x => x.CompanyId == companyId && x.RequestType == requestType, cancellationToken);
-    }
-
-    public async Task<List<RequestDefinition>> GetByCompanyAsync(Guid companyId, RequestType? type = null, CancellationToken cancellationToken = default)
-    {
-        var query = _dbSet
-            .Include(x => x.WorkflowSteps.OrderBy(s => s.SortOrder))
-            .Where(x => x.CompanyId == companyId);
-
-        if (type.HasValue)
-            query = query.Where(x => x.RequestType == type.Value);
-
-        return await query.ToListAsync(cancellationToken);
-    }
-}
