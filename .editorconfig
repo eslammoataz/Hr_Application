@@ -1,0 +1,6 @@
+# root = true
+
+# [*.cs]
+
+# # Disable primary constructor suggestion
+# dotnet_diagnostic.IDE0290.severity = none

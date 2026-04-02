@@ -3,7 +3,6 @@ using HrSystemApp.Application.Interfaces.Services;
 using HrSystemApp.Application.Common;
 using HrSystemApp.Domain.Enums;
 using HrSystemApp.Domain.Models;
-using HrSystemApp.Application.Errors;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -22,18 +21,15 @@ public class CreateRequestDefinitionCommandHandler : IRequestHandler<CreateReque
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
-    private readonly IHierarchyService _hierarchyService;
     private readonly ILogger<CreateRequestDefinitionCommandHandler> _logger;
 
     public CreateRequestDefinitionCommandHandler(
         IUnitOfWork unitOfWork,
         ICurrentUserService currentUserService,
-        IHierarchyService hierarchyService,
         ILogger<CreateRequestDefinitionCommandHandler> logger)
     {
         _unitOfWork = unitOfWork;
         _currentUserService = currentUserService;
-        _hierarchyService = hierarchyService;
         _logger = logger;
     }
 
@@ -67,13 +63,13 @@ public class CreateRequestDefinitionCommandHandler : IRequestHandler<CreateReque
             return Result.Failure<Guid>(new Error("Definition.Exists", "Definition already exists for this type. Use Update instead."));
         }
 
-        // 2. Validate hierarchy roles
-        var roles = request.Steps.Select(s => s.Role).ToList();
-        var isValidHierarchy = await _hierarchyService.AreRolesValidForCompanyAsync(request.CompanyId, roles, cancellationToken);
-        if (!isValidHierarchy)
+        // 2. Validate hierarchy roles and sort order
+        var hierarchyPositions = await _unitOfWork.HierarchyPositions.GetByCompanyAsync(request.CompanyId, cancellationToken);
+        var validationResult = WorkflowValidationHelper.ValidateWorkflowSteps(request.Steps, hierarchyPositions);
+        if (validationResult.IsFailure)
         {
-            _logger.LogWarning("CreateRequestDefinition failed: Invalid hierarchy roles for Company {CompanyId}.", request.CompanyId);
-            return Result.Failure<Guid>(DomainErrors.Hierarchy.WorkflowRoleNotInHierarchy);
+            _logger.LogWarning("CreateRequestDefinition failed: {Error}", validationResult.Error.Message);
+            return Result.Failure<Guid>(validationResult.Error);
         }
 
         // 3. Create Definition

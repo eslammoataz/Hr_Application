@@ -91,6 +91,26 @@ public class ConfigureHierarchyPositionsCommandHandler
         if (request.Positions.Count(p => p.Role == UserRole.CEO) > 1)
             return Result.Failure<int>(DomainErrors.Hierarchy.MultipleCeos);
 
+        // Check: Don't allow removing roles that are in use by Request Definitions
+        var currentPositions = await _unitOfWork.HierarchyPositions.GetByCompanyAsync(companyId, cancellationToken);
+        var newRoles = request.Positions.Select(p => p.Role).ToHashSet();
+        
+        var removedRoles = currentPositions
+            .Select(p => p.Role)
+            .Where(role => !newRoles.Contains(role))
+            .ToList();
+
+        foreach (var role in removedRoles)
+        {
+            var isInUse = await _unitOfWork.RequestDefinitions.AnyDefinitionUsingRoleAsync(companyId, role, cancellationToken);
+            if (isInUse)
+            {
+                _logger.LogWarning("ConfigureHierarchy failed: Role {Role} is in use by a Request Definition for Company {CompanyId}.", role, companyId);
+                return Result.Failure<int>(new Error("Hierarchy.RoleInUse", 
+                    $"Cannot remove role '{role}' because it is currently being used in one or more active Request Definitions. Please update your Request Definitions before removing this role."));
+            }
+        }
+
         // Replace existing positions (idempotent)
         await _unitOfWork.HierarchyPositions.DeleteAllForCompanyAsync(companyId, cancellationToken);
 
