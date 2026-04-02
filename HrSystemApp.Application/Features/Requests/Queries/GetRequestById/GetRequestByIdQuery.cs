@@ -1,5 +1,6 @@
 using HrSystemApp.Application.Interfaces;
 using HrSystemApp.Application.Common;
+using HrSystemApp.Application.Errors;
 using HrSystemApp.Domain.Enums;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -47,7 +48,7 @@ public class GetRequestByIdQueryHandler : IRequestHandler<GetRequestByIdQuery, R
         if (existingRequest == null)
         {
             _logger.LogWarning("GetRequestById failed: Request {RequestId} not found.", request.Id);
-            return Result.Failure<RequestDetailDto>(new Error("Request.NotFound", "Request not found."));
+            return Result.Failure<RequestDetailDto>(DomainErrors.Requests.NotFound);
         }
         
         _logger.LogInformation("Retrieving details for request {RequestId} of type {Type}", existingRequest.Id, existingRequest.RequestType);

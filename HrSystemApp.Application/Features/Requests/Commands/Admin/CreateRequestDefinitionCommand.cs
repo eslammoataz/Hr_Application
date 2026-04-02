@@ -1,6 +1,7 @@
 using HrSystemApp.Application.Interfaces;
 using HrSystemApp.Application.Interfaces.Services;
 using HrSystemApp.Application.Common;
+using HrSystemApp.Application.Errors;
 using HrSystemApp.Domain.Enums;
 using HrSystemApp.Domain.Models;
 using MediatR;
@@ -40,18 +41,18 @@ public class CreateRequestDefinitionCommandHandler : IRequestHandler<CreateReque
 
         var userId = _currentUserService.UserId;
         if (string.IsNullOrEmpty(userId))
-            return Result.Failure<Guid>(new Error("Auth.Unauthorized", "User not authenticated."));
+            return Result.Failure<Guid>(DomainErrors.Auth.Unauthorized);
 
         var employee = await _unitOfWork.Employees.GetByUserIdAsync(userId, cancellationToken);
         if (employee == null)
-            return Result.Failure<Guid>(new Error("Employee.NotFound", "Employee profile not found."));
+            return Result.Failure<Guid>(DomainErrors.Employee.NotFound);
 
         // Security check: Must belong to the company
         if (request.CompanyId != employee.CompanyId)
         {
             _logger.LogWarning("Unauthorized create attempt for Company {TargetId} by user {UserId} from different company {CompanyId}.", 
                 request.CompanyId, userId, employee.CompanyId);
-            return Result.Failure<Guid>(new Error("Auth.Forbidden", "You can only create definitions for your own company."));
+            return Result.Failure<Guid>(DomainErrors.Auth.Unauthorized);
         }
 
         // 1. Check if already exists
@@ -60,7 +61,7 @@ public class CreateRequestDefinitionCommandHandler : IRequestHandler<CreateReque
         {
             _logger.LogWarning("CreateRequestDefinition failed: Definition already exists for Company {CompanyId}, Type {Type}.", 
                 request.CompanyId, request.RequestType);
-            return Result.Failure<Guid>(new Error("Definition.Exists", "Definition already exists for this type. Use Update instead."));
+            return Result.Failure<Guid>(DomainErrors.Requests.DefinitionNotFound);
         }
 
         // 2. Validate hierarchy roles and sort order

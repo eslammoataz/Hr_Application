@@ -1,5 +1,6 @@
 using HrSystemApp.Application.Interfaces;
 using HrSystemApp.Application.Common;
+using HrSystemApp.Application.Errors;
 using HrSystemApp.Domain.Enums;
 using HrSystemApp.Domain.Models;
 using HrSystemApp.Application.Interfaces.Services;
@@ -24,19 +25,19 @@ public class RejectRequestCommandHandler : IRequestHandler<RejectRequestCommand,
     {
         var userId = _currentUserService.UserId;
         if (string.IsNullOrEmpty(userId))
-            return Result.Failure<bool>(new Error("Auth.Unauthorized", "User not authenticated."));
+            return Result.Failure<bool>(DomainErrors.Auth.Unauthorized);
 
         var employee = await _unitOfWork.Employees.GetByUserIdAsync(userId, cancellationToken);
         if (employee == null)
-            return Result.Failure<bool>(new Error("Employee.NotFound", "Employee profile not found."));
+            return Result.Failure<bool>(DomainErrors.Employee.NotFound);
 
         var existingRequest = await _unitOfWork.Requests.GetByIdWithHistoryAsync(request.RequestId, cancellationToken);
         if (existingRequest == null)
-            return Result.Failure<bool>(new Error("Request.NotFound", "Request not found."));
+            return Result.Failure<bool>(DomainErrors.Requests.NotFound);
 
         // 1. Security: Is this the current approver?
         if (existingRequest.CurrentApproverId != employee.Id)
-            return Result.Failure<bool>(new Error("Request.Unauthorized", "You are not the designated approver for this request."));
+            return Result.Failure<bool>(DomainErrors.Requests.Unauthorized);
 
         // 2. Action: Set to Rejected
         existingRequest.Status = RequestStatus.Rejected;

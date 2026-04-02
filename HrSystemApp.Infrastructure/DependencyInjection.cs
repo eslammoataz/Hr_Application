@@ -22,16 +22,16 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
-        var dataProtectionKeysPath = configuration["DataProtection:KeysPath"];
-        var dataProtectionAppName = configuration["DataProtection:ApplicationName"] ?? "HrSystemApp";
+        var dataProtectionSettings = new DataProtectionSettings();
+        configuration.GetSection("DataProtection").Bind(dataProtectionSettings);
 
         // Persist keys so Identity tokens remain valid across restarts/replicas.
         var dataProtectionBuilder = services.AddDataProtection()
-            .SetApplicationName(dataProtectionAppName);
+            .SetApplicationName(dataProtectionSettings.ApplicationName);
 
-        if (!string.IsNullOrWhiteSpace(dataProtectionKeysPath))
+        if (!string.IsNullOrWhiteSpace(dataProtectionSettings.KeysPath))
         {
-            dataProtectionBuilder.PersistKeysToFileSystem(new DirectoryInfo(dataProtectionKeysPath));
+            dataProtectionBuilder.PersistKeysToFileSystem(new DirectoryInfo(dataProtectionSettings.KeysPath));
         }
 
         // Database

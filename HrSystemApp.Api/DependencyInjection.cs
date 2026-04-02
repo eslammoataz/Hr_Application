@@ -15,11 +15,13 @@ public static class DependencyInjection
 
         services.AddControllers();
 
-        var jwtSettings = configuration.GetSection("JwtSettings");
-        var secretKey = jwtSettings["Secret"]
-            ?? throw new InvalidOperationException("JWT Secret not configured");
+        var jwtSettings = new HrSystemApp.Application.Settings.JwtSettings();
+        configuration.GetSection("JwtSettings").Bind(jwtSettings);
 
-        if (secretKey.Length < 32)
+        if (string.IsNullOrEmpty(jwtSettings.Secret))
+            throw new InvalidOperationException("JWT Secret not configured");
+
+        if (jwtSettings.Secret.Length < 32)
             throw new InvalidOperationException("JWT Secret must be at least 32 characters.");
 
         services.AddAuthentication(options =>
@@ -37,11 +39,11 @@ public static class DependencyInjection
             options.TokenValidationParameters = new TokenValidationParameters
             {
                 ValidateIssuerSigningKey = true,
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Secret)),
                 ValidateIssuer = true,
-                ValidIssuer = jwtSettings["Issuer"],
+                ValidIssuer = jwtSettings.Issuer,
                 ValidateAudience = true,
-                ValidAudience = jwtSettings["Audience"],
+                ValidAudience = jwtSettings.Audience,
                 ValidateLifetime = true,
                 ClockSkew = TimeSpan.Zero,
 

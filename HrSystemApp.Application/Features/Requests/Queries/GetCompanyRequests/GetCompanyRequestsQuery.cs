@@ -1,9 +1,9 @@
 using HrSystemApp.Application.Interfaces;
 using HrSystemApp.Application.Interfaces.Services;
 using HrSystemApp.Application.Common;
+using HrSystemApp.Application.Errors;
 using HrSystemApp.Domain.Enums;
 using MediatR;
-using HrSystemApp.Application.Interfaces;
 
 namespace HrSystemApp.Application.Features.Requests.Queries.GetCompanyRequests;
 
@@ -42,11 +42,11 @@ public class GetCompanyRequestsQueryHandler : IRequestHandler<GetCompanyRequests
     {
         var userId = _currentUserService.UserId;
         if (string.IsNullOrEmpty(userId))
-            return Result.Failure<PagedResult<AdminRequestDto>>(new Error("Auth.Unauthorized", "User not authenticated."));
+            return Result.Failure<PagedResult<AdminRequestDto>>(DomainErrors.Auth.Unauthorized);
 
         var admin = await _unitOfWork.Employees.GetByUserIdAsync(userId, cancellationToken);
         if (admin == null)
-            return Result.Failure<PagedResult<AdminRequestDto>>(new Error("Employee.NotFound", "Admin employee profile not found."));
+            return Result.Failure<PagedResult<AdminRequestDto>>(DomainErrors.Employee.NotFound);
 
         // Query all requests for the company
         // We use FindAsync with an expression to leverage EF Core change tracking and includes if needed, 

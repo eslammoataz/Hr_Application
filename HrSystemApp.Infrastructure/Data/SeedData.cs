@@ -4,6 +4,8 @@ using HrSystemApp.Domain.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 
+using Microsoft.Extensions.Configuration;
+
 namespace HrSystemApp.Infrastructure.Data;
 
 public static class SeedData
@@ -13,6 +15,7 @@ public static class SeedData
         var roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
         var userManager = serviceProvider
             .GetRequiredService<UserManager<ApplicationUser>>();
+        var configuration = serviceProvider.GetRequiredService<IConfiguration>();
 
         // Seed Identity roles from UserRole enum
         foreach (UserRole role in Enum.GetValues(typeof(UserRole)))
@@ -25,7 +28,11 @@ public static class SeedData
         }
 
         // Create SuperAdmin if not exists
-        const string superAdminEmail = "superadmin@hrms.com";
+        var superAdminSettings = new HrSystemApp.Application.Settings.SuperAdminSettings();
+        configuration.GetSection("SuperAdminSettings").Bind(superAdminSettings);
+
+        var superAdminEmail = string.IsNullOrEmpty(superAdminSettings.Email) ? "superadmin@hrms.com" : superAdminSettings.Email;
+        var superAdminPassword = string.IsNullOrEmpty(superAdminSettings.Password) ? "SuperAdmin@123" : superAdminSettings.Password;
 
         var existingAdmin = await userManager.FindByEmailAsync(superAdminEmail);
 
@@ -42,7 +49,7 @@ public static class SeedData
                 EmployeeId = null // SuperAdmin has NO employee record
             };
 
-            var result = await userManager.CreateAsync(superAdmin, "SuperAdmin@123");
+            var result = await userManager.CreateAsync(superAdmin, superAdminPassword);
 
             if (result.Succeeded)
             {

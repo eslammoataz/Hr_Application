@@ -1,5 +1,6 @@
 using HrSystemApp.Application.Interfaces;
 using HrSystemApp.Application.Common;
+using HrSystemApp.Application.Errors;
 using HrSystemApp.Domain.Enums;
 using HrSystemApp.Application.Interfaces.Services;
 using MediatR;
@@ -39,11 +40,11 @@ public class GetPendingApprovalsQueryHandler : IRequestHandler<GetPendingApprova
     {
         var userId = _currentUserService.UserId;
         if (string.IsNullOrEmpty(userId))
-            return Result.Failure<PagedResult<PendingRequestDto>>(new Error("Auth.Unauthorized", "User not authenticated."));
+            return Result.Failure<PagedResult<PendingRequestDto>>(DomainErrors.Auth.Unauthorized);
 
         var employee = await _unitOfWork.Employees.GetByUserIdAsync(userId, cancellationToken);
         if (employee == null)
-            return Result.Failure<PagedResult<PendingRequestDto>>(new Error("Employee.NotFound", "Employee profile not found."));
+            return Result.Failure<PagedResult<PendingRequestDto>>(DomainErrors.Employee.NotFound);
 
         var pendingRequests = await _unitOfWork.Requests.GetPendingApprovalsAsync(employee.Id, cancellationToken);
         var queryable = pendingRequests.AsQueryable();

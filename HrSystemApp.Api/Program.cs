@@ -14,10 +14,12 @@ var loggerConfiguration = new LoggerConfiguration()
     .ReadFrom.Configuration(builder.Configuration);
 
 // Add Seq if enabled in settings
-var seqEnabled = builder.Configuration.GetValue<bool>("SeqSettings:Enabled");
-if (seqEnabled)
+var seqSettings = new HrSystemApp.Application.Settings.SeqSettings();
+builder.Configuration.GetSection("SeqSettings").Bind(seqSettings);
+
+if (seqSettings.Enabled)
 {
-    var seqUrl = builder.Configuration.GetValue<string>("SeqSettings:ServerUrl") ?? "http://localhost:5341";
+    var seqUrl = string.IsNullOrEmpty(seqSettings.ServerUrl) ? "http://localhost:5341" : seqSettings.ServerUrl;
     loggerConfiguration.WriteTo.Seq(seqUrl);
 }
 
