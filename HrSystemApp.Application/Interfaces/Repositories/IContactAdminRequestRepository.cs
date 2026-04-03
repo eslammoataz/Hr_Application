@@ -5,7 +5,7 @@ namespace HrSystemApp.Application.Interfaces.Repositories;
 
 public interface IContactAdminRequestRepository : IRepository<ContactAdminRequest>
 {
-    Task<bool> ExistsPendingRequestAsync(string email, string companyName,
+    Task<bool> ExistsPendingRequestAsync(string email, string companyName, string phoneNumber,
         CancellationToken cancellationToken = default);
 
     Task<PagedResult<ContactAdminRequest>> GetPagedAsync(

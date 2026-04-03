@@ -20,7 +20,7 @@ public class CreateContactAdminRequestHandler : IRequestHandler<CreateContactAdm
     public async Task<Result> Handle(CreateContactAdminRequestCommand request, CancellationToken cancellationToken)
     {
         var existsPending = await _unitOfWork.ContactAdminRequests.ExistsPendingRequestAsync(
-            request.Email, request.CompanyName, cancellationToken);
+            request.Email, request.CompanyName, request.PhoneNumber, cancellationToken);
 
         if (existsPending)
         {
@@ -33,7 +33,14 @@ public class CreateContactAdminRequestHandler : IRequestHandler<CreateContactAdm
             return Result.Failure(DomainErrors.ContactAdmin.EmailAlreadyTaken);
         }
 
-        var companyNameTaken = await _unitOfWork.Companies.ExistsAsync(c => c.CompanyName == request.CompanyName, cancellationToken);
+        var phoneTaken = await _unitOfWork.Users.GetByPhoneNumberAsync(request.PhoneNumber, cancellationToken);
+        if (phoneTaken is not null)
+        {
+            return Result.Failure(DomainErrors.ContactAdmin.PhoneNumberAlreadyTaken);
+        }
+
+        var companyNameTaken =
+            await _unitOfWork.Companies.ExistsAsync(c => c.CompanyName == request.CompanyName, cancellationToken);
         if (companyNameTaken)
         {
             return Result.Failure(DomainErrors.ContactAdmin.CompanyNameAlreadyTaken);
