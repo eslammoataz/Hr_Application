@@ -37,8 +37,13 @@ public class CreateEmployeeCommandHandler : IRequestHandler<CreateEmployeeComman
 
         // Both IDs are auto-generated in their constructors,
         // so we can cross-link them before any DB call.
+
+        var employeeId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+
         var employee = new Employee
         {
+            Id = employeeId,
             CompanyId = request.CompanyId,
             FullName = request.FullName,
             PhoneNumber = request.PhoneNumber,
@@ -49,6 +54,7 @@ public class CreateEmployeeCommandHandler : IRequestHandler<CreateEmployeeComman
 
         var user = new ApplicationUser
         {
+            Id = userId.ToString(),
             UserName = request.Email,
             Email = request.Email,
             Name = request.FullName,
