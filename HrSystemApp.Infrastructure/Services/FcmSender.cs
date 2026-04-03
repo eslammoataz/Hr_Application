@@ -20,12 +20,17 @@ public class FcmSender
 
     public Task SendAsync(string token, DomainNotification notification, NotificationType type)
     {
+        // We use a separate logger here because we are outside the scope of the Task.Run when starting
+        // But the Task itself will create its own scope and logger.
+        
         return Task.Run(async () =>
         {
             using var scope = _scopeFactory.CreateScope();
             var fcmClient = scope.ServiceProvider.GetRequiredService<IFcmClient>();
             var logger = scope.ServiceProvider.GetRequiredService<ILogger<FcmSender>>();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+            logger.LogInformation("Starting FCM notification {NotificationId} delivery", notification.Id);
 
             try
             {
