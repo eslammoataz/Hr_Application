@@ -1,5 +1,6 @@
 using System.Text.Json;
 using HrSystemApp.Application.Common;
+using HrSystemApp.Application.Errors;
 using HrSystemApp.Application.Interfaces.Services;
 using HrSystemApp.Domain.Enums;
 using Microsoft.Extensions.Hosting;
@@ -51,23 +52,23 @@ public class RequestSchemaValidator : IRequestSchemaValidator
                     if (isRequired)
                     {
                         _logger.LogWarning("Validation failed for {RequestType}: Missing required field '{FieldName}'", type, name);
-                        return Result.Failure(new Error("Validation.FieldRequired", $"Field '{name}' is required for {type} requests."));
+                        return Result.Failure(DomainErrors.Validation.FieldRequired with { Message = $"Field '{name}' is required for {type} requests." });
                     }
                     continue;
                 }
 
                 // Simple type check
                 if (expectedType == "number" && value.ValueKind != JsonValueKind.Number)
-                    return Result.Failure(new Error("Validation.InvalidType", $"Field '{name}' must be a number."));
+                    return Result.Failure(DomainErrors.Validation.InvalidType with { Message = $"Field '{name}' must be a number." });
                 
                 if (expectedType == "boolean" && value.ValueKind != JsonValueKind.True && value.ValueKind != JsonValueKind.False)
-                    return Result.Failure(new Error("Validation.InvalidType", $"Field '{name}' must be a boolean."));
+                    return Result.Failure(DomainErrors.Validation.InvalidType with { Message = $"Field '{name}' must be a boolean." });
 
                 // Date and String both come as strings/numbers in some cases, but simplified for now
                 if (expectedType == "string" && value.ValueKind != JsonValueKind.String)
                 {
                     _logger.LogWarning("Validation failed for {RequestType}: Field '{FieldName}' expected string but got {ActualType}", type, name, value.ValueKind);
-                    return Result.Failure(new Error("Validation.InvalidType", $"Field '{name}' must be a string."));
+                    return Result.Failure(DomainErrors.Validation.InvalidType with { Message = $"Field '{name}' must be a string." });
                 }
             }
 
@@ -76,7 +77,7 @@ public class RequestSchemaValidator : IRequestSchemaValidator
         catch (Exception ex)
         {
             _logger.LogError(ex, "Unexpected error during schema validation for {RequestType}", type);
-            return Result.Failure(new Error("Validation.Error", $"Schema validation failed: {ex.Message}"));
+            return Result.Failure(DomainErrors.Validation.Error with { Message = $"Schema validation failed: {ex.Message}" });
         }
     }
 
