@@ -26,8 +26,11 @@ public class NotificationService : INotificationService
 
     public async Task SendNotificationAsync(Guid employeeId, string title, string message, NotificationType type)
     {
-        _logger.LogInformation("Processing notification request for employee {EmployeeId}, type: {Type}", 
-            employeeId, type);
+        _logger.LogInformation(
+            "Processing notification request for employee {EmployeeId}, type {Type}, title '{Title}'",
+            employeeId,
+            type,
+            title);
 
         var employee = await _context.Employees
             .AsNoTracking()
@@ -52,17 +55,33 @@ public class NotificationService : INotificationService
         await _context.Notifications.AddAsync(notification);
         await _context.SaveChangesAsync();
 
+        _logger.LogInformation(
+            "Notification {NotificationId} saved to database for employee {EmployeeId}.",
+            notification.Id,
+            employeeId);
+
         if (employee.User is not null && !string.IsNullOrWhiteSpace(employee.User.FcmToken))
         {
-            _logger.LogInformation("Scheduling FCM delivery task for employee {EmployeeId}", employeeId);
+            _logger.LogInformation(
+                "Scheduling Firebase push delivery for notification {NotificationId} to employee {EmployeeId}.",
+                notification.Id,
+                employeeId);
             _ = _fcmSender.SendAsync(employee.User.FcmToken, notification, type);
+            return;
         }
+
+        _logger.LogInformation(
+            "Notification {NotificationId} stored without Firebase delivery because employee {EmployeeId} has no FCM token.",
+            notification.Id,
+            employeeId);
     }
 
     public async Task SendBroadcastAsync(string title, string message, NotificationType type)
     {
-        _logger.LogInformation("Initiating broadcast notification: {Title}, type: {Type}", 
-            title, type);
+        _logger.LogInformation(
+            "Initiating broadcast notification '{Title}' with type {Type}.",
+            title,
+            type);
 
         var activeEmployees = await _context.Employees
             .AsNoTracking()
@@ -72,6 +91,9 @@ public class NotificationService : INotificationService
 
         if (!activeEmployees.Any())
         {
+            _logger.LogInformation(
+                "Broadcast notification '{Title}' skipped because no active employees with FCM tokens were found.",
+                title);
             return;
         }
 
@@ -87,6 +109,11 @@ public class NotificationService : INotificationService
         await _context.Notifications.AddRangeAsync(notifications);
         await _context.SaveChangesAsync();
 
+        _logger.LogInformation(
+            "Broadcast notification '{Title}' saved to database for {Count} employees.",
+            title,
+            notifications.Count);
+
         // created for O(1) lookups
         var notificationByEmployeeId = notifications.ToDictionary(n => n.EmployeeId);
 
@@ -98,6 +125,10 @@ public class NotificationService : INotificationService
                 Type: type
             ))
             .ToList();
+
+        _logger.LogInformation(
+            "Scheduling Firebase broadcast delivery for {Count} notifications.",
+            batch.Count);
 
         await _fcmSender.SendBatchAsync(batch);
 

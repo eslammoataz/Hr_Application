@@ -78,7 +78,9 @@ public static class DependencyInjection
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         services.Configure<EmailSettings>(configuration.GetSection("EmailSettings"));
+        services.Configure<FirebaseSettings>(configuration.GetSection(FirebaseSettings.SectionName));
         services.Configure<MinioSettings>(configuration.GetSection("Minio"));
+        services.AddFirebaseServices(configuration);
 
         services.AddSingleton<IMinioClient>(sp =>
         {

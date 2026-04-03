@@ -12,17 +12,22 @@ namespace HrSystemApp.Infrastructure.Services;
 public class FcmSender
 {
     private readonly IServiceScopeFactory _scopeFactory;
+    private readonly ILogger<FcmSender> _logger;
 
-    public FcmSender(IServiceScopeFactory scopeFactory)
+    public FcmSender(IServiceScopeFactory scopeFactory, ILogger<FcmSender> logger)
     {
         _scopeFactory = scopeFactory;
+        _logger = logger;
     }
 
     public Task SendAsync(string token, DomainNotification notification, NotificationType type)
     {
-        // We use a separate logger here because we are outside the scope of the Task.Run when starting
-        // But the Task itself will create its own scope and logger.
-        
+        _logger.LogInformation(
+            "Queueing Firebase delivery task for notification {NotificationId}, employee {EmployeeId}, type {Type}.",
+            notification.Id,
+            notification.EmployeeId,
+            type);
+
         return Task.Run(async () =>
         {
             using var scope = _scopeFactory.CreateScope();
@@ -30,23 +35,30 @@ public class FcmSender
             var logger = scope.ServiceProvider.GetRequiredService<ILogger<FcmSender>>();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
-            logger.LogInformation("Starting FCM notification {NotificationId} delivery", notification.Id);
+            logger.LogInformation(
+                "Starting Firebase delivery for notification {NotificationId} to employee {EmployeeId}.",
+                notification.Id,
+                notification.EmployeeId);
 
             try
             {
                 await fcmClient.SendAsync(token, notification, type, CancellationToken.None);
-                logger.LogInformation("FCM notification {NotificationId} sent", notification.Id);
+                logger.LogInformation(
+                    "Firebase delivery completed successfully for notification {NotificationId}.",
+                    notification.Id);
             }
             catch (FirebaseMessagingException ex) when (ex.MessagingErrorCode == MessagingErrorCode.Unregistered ||
                                                         ex.MessagingErrorCode == MessagingErrorCode.InvalidArgument)
             {
-                logger.LogWarning("FCM token is invalid/unregistered. Clearing token. Error: {Error}",
+                logger.LogWarning(
+                    "Firebase rejected token for notification {NotificationId}. Token is invalid or unregistered. Clearing token. Error: {Error}",
+                    notification.Id,
                     ex.MessagingErrorCode);
                 await ClearInvalidTokenAsync(context, token);
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "FCM delivery failed for notification {NotificationId}", notification.Id);
+                logger.LogError(ex, "Firebase delivery failed for notification {NotificationId}", notification.Id);
             }
         });
     }
@@ -54,7 +66,13 @@ public class FcmSender
     public Task SendBatchAsync(
         IEnumerable<(string Token, DomainNotification Notification, NotificationType Type)> batch)
     {
-        foreach (var item in batch)
+        var notifications = batch.ToList();
+
+        _logger.LogInformation(
+            "Queueing Firebase batch delivery for {Count} notifications.",
+            notifications.Count);
+
+        foreach (var item in notifications)
         {
             _ = SendAsync(item.Token, item.Notification, item.Type);
         }
