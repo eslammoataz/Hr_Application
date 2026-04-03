@@ -5,6 +5,7 @@ using HrSystemApp.Domain.Enums;
 using HrSystemApp.Domain.Models;
 using HrSystemApp.Application.Interfaces.Services;
 using MediatR;
+using Microsoft.Extensions.Logging;
 
 namespace HrSystemApp.Application.Features.Requests.Commands.RejectRequest;
 
@@ -14,11 +15,19 @@ public class RejectRequestCommandHandler : IRequestHandler<RejectRequestCommand,
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
+    private readonly INotificationService _notificationService;
+    private readonly ILogger<RejectRequestCommandHandler> _logger;
 
-    public RejectRequestCommandHandler(IUnitOfWork unitOfWork, ICurrentUserService currentUserService)
+    public RejectRequestCommandHandler(
+        IUnitOfWork unitOfWork,
+        ICurrentUserService currentUserService,
+        INotificationService notificationService,
+        ILogger<RejectRequestCommandHandler> logger)
     {
         _unitOfWork = unitOfWork;
         _currentUserService = currentUserService;
+        _notificationService = notificationService;
+        _logger = logger;
     }
 
     public async Task<Result<bool>> Handle(RejectRequestCommand request, CancellationToken cancellationToken)
@@ -54,6 +63,19 @@ public class RejectRequestCommandHandler : IRequestHandler<RejectRequestCommand,
 
         await _unitOfWork.Requests.UpdateAsync(existingRequest, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        try
+        {
+            await _notificationService.SendNotificationAsync(
+                existingRequest.EmployeeId,
+                "Request Rejected",
+                $"Your {existingRequest.RequestType} request has been rejected. Reason: {request.Reason}",
+                NotificationType.RequestRejected);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Request {RequestId} rejected, but notification delivery failed.", existingRequest.Id);
+        }
 
         return Result.Success(true);
     }

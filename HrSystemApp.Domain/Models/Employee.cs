@@ -41,4 +41,5 @@ public class Employee : AuditableEntity
 
     // Reverse navigation
     public ICollection<Employee> DirectReports { get; set; } = new List<Employee>();
+    public ICollection<Notification> Notifications { get; set; } = new List<Notification>();
 }
