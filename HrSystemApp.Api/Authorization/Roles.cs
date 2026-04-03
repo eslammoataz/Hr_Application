@@ -36,7 +36,7 @@ public static class Roles
         $"{SuperAdmin},{CEO},{VicePresident},{DepartmentManager}";
 
     public const string HrOrAbove =
-        $"{SuperAdmin},{CEO},{VicePresident},{DepartmentManager},{UnitLeader},{TeamLeader},{HR}";
+        $"{SuperAdmin},{CEO},{VicePresident},{DepartmentManager},{UnitLeader},{TeamLeader},{HR} , {CompanyAdmin}";
 
     public const string HierarchyManagers =
         $"{SuperAdmin},{CEO},{DepartmentManager},{HR}";
