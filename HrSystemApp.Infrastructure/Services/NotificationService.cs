@@ -26,6 +26,9 @@ public class NotificationService : INotificationService
 
     public async Task SendNotificationAsync(Guid employeeId, string title, string message, NotificationType type)
     {
+        _logger.LogInformation("Processing notification request for employee {EmployeeId}, type: {Type}", 
+            employeeId, type);
+
         var employee = await _context.Employees
             .AsNoTracking()
             .Include(e => e.User)
@@ -51,12 +54,16 @@ public class NotificationService : INotificationService
 
         if (employee.User is not null && !string.IsNullOrWhiteSpace(employee.User.FcmToken))
         {
-            _ = Task.Run(() => _fcmSender.SendAsync(employee.User.FcmToken, notification, type));
+            _logger.LogInformation("Scheduling FCM delivery task for employee {EmployeeId}", employeeId);
+            _ = _fcmSender.SendAsync(employee.User.FcmToken, notification, type);
         }
     }
 
     public async Task SendBroadcastAsync(string title, string message, NotificationType type)
     {
+        _logger.LogInformation("Initiating broadcast notification: {Title}, type: {Type}", 
+            title, type);
+
         var activeEmployees = await _context.Employees
             .AsNoTracking()
             .Include(e => e.User)

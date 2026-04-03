@@ -36,7 +36,7 @@ public class FirebaseFcmClient : IFcmClient
         var message = new Message
         {
             Token = token,
-            Notification = new FirebaseAdmin.Messaging.Notification
+            Notification = new Notification
             {
                 Title = notification.Title,
                 Body = notification.Message
@@ -49,7 +49,28 @@ public class FirebaseFcmClient : IFcmClient
             }
         };
 
-        await FirebaseMessaging.GetMessaging(_firebaseApp!).SendAsync(message, cancellationToken);
+        try
+        {
+            _logger.LogInformation("Attempting to send FCM notification {NotificationId} to token {Token}", 
+                notification.Id, token[..10] + "...");
+
+            var response = await FirebaseMessaging.GetMessaging(_firebaseApp!).SendAsync(message, cancellationToken);
+            
+            _logger.LogInformation("FCM notification {NotificationId} sent successfully. Response: {Response}", 
+                notification.Id, response);
+        }
+        catch (FirebaseMessagingException ex)
+        {
+            _logger.LogError(ex, "Firebase Messaging error sending notification {NotificationId}: {Error} - {Message}", 
+                notification.Id, ex.MessagingErrorCode, ex.Message);
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error sending FCM notification {NotificationId}: {Message}", 
+                notification.Id, ex.Message);
+            throw;
+        }
     }
 
     private void EnsureFirebaseApp()
@@ -73,7 +94,7 @@ public class FirebaseFcmClient : IFcmClient
                 Credential = credential
             }, "HrSystemAppNotifications");
 
-            _logger.LogInformation("Firebase app initialized for FCM notifications.");
+            _logger.LogInformation("Firebase app '{AppName}' initialized for FCM notifications.", _firebaseApp.Name);
         }
     }
 
