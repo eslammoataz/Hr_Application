@@ -5,8 +5,7 @@ using HrSystemApp.Application.Errors;
 using HrSystemApp.Application.Interfaces;
 using HrSystemApp.Domain.Enums;
 using HrSystemApp.Domain.Models;
-using Microsoft.EntityFrameworkCore;
-using Npgsql;
+
 
 namespace HrSystemApp.Application.Features.Employees.Commands.CreateEmployee;
 
@@ -103,11 +102,6 @@ public class CreateEmployeeCommandHandler : IRequestHandler<CreateEmployeeComman
                 Role = request.Role.ToString(),
                 TemporaryPassword = request.PhoneNumber
             });
-        }
-        catch (DbUpdateException ex) when (ex.InnerException is PostgresException { SqlState: "23505" })
-        {
-            await _unitOfWork.RollbackTransactionAsync(cancellationToken);
-            return Result.Failure<CreateEmployeeResponse>(DomainErrors.Employee.AlreadyExists);
         }
         catch
         {
