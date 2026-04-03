@@ -16,11 +16,12 @@ public class ContactAdminRequestRepository : Repository<ContactAdminRequest>, IC
     public async Task<bool> ExistsPendingRequestAsync(
         string email,
         string companyName,
+        string phoneNumber,
         CancellationToken cancellationToken = default)
     {
         return await _context.Set<ContactAdminRequest>()
             .AnyAsync(r => r.Status == ContactAdminRequestStatus.Pending &&
-                           (r.Email == email || r.CompanyName == companyName),
+                           (r.Email == email || r.CompanyName == companyName || r.PhoneNumber == phoneNumber),
                 cancellationToken);
     }
 
