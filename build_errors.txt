@@ -1,0 +1,27 @@
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  HrSystemApp.Domain -> E:\Github Repos\HR System App\HrSystemApp\HrSystemApp.Domain\bin\Debug\net8.0\HrSystemApp.Domain.dll
+  HrSystemApp.Application -> E:\Github Repos\HR System App\HrSystemApp\HrSystemApp.Application\bin\Debug\net8.0\HrSystemApp.Application.dll
+E:\Github Repos\HR System App\HrSystemApp\HrSystemApp.Infrastructure\Services\WorkflowService.cs(142,74): warning CS8604: Possible null reference argument for parameter 'item' in 'bool List<string>.Contains(string item)'. [E:\Github Repos\HR System App\HrSystemApp\HrSystemApp.Infrastructure\HrSystemApp.Infrastructure.csproj]
+E:\Github Repos\HR System App\HrSystemApp\HrSystemApp.Infrastructure\Repositories\UserRepository.cs(171,31): warning CS8602: Dereference of a possibly null reference. [E:\Github Repos\HR System App\HrSystemApp\HrSystemApp.Infrastructure\HrSystemApp.Infrastructure.csproj]
+E:\Github Repos\HR System App\HrSystemApp\HrSystemApp.Infrastructure\Services\RequestSchemaValidator.cs(54,47): error CS0103: The name 'DomainErrors' does not exist in the current context [E:\Github Repos\HR System App\HrSystemApp\HrSystemApp.Infrastructure\HrSystemApp.Infrastructure.csproj]
+E:\Github Repos\HR System App\HrSystemApp\HrSystemApp.Infrastructure\Services\RequestSchemaValidator.cs(61,43): error CS0103: The name 'DomainErrors' does not exist in the current context [E:\Github Repos\HR System App\HrSystemApp\HrSystemApp.Infrastructure\HrSystemApp.Infrastructure.csproj]
+E:\Github Repos\HR System App\HrSystemApp\HrSystemApp.Infrastructure\Services\RequestSchemaValidator.cs(64,43): error CS0103: The name 'DomainErrors' does not exist in the current context [E:\Github Repos\HR System App\HrSystemApp\HrSystemApp.Infrastructure\HrSystemApp.Infrastructure.csproj]
+E:\Github Repos\HR System App\HrSystemApp\HrSystemApp.Infrastructure\Services\RequestSchemaValidator.cs(70,43): error CS0103: The name 'DomainErrors' does not exist in the current context [E:\Github Repos\HR System App\HrSystemApp\HrSystemApp.Infrastructure\HrSystemApp.Infrastructure.csproj]
+E:\Github Repos\HR System App\HrSystemApp\HrSystemApp.Infrastructure\Services\RequestSchemaValidator.cs(79,35): error CS0103: The name 'DomainErrors' does not exist in the current context [E:\Github Repos\HR System App\HrSystemApp\HrSystemApp.Infrastructure\HrSystemApp.Infrastructure.csproj]
+
+Build FAILED.
+
+E:\Github Repos\HR System App\HrSystemApp\HrSystemApp.Infrastructure\Services\WorkflowService.cs(142,74): warning CS8604: Possible null reference argument for parameter 'item' in 'bool List<string>.Contains(string item)'. [E:\Github Repos\HR System App\HrSystemApp\HrSystemApp.Infrastructure\HrSystemApp.Infrastructure.csproj]
+E:\Github Repos\HR System App\HrSystemApp\HrSystemApp.Infrastructure\Repositories\UserRepository.cs(171,31): warning CS8602: Dereference of a possibly null reference. [E:\Github Repos\HR System App\HrSystemApp\HrSystemApp.Infrastructure\HrSystemApp.Infrastructure.csproj]
+E:\Github Repos\HR System App\HrSystemApp\HrSystemApp.Infrastructure\Services\RequestSchemaValidator.cs(54,47): error CS0103: The name 'DomainErrors' does not exist in the current context [E:\Github Repos\HR System App\HrSystemApp\HrSystemApp.Infrastructure\HrSystemApp.Infrastructure.csproj]
+E:\Github Repos\HR System App\HrSystemApp\HrSystemApp.Infrastructure\Services\RequestSchemaValidator.cs(61,43): error CS0103: The name 'DomainErrors' does not exist in the current context [E:\Github Repos\HR System App\HrSystemApp\HrSystemApp.Infrastructure\HrSystemApp.Infrastructure.csproj]
+E:\Github Repos\HR System App\HrSystemApp\HrSystemApp.Infrastructure\Services\RequestSchemaValidator.cs(64,43): error CS0103: The name 'DomainErrors' does not exist in the current context [E:\Github Repos\HR System App\HrSystemApp\HrSystemApp.Infrastructure\HrSystemApp.Infrastructure.csproj]
+E:\Github Repos\HR System App\HrSystemApp\HrSystemApp.Infrastructure\Services\RequestSchemaValidator.cs(70,43): error CS0103: The name 'DomainErrors' does not exist in the current context [E:\Github Repos\HR System App\HrSystemApp\HrSystemApp.Infrastructure\HrSystemApp.Infrastructure.csproj]
+E:\Github Repos\HR System App\HrSystemApp\HrSystemApp.Infrastructure\Services\RequestSchemaValidator.cs(79,35): error CS0103: The name 'DomainErrors' does not exist in the current context [E:\Github Repos\HR System App\HrSystemApp\HrSystemApp.Infrastructure\HrSystemApp.Infrastructure.csproj]
+    2 Warning(s)
+    5 Error(s)
+
+Time Elapsed 00:00:01.86
+
+Workload updates are available. Run `dotnet workload list` for more information.

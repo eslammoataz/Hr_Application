@@ -14,16 +14,28 @@ var loggerConfiguration = new LoggerConfiguration()
     .ReadFrom.Configuration(builder.Configuration);
 
 // Add Seq if enabled in settings
-var seqSettings = new HrSystemApp.Application.Settings.SeqSettings();
-builder.Configuration.GetSection("SeqSettings").Bind(seqSettings);
+var seqEnabled = builder.Configuration.GetValue<bool>("SeqSettings:Enabled");
+var seqUrl = builder.Configuration.GetValue<string>("SeqSettings:ServerUrl") ?? "http://localhost:5341";
 
-if (seqSettings.Enabled)
+if (seqEnabled)
 {
-    var seqUrl = string.IsNullOrEmpty(seqSettings.ServerUrl) ? "http://localhost:5341" : seqSettings.ServerUrl;
     loggerConfiguration.WriteTo.Seq(seqUrl);
 }
 
 Log.Logger = loggerConfiguration.CreateLogger();
+
+// Verify Seq logging at startup
+if (seqEnabled)
+{
+    Log.Information("🚀 Seq Logging is ENABLED at {SeqUrl}", seqUrl);
+}
+else
+{
+    Log.Warning("⚠️ Seq Logging is DISABLED.");
+}
+
+// Enable Serilog SelfLog to output sink errors to the console
+Serilog.Debugging.SelfLog.Enable(msg => Console.WriteLine($"Serilog Error: {msg}"));
 
 builder.Host.UseSerilog();
 

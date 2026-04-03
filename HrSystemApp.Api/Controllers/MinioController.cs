@@ -1,5 +1,6 @@
 using HrSystemApp.Api.Authorization;
 using HrSystemApp.Application.Common;
+using HrSystemApp.Application.Errors;
 using HrSystemApp.Application.Interfaces.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -33,7 +34,7 @@ public class MinioController : BaseApiController
     {
         if (file == null || file.Length == 0)
             return BadRequest(new ApiResponse<object>(false, null,
-                new Error("General.ValidationError", "No file was uploaded.")));
+                DomainErrors.General.ValidationError with { Message = "No file was uploaded." }));
 
         await using var stream = file.OpenReadStream();
         var result = await _minioService.UploadAsync(

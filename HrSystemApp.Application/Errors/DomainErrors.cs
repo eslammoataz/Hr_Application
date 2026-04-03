@@ -216,6 +216,12 @@ public static class DomainErrors
 
         public static readonly Error NotFound = new(
             "General.NotFound", "The requested resource was not found.");
+
+        public static readonly Error ArgumentError = new(
+            "General.ArgumentError", "An invalid argument was provided.");
+
+        public static readonly Error InvalidOperation = new(
+            "General.InvalidOperation", "The requested operation is not valid in the current state.");
     }
 
     public static class ContactAdmin
@@ -307,6 +313,18 @@ public static class DomainErrors
 
         public static readonly Error RoleInUse = new(
             "Hierarchy.RoleInUse", "Cannot remove role because it is currently being used in one or more active Request Definitions.");
+    }
+
+    public static class Validation
+    {
+        public static readonly Error FieldRequired = new(
+            "Validation.FieldRequired", "A required field is missing.");
+
+        public static readonly Error InvalidType = new(
+            "Validation.InvalidType", "Field has an invalid data type.");
+
+        public static readonly Error Error = new(
+            "Validation.Error", "An error occurred during validation.");
     }
 }
 

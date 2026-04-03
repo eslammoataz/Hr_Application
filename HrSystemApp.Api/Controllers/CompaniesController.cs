@@ -147,6 +147,7 @@ public class CompaniesController : BaseApiController
     /// Gets the full organizational hierarchy for the current user's company.
     /// </summary>
     [HttpGet("hierarchy")]
+    [Authorize(Roles = Roles.Viewers)]
     public async Task<IActionResult> GetHierarchy(CancellationToken ct)
     {
         var result = await _sender.Send(new GetCompanyHierarchyQuery(), ct);
@@ -158,6 +159,7 @@ public class CompaniesController : BaseApiController
     /// Typically performed by a Company Admin or HR.
     /// </summary>
     [HttpPost("hierarchy/positions")]
+    [Authorize(Roles = Roles.CompanyAdmins)]
     public async Task<IActionResult> ConfigurePositions([FromBody] List<HierarchyPositionInputDto> positions,
         CancellationToken ct)
     {

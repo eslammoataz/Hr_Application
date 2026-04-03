@@ -65,7 +65,7 @@ public class ExceptionMiddleware
         {
             ValidationException validationEx => (
                 HttpStatusCode.BadRequest,
-                new Error(DomainErrors.General.ValidationError.Code, GetValidationMessage(validationEx))
+                DomainErrors.General.ValidationError with { Message = GetValidationMessage(validationEx) }
             ),
             UnauthorizedAccessException => (
                 HttpStatusCode.Unauthorized,
@@ -77,11 +77,11 @@ public class ExceptionMiddleware
             ),
             ArgumentException argEx => (
                 HttpStatusCode.BadRequest,
-                new Error("General.ArgumentError", argEx.Message)
+                DomainErrors.General.ArgumentError with { Message = argEx.Message }
             ),
             InvalidOperationException opEx => (
                 HttpStatusCode.BadRequest,
-                new Error("General.InvalidOperation", opEx.Message)
+                DomainErrors.General.InvalidOperation with { Message = opEx.Message }
             ),
             _ => (
                 HttpStatusCode.InternalServerError,
