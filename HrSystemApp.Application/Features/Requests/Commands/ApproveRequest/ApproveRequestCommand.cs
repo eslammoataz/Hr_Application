@@ -18,13 +18,20 @@ public class ApproveRequestCommandHandler : IRequestHandler<ApproveRequestComman
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
     private readonly IRequestStrategyFactory _strategyFactory;
+    private readonly INotificationService _notificationService;
     private readonly ILogger<ApproveRequestCommandHandler> _logger;
 
-    public ApproveRequestCommandHandler(IUnitOfWork unitOfWork, ICurrentUserService currentUserService, IRequestStrategyFactory strategyFactory, ILogger<ApproveRequestCommandHandler> logger)
+    public ApproveRequestCommandHandler(
+        IUnitOfWork unitOfWork,
+        ICurrentUserService currentUserService,
+        IRequestStrategyFactory strategyFactory,
+        INotificationService notificationService,
+        ILogger<ApproveRequestCommandHandler> logger)
     {
         _unitOfWork = unitOfWork;
         _currentUserService = currentUserService;
         _strategyFactory = strategyFactory;
+        _notificationService = notificationService;
         _logger = logger;
     }
 
@@ -101,6 +108,22 @@ public class ApproveRequestCommandHandler : IRequestHandler<ApproveRequestComman
         }
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        if (existingRequest.Status == RequestStatus.Approved)
+        {
+            try
+            {
+                await _notificationService.SendNotificationAsync(
+                    existingRequest.EmployeeId,
+                    "Request Approved",
+                    $"Your {existingRequest.RequestType} request has been approved.",
+                    NotificationType.RequestApproved);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Request {RequestId} approved, but notification delivery failed.", existingRequest.Id);
+            }
+        }
 
         return Result.Success(true);
     }

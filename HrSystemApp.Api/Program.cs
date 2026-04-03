@@ -1,8 +1,6 @@
-using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using HrSystemApp.Api;
 using HrSystemApp.Application;
-using HrSystemApp.Infrastructure.Data;
 using Serilog;
 using HrSystemApp.Api.Middleware;
 using HrSystemApp.Infrastructure;
@@ -102,21 +100,20 @@ builder.Services.AddCors(options =>
 var app = builder.Build();
 
 // ══════════════════════════════════════════════════════════════
-// Configure the HTTP request pipeline
+// Database Initialization (Migrations & Seeding)
 // ══════════════════════════════════════════════════════════════
+var applyMigrations = app.Configuration.GetValue("ApplyMigrationsOnStartup", true);
 
-// Apply migrations automatically in development
-if (app.Environment.IsDevelopment())
+Log.Information("🚀 Starting database initialization...");
+try
 {
-    using var scope = app.Services.CreateScope();
-    var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    await context.Database.MigrateAsync();
+    await app.Services.InitialiseDatabaseAsync(applyMigrations);
+    Log.Information("✅ Database initialization completed successfully.");
 }
-
-// Seed SuperAdmin on every startup (idempotent – skips if already exists)
-using (var scope = app.Services.CreateScope())
+catch (Exception ex)
 {
-    await SeedData.InitializeAsync(scope.ServiceProvider);
+    Log.Fatal(ex, "❌ Database initialization failed.");
+    throw; 
 }
 
 // Swagger UI (available in all environments for now)

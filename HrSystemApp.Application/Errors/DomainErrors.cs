@@ -176,6 +176,21 @@ public static class DomainErrors
             "LeaveBalance.Insufficient", "Insufficient leave balance.");
     }
 
+    public static class Notification
+    {
+        public static readonly Error NotFound = new(
+            "Notification.NotFound", "Notification was not found.");
+
+        public static readonly Error Forbidden = new(
+            "Notification.Forbidden", "You are not allowed to access this notification.");
+
+        public static readonly Error SendFailed = new(
+            "Notification.SendFailed", "Failed to send the notification.");
+
+        public static readonly Error TokenMissing = new(
+            "Notification.TokenMissing", "The target employee does not have a valid FCM token.");
+    }
+
     public static class Workflows
     {
         public static readonly Error NotFound = new(

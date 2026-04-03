@@ -107,17 +107,34 @@ public static class DependencyInjection
         services.AddScoped<IWorkflowService, WorkflowService>();
         services.AddScoped<IRequestSchemaValidator, RequestSchemaValidator>();
         services.AddScoped<IHierarchyService, HierarchyService>();
+        services.AddScoped<INotificationService, NotificationService>();
+        services.AddScoped<FcmSender>();
+        services.AddSingleton<IFcmClient, FirebaseFcmClient>();
 
         return services;
     }
 
     /// <summary>
-    /// Apply pending migrations automatically
+    /// Apply pending migrations (optional) and seed data automatically
     /// </summary>
-    public static async Task ApplyMigrationsAsync(IServiceProvider serviceProvider)
+    public static async Task InitialiseDatabaseAsync(this IServiceProvider serviceProvider, bool applyMigrations)
     {
         using var scope = serviceProvider.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        await context.Database.MigrateAsync();
+
+        try
+        {
+            if (applyMigrations && context.Database.IsNpgsql())
+            {
+                await context.Database.MigrateAsync();
+            }
+
+            await SeedData.InitializeAsync(scope.ServiceProvider);
+        }
+        catch (Exception ex)
+        {
+            // Log error (Serilog is configured in Api, so we can use static Log or just throw)
+            throw new Exception("An error occurred while migrating or seeding the database.", ex);
+        }
     }
 }

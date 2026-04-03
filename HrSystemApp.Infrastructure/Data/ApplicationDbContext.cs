@@ -34,6 +34,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<LeaveBalance> LeaveBalances => Set<LeaveBalance>();
     public DbSet<ProfileUpdateRequest> ProfileUpdateRequests => Set<ProfileUpdateRequest>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+    public DbSet<Notification> Notifications => Set<Notification>();
 
     // Requests Feature
     public DbSet<RequestDefinition> RequestDefinitions => Set<RequestDefinition>();
