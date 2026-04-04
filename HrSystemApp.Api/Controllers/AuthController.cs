@@ -17,7 +17,6 @@ using HrSystemApp.Application.Features.Auth.Commands.RefreshToken;
 using HrSystemApp.Application.Features.Auth.Commands.RevokeToken;
 using HrSystemApp.Application.Features.Auth.Commands.RevokeAllTokens;
 using HrSystemApp.Application.Features.Auth.Queries.GetUserTokens;
-using HrSystemApp.Domain.Enums;
 
 
 namespace HrSystemApp.Api.Controllers;
@@ -81,7 +80,10 @@ public class AuthController : BaseApiController
         if (string.IsNullOrEmpty(userId))
             return Unauthorized();
 
-        var result = await _sender.Send(new LogoutUserCommand(userId, request.RefreshToken, HttpContext.Connection.RemoteIpAddress?.ToString()), cancellationToken);
+        var result =
+            await _sender.Send(
+                new LogoutUserCommand(userId, request.RefreshToken, HttpContext.Connection.RemoteIpAddress?.ToString()),
+                cancellationToken);
         return HandleResult(result);
     }
 
@@ -90,9 +92,13 @@ public class AuthController : BaseApiController
     [AllowAnonymous]
     [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> Refresh([FromBody] RefreshTokenRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> Refresh([FromBody] RefreshTokenRequest request,
+        CancellationToken cancellationToken)
     {
-        var result = await _sender.Send(new RefreshTokenCommand(request.RefreshToken, HttpContext.Connection.RemoteIpAddress?.ToString()), cancellationToken);
+        var result =
+            await _sender.Send(
+                new RefreshTokenCommand(request.RefreshToken, HttpContext.Connection.RemoteIpAddress?.ToString()),
+                cancellationToken);
         return HandleResult(result);
     }
 
@@ -103,7 +109,10 @@ public class AuthController : BaseApiController
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Revoke([FromBody] RevokeTokenRequest request, CancellationToken cancellationToken)
     {
-        var result = await _sender.Send(new RevokeTokenCommand(request.RefreshToken, HttpContext.Connection.RemoteIpAddress?.ToString()), cancellationToken);
+        var result =
+            await _sender.Send(
+                new RevokeTokenCommand(request.RefreshToken, HttpContext.Connection.RemoteIpAddress?.ToString()),
+                cancellationToken);
         return HandleResult(result);
     }
 
@@ -118,7 +127,9 @@ public class AuthController : BaseApiController
         if (string.IsNullOrEmpty(userId))
             return Unauthorized();
 
-        var result = await _sender.Send(new RevokeAllTokensCommand(userId, HttpContext.Connection.RemoteIpAddress?.ToString()), cancellationToken);
+        var result =
+            await _sender.Send(new RevokeAllTokensCommand(userId, HttpContext.Connection.RemoteIpAddress?.ToString()),
+                cancellationToken);
         return HandleResult(result);
     }
 
