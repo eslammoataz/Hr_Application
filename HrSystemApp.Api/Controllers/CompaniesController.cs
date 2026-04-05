@@ -4,10 +4,12 @@ using HrSystemApp.Domain.Enums;
 using HrSystemApp.Application.DTOs.Companies;
 using HrSystemApp.Application.Features.Companies.Commands.CreateCompany;
 using HrSystemApp.Application.Features.Companies.Commands.CreateCompanyLocation;
+using HrSystemApp.Application.Features.Companies.Commands.DeleteCompanyLocation;
 using HrSystemApp.Application.Features.Companies.Commands.UpdateCompany;
 using HrSystemApp.Application.Features.Companies.Commands.ChangeCompanyStatus;
 using HrSystemApp.Application.Features.Companies.Queries.GetCompanies;
 using HrSystemApp.Application.Features.Companies.Queries.GetCompanyById;
+using HrSystemApp.Application.Features.Companies.Queries.GetCompanyLocations;
 using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -66,6 +68,38 @@ public class CompaniesController : BaseApiController
             request.Longitude);
 
         var result = await _sender.Send(command, cancellationToken);
+        return HandleResult(result);
+    }
+
+    /// <summary>Delete a company location.</summary>
+    [HttpDelete("superadmin/locations/{id:guid}")]
+    [Authorize(Roles = Roles.SuperAdminOnly)]
+    [ProducesResponseType(typeof(Guid), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteLocation(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        var command = new DeleteCompanyLocationCommand(id);
+        var result = await _sender.Send(command, cancellationToken);
+        return HandleResult(result);
+    }
+
+    /// <summary>Get all locations for a company.</summary>
+    [HttpGet("superadmin/{companyId:guid}/locations")]
+    [Authorize(Roles = Roles.SuperAdminOnly)]
+    [ProducesResponseType(typeof(IReadOnlyList<CompanyLocationResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetLocations(
+        Guid companyId,
+        CancellationToken cancellationToken)
+    {
+        var query = new GetCompanyLocationsQuery(companyId);
+        var result = await _sender.Send(query, cancellationToken);
         return HandleResult(result);
     }
 
