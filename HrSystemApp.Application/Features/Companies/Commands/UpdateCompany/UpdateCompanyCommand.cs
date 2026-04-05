@@ -9,5 +9,4 @@ public record UpdateCompanyCommand(
     Guid Id,
     string CompanyName,
     string? CompanyLogoUrl,
-    int YearlyVacationDays,
-    CompanyStatus Status) : IRequest<Result<CompanyResponse>>;
+    int YearlyVacationDays) : IRequest<Result<CompanyResponse>>;

@@ -8,5 +8,4 @@ namespace HrSystemApp.Application.Features.Companies.Commands.UpdateMyCompany;
 public record UpdateMyCompanyCommand(
     string CompanyName,
     string? CompanyLogoUrl,
-    int YearlyVacationDays,
-    CompanyStatus Status) : IRequest<Result<CompanyResponse>>;
+    int YearlyVacationDays) : IRequest<Result<CompanyResponse>>;

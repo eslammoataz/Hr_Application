@@ -43,7 +43,6 @@ public class UpdateCompanyCommandHandler : IRequestHandler<UpdateCompanyCommand,
         company.CompanyName = request.CompanyName;
         company.CompanyLogoUrl = request.CompanyLogoUrl;
         company.YearlyVacationDays = request.YearlyVacationDays;
-        company.Status = request.Status;
 
         await _unitOfWork.Companies.UpdateAsync(company, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);

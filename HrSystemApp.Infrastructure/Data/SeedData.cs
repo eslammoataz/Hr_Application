@@ -3,8 +3,8 @@ using HrSystemApp.Domain.Enums;
 using HrSystemApp.Domain.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
-
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 
 namespace HrSystemApp.Infrastructure.Data;
 
@@ -28,11 +28,15 @@ public static class SeedData
         }
 
         // Create SuperAdmin if not exists
-        var superAdminSettings = new HrSystemApp.Application.Settings.SuperAdminSettings();
+        var superAdminSettings = new Application.Settings.SuperAdminSettings();
         configuration.GetSection("SuperAdminSettings").Bind(superAdminSettings);
 
-        var superAdminEmail = string.IsNullOrEmpty(superAdminSettings.Email) ? "superadmin@hrms.com" : superAdminSettings.Email;
-        var superAdminPassword = string.IsNullOrEmpty(superAdminSettings.Password) ? "SuperAdmin@123" : superAdminSettings.Password;
+        var superAdminEmail = string.IsNullOrEmpty(superAdminSettings.Email)
+            ? "superadmin@hrms.com"
+            : superAdminSettings.Email;
+        var superAdminPassword = string.IsNullOrEmpty(superAdminSettings.Password)
+            ? "SuperAdmin@123"
+            : superAdminSettings.Password;
 
         var existingAdmin = await userManager.FindByEmailAsync(superAdminEmail);
 
@@ -68,5 +72,104 @@ public static class SeedData
             if (!hasRole)
                 await userManager.AddToRoleAsync(existingAdmin, UserRole.SuperAdmin.ToString());
         }
+
+        var context = serviceProvider.GetRequiredService<ApplicationDbContext>();
+
+        // Seed a target Company
+        var companyName = "HRMS";
+        var company = context.Companies.FirstOrDefault(c => c.CompanyName == companyName);
+        if (company == null)
+        {
+            company = new Company
+            {
+                Id = Guid.NewGuid(),
+                CompanyName = companyName,
+                YearlyVacationDays = 21,
+                Status = CompanyStatus.Active,
+                CreatedAt = DateTime.UtcNow
+            };
+            context.Companies.Add(company);
+
+            var location = new CompanyLocation
+            {
+                Id = Guid.NewGuid(),
+                CompanyId = company.Id,
+                LocationName = "Main Branch",
+                Address = "123 Innovation Drive",
+                CreatedAt = DateTime.UtcNow
+            };
+            context.CompanyLocations.Add(location);
+
+            var department = new Department
+            {
+                Id = Guid.NewGuid(),
+                CompanyId = company.Id,
+                Name = "Engineering",
+                CreatedAt = DateTime.UtcNow
+            };
+            context.Departments.Add(department);
+
+            await context.SaveChangesAsync();
+
+            async Task SeedEmployeeUser(string name, string roleStr, string password, string emailPrefix, string phoneNumber)
+            {
+                var email = $"{emailPrefix}@hrms.com";
+                if (await userManager.FindByEmailAsync(email) == null)
+                {
+                    var employee = new Employee
+                    {
+                        Id = Guid.NewGuid(),
+                        CompanyId = company.Id,
+                        DepartmentId = department.Id,
+                        CompanyLocationId = location.Id,
+                        Email = email,
+                        FullName = name,
+                        PhoneNumber = phoneNumber,
+                        EmployeeCode = "EMP" + new Random().Next(1000, 9999),
+                        EmploymentStatus = EmploymentStatus.Active
+                    };
+                    context.Employees.Add(employee);
+                    await context.SaveChangesAsync();
+
+                    var user = new ApplicationUser
+                    {
+                        UserName = email,
+                        Email = email,
+                        Name = name,
+                        PhoneNumber = phoneNumber,
+                        EmailConfirmed = true,
+                        IsActive = true,
+                        MustChangePassword = false,
+                        EmployeeId = employee.Id
+                    };
+                    var res = await userManager.CreateAsync(user, password);
+                    if (res.Succeeded)
+                    {
+                        await userManager.AddToRoleAsync(user, roleStr);
+                        employee.UserId = user.Id;
+                        await context.SaveChangesAsync();
+                    }
+                }
+            }
+
+            await SeedEmployeeUser("Admin User", nameof(UserRole.CompanyAdmin), "Pass@123", "admin", "1234567890");
+            await SeedEmployeeUser("HR User", nameof(UserRole.HR), "Pass@123", "hr", "1234567891");
+
+            for (int i = 1; i <= 4; i++)
+            {
+                await SeedEmployeeUser($"Employee {i}", nameof(UserRole.Employee), "Pass@123", $"emp.{i}", $"123456789{i + 1}");
+            }
+        }
+
+        var logger = serviceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("SeedData");
+        logger.LogInformation("================== TEST CREDENTIALS ==================");
+        logger.LogInformation($"SuperAdmin   => Email: {superAdminEmail} | Password: {superAdminPassword}");
+        logger.LogInformation($"CompanyAdmin => Email: admin@hrms.com | Password: Pass@123 | Phone: 1234567890");
+        logger.LogInformation($"HR Manager   => Email: hr@hrms.com | Password: Pass@123 | Phone: 1234567891");
+        for (int i = 1; i <= 4; i++)
+        {
+            logger.LogInformation($"Employee {i}   => Email: emp.{i}@hrms.com | Password: Pass@123 | Phone: 123456789{i + 1}");
+        }
+        logger.LogInformation("======================================================");
     }
 }
