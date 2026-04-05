@@ -39,8 +39,11 @@ public class GetRequestDefinitionsQueryHandler : IRequestHandler<GetRequestDefin
         Guid targetCompanyId;
 
         // 1. Resolve Company ID (SuperAdmin can specify, CompanyAdmin uses their own)
-        if (_currentUserService.Role == "SuperAdmin" && request.CompanyId.HasValue)
+        if (_currentUserService.Role == nameof(UserRole.SuperAdmin))
         {
+            if (!request.CompanyId.HasValue || request.CompanyId.Value == Guid.Empty)
+                return Result.Failure<List<RequestDefinitionDto>>(DomainErrors.General.ArgumentError);
+
             targetCompanyId = request.CompanyId.Value;
         }
         else

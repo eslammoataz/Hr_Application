@@ -16,7 +16,16 @@ public class RequestSchemaValidator : IRequestSchemaValidator
     public RequestSchemaValidator(IHostEnvironment environment, ILogger<RequestSchemaValidator> logger)
     {
         _logger = logger;
-        var schemaPath = Path.Combine(environment.ContentRootPath, "..", "HrSystemApp.Application", "Common", "RequestSchemas.json");
+        
+        // Primary path: Deployment (copied to output directory)
+        var schemaPath = Path.Combine(AppContext.BaseDirectory, "Common", "RequestSchemas.json");
+        
+        // Fallback path: Local Development (points back to Application project)
+        if (!File.Exists(schemaPath))
+        {
+            schemaPath = Path.Combine(environment.ContentRootPath, "..", "HrSystemApp.Application", "Common", "RequestSchemas.json");
+        }
+
         if (File.Exists(schemaPath))
         {
             var jsonString = File.ReadAllText(schemaPath);

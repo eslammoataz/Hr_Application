@@ -33,6 +33,7 @@ public class EmployeeRepository : Repository<Employee>, IEmployeeRepository
             .Select(e => new EmployeeProfileDto
             {
                 Id = e.Id,
+                CompanyId = e.CompanyId,
                 EmployeeCode = e.EmployeeCode,
                 FullName = e.FullName,
                 Email = e.Email,

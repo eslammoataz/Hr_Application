@@ -11,7 +11,7 @@ namespace HrSystemApp.Application.Features.Requests.Commands.Admin;
 
 public record CreateRequestDefinitionCommand : IRequest<Result<Guid>>
 {
-    public Guid CompanyId { get; set; }
+    public Guid? CompanyId { get; set; }
     public RequestType RequestType { get; set; }
     public List<WorkflowStepDto> Steps { get; set; } = new();
 }
@@ -36,36 +36,42 @@ public class CreateRequestDefinitionCommandHandler : IRequestHandler<CreateReque
 
     public async Task<Result<Guid>> Handle(CreateRequestDefinitionCommand request, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Attempting to create Request Definition for Company {CompanyId} (Type: {Type}).", 
-            request.CompanyId, request.RequestType);
+        Guid targetCompanyId;
 
-        var userId = _currentUserService.UserId;
-        if (string.IsNullOrEmpty(userId))
-            return Result.Failure<Guid>(DomainErrors.Auth.Unauthorized);
-
-        var employee = await _unitOfWork.Employees.GetByUserIdAsync(userId, cancellationToken);
-        if (employee == null)
-            return Result.Failure<Guid>(DomainErrors.Employee.NotFound);
-
-        // Security check: Must belong to the company
-        if (request.CompanyId != employee.CompanyId)
+        if (_currentUserService.Role == nameof(UserRole.SuperAdmin))
         {
-            _logger.LogWarning("Unauthorized create attempt for Company {TargetId} by user {UserId} from different company {CompanyId}.", 
-                request.CompanyId, userId, employee.CompanyId);
-            return Result.Failure<Guid>(DomainErrors.Auth.Unauthorized);
+            if (!request.CompanyId.HasValue || request.CompanyId.Value == Guid.Empty)
+                return Result.Failure<Guid>(DomainErrors.General.ArgumentError); 
+                
+            targetCompanyId = request.CompanyId.Value;
+        }
+        else
+        {
+            var userId = _currentUserService.UserId;
+            if (string.IsNullOrEmpty(userId))
+                return Result.Failure<Guid>(DomainErrors.Auth.Unauthorized);
+
+            var employee = await _unitOfWork.Employees.GetByUserIdAsync(userId, cancellationToken);
+            if (employee == null)
+                return Result.Failure<Guid>(DomainErrors.Employee.NotFound);
+
+            targetCompanyId = employee.CompanyId;
         }
 
+        _logger.LogInformation("Attempting to create Request Definition for Company {CompanyId} (Type: {Type}).", 
+            targetCompanyId, request.RequestType);
+
         // 1. Check if already exists
-        var existing = await _unitOfWork.RequestDefinitions.GetByTypeAsync(request.CompanyId, request.RequestType, cancellationToken);
+        var existing = await _unitOfWork.RequestDefinitions.GetByTypeAsync(targetCompanyId, request.RequestType, cancellationToken);
         if (existing != null) 
         {
             _logger.LogWarning("CreateRequestDefinition failed: Definition already exists for Company {CompanyId}, Type {Type}.", 
-                request.CompanyId, request.RequestType);
+                targetCompanyId, request.RequestType);
             return Result.Failure<Guid>(DomainErrors.Requests.DefinitionNotFound);
         }
 
         // 2. Validate hierarchy roles and sort order
-        var hierarchyPositions = await _unitOfWork.HierarchyPositions.GetByCompanyAsync(request.CompanyId, cancellationToken);
+        var hierarchyPositions = await _unitOfWork.HierarchyPositions.GetByCompanyAsync(targetCompanyId, cancellationToken);
         var validationResult = WorkflowValidationHelper.ValidateWorkflowSteps(request.Steps, hierarchyPositions);
         if (validationResult.IsFailure)
         {
@@ -76,7 +82,7 @@ public class CreateRequestDefinitionCommandHandler : IRequestHandler<CreateReque
         // 3. Create Definition
         var definition = new RequestDefinition
         {
-            CompanyId = request.CompanyId,
+            CompanyId = targetCompanyId,
             RequestType = request.RequestType,
             IsActive = true,
             WorkflowSteps = request.Steps.Select(s => new RequestWorkflowStep
