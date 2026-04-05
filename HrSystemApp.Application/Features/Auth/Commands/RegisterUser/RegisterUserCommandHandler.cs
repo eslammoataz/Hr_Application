@@ -44,7 +44,8 @@ public class RegisterUserCommandHandler : IRequestHandler<RegisterUserCommand, R
                 IsActive = true
             };
 
-            var success = await _unitOfWork.Users.CreateUserAsync(user, request.Password, request.Role, cancellationToken);
+            var success =
+                await _unitOfWork.Users.CreateUserAsync(user, request.Password, request.Role, cancellationToken);
 
             if (!success)
                 return Result.Failure<AuthResponse>(DomainErrors.General.ServerError);
@@ -66,7 +67,9 @@ public class RegisterUserCommandHandler : IRequestHandler<RegisterUserCommand, R
                 Role: roles.FirstOrDefault() ?? string.Empty,
                 EmployeeId: user.EmployeeId,
                 MustChangePassword: user.MustChangePassword,
-                ExpiresAt: expiresAt
+                ExpiresAt: expiresAt,
+                PhoneNumber: user.PhoneNumber,
+                Language: user.Language
             ));
         }
         catch (Exception ex)

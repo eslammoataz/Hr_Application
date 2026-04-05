@@ -74,7 +74,9 @@ public class ForceChangePasswordCommandHandler : IRequestHandler<ForceChangePass
             Role: roles.FirstOrDefault() ?? string.Empty,
             EmployeeId: user.EmployeeId,
             MustChangePassword: false,
-            ExpiresAt: expiresAt
+            ExpiresAt: expiresAt,
+            PhoneNumber: user.PhoneNumber,
+            Language: user.Language
         ));
     }
 }

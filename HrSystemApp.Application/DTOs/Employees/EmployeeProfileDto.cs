@@ -3,6 +3,7 @@ namespace HrSystemApp.Application.DTOs.Employees;
 public class EmployeeProfileDto
 {
     public Guid Id { get; set; }
+    public Guid CompanyId { get; set; }
     public string EmployeeCode { get; set; } = string.Empty;
     public string FullName { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;

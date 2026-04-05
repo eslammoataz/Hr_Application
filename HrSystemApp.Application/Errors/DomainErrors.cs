@@ -237,6 +237,9 @@ public static class DomainErrors
 
         public static readonly Error InvalidOperation = new(
             "General.InvalidOperation", "The requested operation is not valid in the current state.");
+
+        public static readonly Error Forbidden = new(
+            "General.Forbidden", "You are not authorized to access this resource.");
     }
 
     public static class ContactAdmin

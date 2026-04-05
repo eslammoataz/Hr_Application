@@ -3,10 +3,9 @@ using HrSystemApp.Application.DTOs.Companies;
 using HrSystemApp.Domain.Enums;
 using MediatR;
 
-namespace HrSystemApp.Application.Features.Companies.Commands.UpdateCompany;
+namespace HrSystemApp.Application.Features.Companies.Commands.UpdateMyCompany;
 
-public record UpdateCompanyCommand(
-    Guid Id,
+public record UpdateMyCompanyCommand(
     string CompanyName,
     string? CompanyLogoUrl,
     int YearlyVacationDays) : IRequest<Result<CompanyResponse>>;

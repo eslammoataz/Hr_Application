@@ -18,7 +18,9 @@ public record AuthResponse(
     string Role,
     Guid? EmployeeId,
     bool MustChangePassword,
-    DateTime? ExpiresAt);
+    DateTime? ExpiresAt,
+    string? PhoneNumber,
+    string? Language);
 
 public record ChangePasswordRequest(
     string CurrentPassword,
