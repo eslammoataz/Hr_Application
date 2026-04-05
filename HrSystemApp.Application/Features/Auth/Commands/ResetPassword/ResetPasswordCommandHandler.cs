@@ -128,7 +128,9 @@ public class ResetPasswordCommandHandler : IRequestHandler<ResetPasswordCommand,
             Role: roles.FirstOrDefault() ?? string.Empty,
             EmployeeId: user.EmployeeId,
             MustChangePassword: user.MustChangePassword,
-            ExpiresAt: expiresAt
+            ExpiresAt: expiresAt,
+            PhoneNumber: user.PhoneNumber,
+            Language: user.Language
         ));
     }
 }

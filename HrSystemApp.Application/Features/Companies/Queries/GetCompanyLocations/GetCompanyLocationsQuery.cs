@@ -4,4 +4,4 @@ using HrSystemApp.Application.DTOs.Companies;
 
 namespace HrSystemApp.Application.Features.Companies.Queries.GetCompanyLocations;
 
-public record GetCompanyLocationsQuery(Guid CompanyId) : IRequest<Result<IReadOnlyList<CompanyLocationResponse>>>;
+public record GetCompanyLocationsQuery(Guid? CompanyId = null) : IRequest<Result<IReadOnlyList<CompanyLocationResponse>>>;

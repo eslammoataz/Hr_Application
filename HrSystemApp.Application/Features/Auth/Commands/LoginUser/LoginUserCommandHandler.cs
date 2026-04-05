@@ -92,7 +92,9 @@ public class LoginUserCommandHandler : IRequestHandler<LoginUserCommand, Result<
                 Role: roles.FirstOrDefault() ?? string.Empty,
                 EmployeeId: user.EmployeeId,
                 MustChangePassword: true,
-                ExpiresAt: null
+                ExpiresAt: null,
+                PhoneNumber: user.PhoneNumber,
+                Language: user.Language
             ));
         }
 
@@ -131,7 +133,9 @@ public class LoginUserCommandHandler : IRequestHandler<LoginUserCommand, Result<
             Role: roles.FirstOrDefault() ?? string.Empty,
             EmployeeId: user.EmployeeId,
             MustChangePassword: false,
-            ExpiresAt: expiresAt
+            ExpiresAt: expiresAt,
+            PhoneNumber: user.PhoneNumber,
+            Language: user.Language
         ));
     }
 }
