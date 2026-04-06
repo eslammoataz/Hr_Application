@@ -16,6 +16,19 @@ public class CompanyConfiguration : IEntityTypeConfiguration<Company>
         builder.Property(c => c.CompanyLogoUrl)
             .HasMaxLength(500);
 
+        builder.Property(c => c.StartTime)
+            .IsRequired();
+
+        builder.Property(c => c.EndTime)
+            .IsRequired();
+
+        builder.Property(c => c.GraceMinutes)
+            .IsRequired();
+
+        builder.Property(c => c.TimeZoneId)
+            .HasMaxLength(100)
+            .IsRequired();
+
         builder.Property(c => c.CreatedById)
             .HasMaxLength(450);
 

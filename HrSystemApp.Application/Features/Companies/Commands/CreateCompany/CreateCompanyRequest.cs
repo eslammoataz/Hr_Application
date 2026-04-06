@@ -3,4 +3,8 @@ namespace HrSystemApp.Application.Features.Companies.Commands.CreateCompany;
 public record CreateCompanyRequest(
     string CompanyName,
     string? CompanyLogoUrl,
-    int YearlyVacationDays);
+    int YearlyVacationDays,
+    TimeSpan StartTime,
+    TimeSpan EndTime,
+    int GraceMinutes,
+    string TimeZoneId);

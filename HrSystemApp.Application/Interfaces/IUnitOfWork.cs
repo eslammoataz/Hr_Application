@@ -21,6 +21,10 @@ public interface IUnitOfWork : IAsyncDisposable
     IRequestDefinitionRepository RequestDefinitions { get; }
     IRequestRepository Requests { get; }
     ICompanyHierarchyPositionRepository HierarchyPositions { get; }
+    IAttendanceRepository Attendances { get; }
+    IAttendanceLogRepository AttendanceLogs { get; }
+    IAttendanceReminderLogRepository AttendanceReminderLogs { get; }
+    IAttendanceAdjustmentRepository AttendanceAdjustments { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     Task BeginTransactionAsync(CancellationToken cancellationToken = default);

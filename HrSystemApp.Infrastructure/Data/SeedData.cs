@@ -85,6 +85,10 @@ public static class SeedData
                 Id = Guid.NewGuid(),
                 CompanyName = companyName,
                 YearlyVacationDays = 21,
+                StartTime = new TimeSpan(9, 0, 0),
+                EndTime = new TimeSpan(17, 0, 0),
+                GraceMinutes = 15,
+                TimeZoneId = "UTC",
                 Status = CompanyStatus.Active,
                 CreatedAt = DateTime.UtcNow
             };
@@ -158,6 +162,38 @@ public static class SeedData
             for (int i = 1; i <= 4; i++)
             {
                 await SeedEmployeeUser($"Employee {i}", nameof(UserRole.Employee), "Pass@123", $"emp.{i}", $"123456789{i + 1}");
+            }
+        }
+        else
+        {
+            var needsUpdate = false;
+            if (company.StartTime == default)
+            {
+                company.StartTime = new TimeSpan(9, 0, 0);
+                needsUpdate = true;
+            }
+
+            if (company.EndTime == default)
+            {
+                company.EndTime = new TimeSpan(17, 0, 0);
+                needsUpdate = true;
+            }
+
+            if (company.GraceMinutes <= 0)
+            {
+                company.GraceMinutes = 15;
+                needsUpdate = true;
+            }
+
+            if (string.IsNullOrWhiteSpace(company.TimeZoneId))
+            {
+                company.TimeZoneId = "UTC";
+                needsUpdate = true;
+            }
+
+            if (needsUpdate)
+            {
+                await context.SaveChangesAsync();
             }
         }
 

@@ -12,5 +12,12 @@ public class CreateCompanyCommandValidator : AbstractValidator<CreateCompanyComm
 
         RuleFor(x => x.YearlyVacationDays)
             .NotNull().WithMessage("Yearly vacation days is required.");
+
+        RuleFor(x => x.GraceMinutes)
+            .GreaterThanOrEqualTo(0).WithMessage("Grace minutes must be zero or positive.");
+
+        RuleFor(x => x.TimeZoneId)
+            .NotEmpty().WithMessage("Time zone id is required.")
+            .MaximumLength(100).WithMessage("Time zone id cannot exceed 100 characters.");
     }
 }

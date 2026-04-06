@@ -9,4 +9,8 @@ public record UpdateCompanyCommand(
     Guid Id,
     string CompanyName,
     string? CompanyLogoUrl,
-    int YearlyVacationDays) : IRequest<Result<CompanyResponse>>;
+    int YearlyVacationDays,
+    TimeSpan StartTime,
+    TimeSpan EndTime,
+    int GraceMinutes,
+    string TimeZoneId) : IRequest<Result<CompanyResponse>>;

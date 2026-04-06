@@ -75,6 +75,10 @@ public static class DependencyInjection
         services.AddScoped<IRequestDefinitionRepository, RequestDefinitionRepository>();
         services.AddScoped<IRequestRepository, RequestRepository>();
         services.AddScoped<ICompanyHierarchyPositionRepository, CompanyHierarchyPositionRepository>();
+        services.AddScoped<IAttendanceRepository, AttendanceRepository>();
+        services.AddScoped<IAttendanceLogRepository, AttendanceLogRepository>();
+        services.AddScoped<IAttendanceReminderLogRepository, AttendanceReminderLogRepository>();
+        services.AddScoped<IAttendanceAdjustmentRepository, AttendanceAdjustmentRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         services.Configure<EmailSettings>(configuration.GetSection("EmailSettings"));
@@ -110,6 +114,10 @@ public static class DependencyInjection
         services.AddScoped<IRequestSchemaValidator, RequestSchemaValidator>();
         services.AddScoped<IHierarchyService, HierarchyService>();
         services.AddScoped<INotificationService, NotificationService>();
+        services.AddScoped<IAttendanceRulesProvider, AttendanceRulesProvider>();
+        services.AddScoped<IAttendanceReminderService, AttendanceReminderService>();
+        services.AddScoped<IAutoClockOutService, AutoClockOutService>();
+        services.AddScoped<AttendanceRecurringJobs>();
         services.AddScoped<FcmSender>();
         services.AddSingleton<IFcmClient, FirebaseFcmClient>();
 

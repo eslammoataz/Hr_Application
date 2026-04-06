@@ -38,7 +38,14 @@ public class AcceptContactAdminRequestHandler : IRequestHandler<AcceptContactAdm
 
         // 3. Create Company
         var companyResult = await _sender.Send(
-            new CreateCompanyCommand(contactRequest.CompanyName, null, 21),
+            new CreateCompanyCommand(
+                contactRequest.CompanyName,
+                null,
+                21,
+                new TimeSpan(9, 0, 0),
+                new TimeSpan(17, 0, 0),
+                15,
+                "UTC"),
             cancellationToken);
 
         if (companyResult.IsFailure)

@@ -30,6 +30,10 @@ public class UnitOfWork : IUnitOfWork
     private IRequestDefinitionRepository? _requestDefinitionRepository;
     private IRequestRepository? _requestRepository;
     private ICompanyHierarchyPositionRepository? _hierarchyPositionRepository;
+    private IAttendanceRepository? _attendanceRepository;
+    private IAttendanceLogRepository? _attendanceLogRepository;
+    private IAttendanceReminderLogRepository? _attendanceReminderLogRepository;
+    private IAttendanceAdjustmentRepository? _attendanceAdjustmentRepository;
 
 
     public UnitOfWork(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
@@ -79,6 +83,18 @@ public class UnitOfWork : IUnitOfWork
 
     public ICompanyHierarchyPositionRepository HierarchyPositions =>
         _hierarchyPositionRepository ??= new CompanyHierarchyPositionRepository(_context);
+
+    public IAttendanceRepository Attendances =>
+        _attendanceRepository ??= new AttendanceRepository(_context);
+
+    public IAttendanceLogRepository AttendanceLogs =>
+        _attendanceLogRepository ??= new AttendanceLogRepository(_context);
+
+    public IAttendanceReminderLogRepository AttendanceReminderLogs =>
+        _attendanceReminderLogRepository ??= new AttendanceReminderLogRepository(_context);
+
+    public IAttendanceAdjustmentRepository AttendanceAdjustments =>
+        _attendanceAdjustmentRepository ??= new AttendanceAdjustmentRepository(_context);
 
 
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

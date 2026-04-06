@@ -7,6 +7,10 @@ public record CompanyResponse(
     string CompanyName,
     string? CompanyLogoUrl,
     int YearlyVacationDays,
+    TimeSpan StartTime,
+    TimeSpan EndTime,
+    int GraceMinutes,
+    string TimeZoneId,
     string Status,
     IReadOnlyList<CompanyLocationResponse> Locations,
     IReadOnlyList<DepartmentResponse> Departments);
