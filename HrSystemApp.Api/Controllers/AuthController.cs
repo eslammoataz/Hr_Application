@@ -311,7 +311,7 @@ public class AuthController : BaseApiController
             Name = HttpContext.User.FindFirstValue("name"),
             Role = HttpContext.User.FindFirstValue("role"),
             EmployeeId = HttpContext.User.FindFirstValue("employeeId"),
-            Phone = HttpContext.User.FindFirstValue("phone")
+            PhoneNumber = HttpContext.User.FindFirstValue("phone")
         });
     }
 }
