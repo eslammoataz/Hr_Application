@@ -3,6 +3,7 @@ public enum AttendanceStatus
 {
     Present,
     Late,
+    EarlyLeave,
     Absent,
     HalfDay,
     OnLeave,

@@ -191,6 +191,27 @@ public static class DomainErrors
             "Notification.TokenMissing", "The target employee does not have a valid FCM token.");
     }
 
+    public static class Attendance
+    {
+        public static readonly Error NotFound = new(
+            "Attendance.NotFound", "Attendance record was not found.");
+
+        public static readonly Error AlreadyClockedIn = new(
+            "Attendance.AlreadyClockedIn", "Employee already has an open attendance record.");
+
+        public static readonly Error ClockInRequired = new(
+            "Attendance.ClockInRequired", "Employee must clock in before clocking out.");
+
+        public static readonly Error AlreadyClockedOut = new(
+            "Attendance.AlreadyClockedOut", "Employee has already clocked out.");
+
+        public static readonly Error InvalidClockOut = new(
+            "Attendance.InvalidClockOut", "Clock-out time must be after clock-in time.");
+
+        public static readonly Error OverrideReasonRequired = new(
+            "Attendance.OverrideReasonRequired", "Override reason is required.");
+    }
+
     public static class Workflows
     {
         public static readonly Error NotFound = new(

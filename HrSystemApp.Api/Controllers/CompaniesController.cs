@@ -43,7 +43,11 @@ public class CompaniesController : BaseApiController
         var command = new CreateCompanyCommand(
             request.CompanyName,
             request.CompanyLogoUrl,
-            request.YearlyVacationDays);
+            request.YearlyVacationDays,
+            request.StartTime,
+            request.EndTime,
+            request.GraceMinutes,
+            request.TimeZoneId);
 
         var result = await _sender.Send(command, cancellationToken);
         return HandleResult(result);
@@ -102,7 +106,11 @@ public class CompaniesController : BaseApiController
             id,
             request.CompanyName,
             request.CompanyLogoUrl,
-            request.YearlyVacationDays);
+            request.YearlyVacationDays,
+            request.StartTime,
+            request.EndTime,
+            request.GraceMinutes,
+            request.TimeZoneId);
 
         var result = await _sender.Send(command, cancellationToken);
         return HandleResult(result);
@@ -139,7 +147,11 @@ public class CompaniesController : BaseApiController
         var command = new UpdateMyCompanyCommand(
             request.CompanyName,
             request.CompanyLogoUrl,
-            request.YearlyVacationDays);
+            request.YearlyVacationDays,
+            request.StartTime,
+            request.EndTime,
+            request.GraceMinutes,
+            request.TimeZoneId);
 
         var result = await _sender.Send(command, cancellationToken);
         return HandleResult(result);

@@ -35,6 +35,10 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<ProfileUpdateRequest> ProfileUpdateRequests => Set<ProfileUpdateRequest>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<Notification> Notifications => Set<Notification>();
+    public DbSet<Attendance> Attendances => Set<Attendance>();
+    public DbSet<AttendanceLog> AttendanceLogs => Set<AttendanceLog>();
+    public DbSet<AttendanceReminderLog> AttendanceReminderLogs => Set<AttendanceReminderLog>();
+    public DbSet<AttendanceAdjustment> AttendanceAdjustments => Set<AttendanceAdjustment>();
 
     // Requests Feature
     public DbSet<RequestDefinition> RequestDefinitions => Set<RequestDefinition>();

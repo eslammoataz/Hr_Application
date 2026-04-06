@@ -4,6 +4,9 @@ using HrSystemApp.Application;
 using Serilog;
 using HrSystemApp.Api.Middleware;
 using HrSystemApp.Infrastructure;
+using Hangfire;
+using Hangfire.PostgreSql;
+using HrSystemApp.Infrastructure.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -45,6 +48,18 @@ builder.Services.AddApplication();
 
 // Add Infrastructure layer services
 builder.Services.AddInfrastructure(builder.Configuration);
+
+builder.Services.AddHangfire(config =>
+{
+    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+    config.UseSimpleAssemblyNameTypeSerializer()
+        .UseRecommendedSerializerSettings()
+        .UsePostgreSqlStorage(options =>
+        {
+            options.UseNpgsqlConnection(connectionString);
+        });
+});
+builder.Services.AddHangfireServer();
 
 
 // Swagger/OpenAPI
@@ -148,6 +163,17 @@ app.UseAuthorization();
 
 // Map controllers
 app.MapControllers();
+app.UseHangfireDashboard("/hangfire");
+
+RecurringJob.AddOrUpdate<AttendanceRecurringJobs>(
+    "attendance-reminder-job",
+    job => job.RunReminderJob(),
+    "*/15 * * * *");
+
+RecurringJob.AddOrUpdate<AttendanceRecurringJobs>(
+    "attendance-auto-clock-out-job",
+    job => job.RunAutoClockOutJob(),
+    "0 * * * *");
 
 // Run the application
 app.Run();
