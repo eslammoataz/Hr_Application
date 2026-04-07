@@ -15,4 +15,8 @@ public interface IContactAdminRequestRepository : IRepository<ContactAdminReques
         int pageNumber,
         int pageSize,
         CancellationToken cancellationToken = default);
+
+
+    Task<(int TotalPending, int TotalAccepted, int TotalRejected)> GetStatusCountsAsync(
+        CancellationToken cancellationToken = default);
 }

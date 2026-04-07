@@ -9,4 +9,4 @@ public record GetContactAdminRequestsQuery(
     bool? IsPending = null,
     bool? IsRejected = null,
     int PageNumber = 1,
-    int PageSize = 20) : IRequest<Result<PagedResult<ContactAdminRequestDto>>>;
+    int PageSize = 20) : IRequest<Result<ContactAdminPagedResult>>;

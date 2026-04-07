@@ -11,4 +11,4 @@ public record GetCompaniesQuery(
     int PageNumber = 1,
     int PageSize = 20,
     bool IncludeLocations = false,
-    bool IncludeDepartments = false) : IRequest<Result<PagedResult<CompanyResponse>>>;
+    bool IncludeDepartments = false) : IRequest<Result<CompaniesPagedResult>>;

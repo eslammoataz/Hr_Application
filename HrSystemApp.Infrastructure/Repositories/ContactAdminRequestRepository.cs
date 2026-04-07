@@ -56,4 +56,25 @@ public class ContactAdminRequestRepository : Repository<ContactAdminRequest>, IC
 
         return PagedResult<ContactAdminRequest>.Create(items, pageNumber, pageSize, totalCount);
     }
+
+
+
+    public async Task<(int TotalPending, int TotalAccepted, int TotalRejected)> GetStatusCountsAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var stats = await _dbSet
+            .GroupBy(_ => 1) // Force a dummy group to perform multiple aggregates in one query
+            .Select(g => new
+            {
+                Pending = g.Count(x => x.Status == ContactAdminRequestStatus.Pending),
+                Accepted = g.Count(x => x.Status == ContactAdminRequestStatus.Accepted),
+                Rejected = g.Count(x => x.Status == ContactAdminRequestStatus.Rejected)
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (stats == null)
+            return (0, 0, 0);
+
+        return (stats.Pending, stats.Accepted, stats.Rejected);
+    }
 }

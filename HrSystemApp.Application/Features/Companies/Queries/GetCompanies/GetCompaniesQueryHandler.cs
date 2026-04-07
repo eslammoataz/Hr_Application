@@ -6,7 +6,7 @@ using MediatR;
 
 namespace HrSystemApp.Application.Features.Companies.Queries.GetCompanies;
 
-public class GetCompaniesQueryHandler : IRequestHandler<GetCompaniesQuery, Result<PagedResult<CompanyResponse>>>
+public class GetCompaniesQueryHandler : IRequestHandler<GetCompaniesQuery, Result<CompaniesPagedResult>>
 {
     private readonly IUnitOfWork _unitOfWork;
 
@@ -15,7 +15,7 @@ public class GetCompaniesQueryHandler : IRequestHandler<GetCompaniesQuery, Resul
         _unitOfWork = unitOfWork;
     }
 
-    public async Task<Result<PagedResult<CompanyResponse>>> Handle(GetCompaniesQuery request, CancellationToken cancellationToken)
+    public async Task<Result<CompaniesPagedResult>> Handle(GetCompaniesQuery request, CancellationToken cancellationToken)
     {
         var paged = await _unitOfWork.Companies.GetPagedAsync(
             request.SearchTerm, 
@@ -28,7 +28,17 @@ public class GetCompaniesQueryHandler : IRequestHandler<GetCompaniesQuery, Resul
         
         var items = paged.Items.Adapt<List<CompanyResponse>>();
 
-        return Result.Success(PagedResult<CompanyResponse>.Create(
-            items, paged.PageNumber, paged.PageSize, paged.TotalCount));
+        var (active, inactive, suspended) = await _unitOfWork.Companies.GetStatusCountsAsync(cancellationToken);
+
+        return Result.Success(new CompaniesPagedResult
+        {
+            Items = items,
+            PageNumber = paged.PageNumber,
+            PageSize = paged.PageSize,
+            TotalCount = paged.TotalCount,
+            TotalActive = active,
+            TotalInactive = inactive,
+            TotalSuspended = suspended
+        });
     }
 }
