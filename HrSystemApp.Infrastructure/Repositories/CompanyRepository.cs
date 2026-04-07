@@ -19,7 +19,7 @@ public class CompanyRepository : Repository<Company>, ICompanyRepository
         bool includeDepartments = false, 
         CancellationToken cancellationToken = default)
     {
-        var query = _dbSet.AsQueryable();
+        IQueryable<Company> query = _dbSet.AsNoTracking();
 
         if (includeLocations) query = query.Include(c => c.Locations);
         if (includeDepartments) query = query.Include(c => c.Departments);
@@ -36,24 +36,26 @@ public class CompanyRepository : Repository<Company>, ICompanyRepository
         bool includeDepartments = false,
         CancellationToken cancellationToken = default)
     {
-        var query = _dbSet.AsQueryable();
-
-        if (includeLocations) query = query.Include(c => c.Locations);
-        if (includeDepartments) query = query.Include(c => c.Departments);
+        var baseQuery = _dbSet.AsQueryable();
 
         if (status.HasValue)
         {
-            query = query.Where(c => c.Status == status.Value);
+            baseQuery = baseQuery.Where(c => c.Status == status.Value);
         }
 
         if (!string.IsNullOrWhiteSpace(searchTerm))
         {
             var term = searchTerm.ToLower();
-            query = query.Where(c => c.CompanyName.ToLower().Contains(term));
+            baseQuery = baseQuery.Where(c => c.CompanyName.ToLower().Contains(term));
         }
 
-        var totalCount = await query.CountAsync(cancellationToken);
-        var items = await query
+        var totalCount = await baseQuery.CountAsync(cancellationToken);
+
+        IQueryable<Company> itemsQuery = baseQuery.AsNoTracking();
+        if (includeLocations) itemsQuery = itemsQuery.Include(c => c.Locations);
+        if (includeDepartments) itemsQuery = itemsQuery.Include(c => c.Departments);
+
+        var items = await itemsQuery
             .OrderBy(c => c.CompanyName)
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)

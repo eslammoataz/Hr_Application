@@ -139,7 +139,7 @@ public class WorkflowService : IWorkflowService
 
         // Find the first employee in this company that belongs to one of these users
         var employees = await _unitOfWork.Employees.FindAsync(e => 
-            e.CompanyId == companyId && !e.IsDeleted && userIds.Contains(e.UserId), cancellationToken);
+            e.CompanyId == companyId && !e.IsDeleted && e.UserId != null && userIds.Contains(e.UserId), cancellationToken);
 
         return employees.FirstOrDefault();
     }

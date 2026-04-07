@@ -70,32 +70,32 @@ public class AttendanceRepository : Repository<Attendance>, IAttendanceRepositor
         int pageSize,
         CancellationToken cancellationToken = default)
     {
-        var query = _dbSet.AsNoTracking()
-            .Include(x => x.Employee)
+        var baseQuery = _dbSet.AsNoTracking()
             .Where(x => x.Employee.CompanyId == companyId && x.Date >= fromDate && x.Date <= toDate);
 
         if (employeeId.HasValue)
         {
-            query = query.Where(x => x.EmployeeId == employeeId.Value);
+            baseQuery = baseQuery.Where(x => x.EmployeeId == employeeId.Value);
         }
 
         if (status.HasValue)
         {
-            query = query.Where(x => x.Status == status.Value);
+            baseQuery = baseQuery.Where(x => x.Status == status.Value);
         }
 
         if (isLate.HasValue)
         {
-            query = query.Where(x => x.IsLate == isLate.Value);
+            baseQuery = baseQuery.Where(x => x.IsLate == isLate.Value);
         }
 
         if (isEarlyLeave.HasValue)
         {
-            query = query.Where(x => x.IsEarlyLeave == isEarlyLeave.Value);
+            baseQuery = baseQuery.Where(x => x.IsEarlyLeave == isEarlyLeave.Value);
         }
 
-        var totalCount = await query.CountAsync(cancellationToken);
-        var items = await query
+        var totalCount = await baseQuery.CountAsync(cancellationToken);
+        var items = await baseQuery
+            .Include(x => x.Employee)
             .OrderByDescending(x => x.Date)
             .ThenBy(x => x.Employee.FullName)
             .Skip((pageNumber - 1) * pageSize)

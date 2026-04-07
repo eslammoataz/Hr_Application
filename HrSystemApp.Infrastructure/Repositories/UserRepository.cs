@@ -167,7 +167,7 @@ public class UserRepository : Repository<ApplicationUser>, IUserRepository
         CancellationToken cancellationToken = default)
     {
         return await _dbSet
-            .Include(u => u.Employee)
+            .Include(u => u.Employee!)
             .ThenInclude(e => e.Company)
             .FirstOrDefaultAsync(u => u.NormalizedEmail == email.ToUpper(), cancellationToken);
     }

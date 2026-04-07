@@ -33,7 +33,7 @@ public class ContactAdminRequestRepository : Repository<ContactAdminRequest>, IC
         int pageSize,
         CancellationToken cancellationToken = default)
     {
-        var query = _dbSet.AsQueryable();
+        var baseQuery = _dbSet.AsQueryable();
 
         // Build requested statuses dynamically — handles all combinations
         var statuses = new List<ContactAdminRequestStatus>();
@@ -44,11 +44,12 @@ public class ContactAdminRequestRepository : Repository<ContactAdminRequest>, IC
 
         // Only filter if at least one flag was provided, otherwise return all
         if (statuses.Any())
-            query = query.Where(r => statuses.Contains(r.Status));
+            baseQuery = baseQuery.Where(r => statuses.Contains(r.Status));
 
-        var totalCount = await query.CountAsync(cancellationToken);
+        var totalCount = await baseQuery.CountAsync(cancellationToken);
 
-        var items = await query
+        var items = await baseQuery
+            .AsNoTracking()
             .OrderByDescending(r => r.CreatedAt)
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)

@@ -14,7 +14,9 @@ public class EmployeeRepository : Repository<Employee>, IEmployeeRepository
     }
 
     public async Task<Employee?> GetByUserIdAsync(string userId, CancellationToken cancellationToken = default)
-        => await _dbSet.FirstOrDefaultAsync(e => e.UserId == userId, cancellationToken);
+        => await _dbSet
+            .AsNoTracking()
+            .FirstOrDefaultAsync(e => e.UserId == userId, cancellationToken);
 
     public async Task<Employee?> GetWithDetailsAsync(Guid id, CancellationToken cancellationToken = default)
         => await _dbSet
@@ -28,7 +30,8 @@ public class EmployeeRepository : Repository<Employee>, IEmployeeRepository
     public async Task<EmployeeProfileDto?> GetProfileByUserIdAsync(string userId,
         CancellationToken cancellationToken = default)
     {
-        return await _dbSet.AsQueryable()
+        return await _dbSet
+            .AsNoTracking()
             .Where(e => e.UserId == userId && !e.IsDeleted)
             .Select(e => new EmployeeProfileDto
             {
@@ -51,37 +54,39 @@ public class EmployeeRepository : Repository<Employee>, IEmployeeRepository
             .FirstOrDefaultAsync(cancellationToken);
     }
 
-// for me "needs some query optimization"  
+    // for me "needs some query optimization"
     public async Task<PagedResult<Employee>> GetPagedAsync(
         Guid? companyId, Guid? teamId, string? searchTerm,
         int pageNumber, int pageSize, CancellationToken cancellationToken = default)
     {
-        var query = _dbSet
-            .Include(e => e.Department)
-            .Include(e => e.Unit)
-            .Include(e => e.Team)
-            .Include(e => e.Manager)
-            .Include(e => e.User)
+        var baseQuery = _dbSet
             .Where(e => !e.IsDeleted)
             .AsQueryable();
 
         if (companyId.HasValue)
-            query = query.Where(e => e.CompanyId == companyId.Value);
+            baseQuery = baseQuery.Where(e => e.CompanyId == companyId.Value);
 
         if (teamId.HasValue)
-            query = query.Where(e => e.TeamId == teamId.Value);
+            baseQuery = baseQuery.Where(e => e.TeamId == teamId.Value);
 
         if (!string.IsNullOrWhiteSpace(searchTerm))
         {
             var term = searchTerm.ToLower();
-            query = query.Where(e =>
+            baseQuery = baseQuery.Where(e =>
                 e.FullName.ToLower().Contains(term) ||
                 e.Email.ToLower().Contains(term) ||
                 e.EmployeeCode.ToLower().Contains(term));
         }
 
-        var totalCount = await query.CountAsync(cancellationToken);
-        var items = await query
+        var totalCount = await baseQuery.CountAsync(cancellationToken);
+
+        var items = await baseQuery
+            .AsNoTracking()
+            .Include(e => e.Department)
+            .Include(e => e.Unit)
+            .Include(e => e.Team)
+            .Include(e => e.Manager)
+            .Include(e => e.User)
             .OrderBy(e => e.FullName)
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
