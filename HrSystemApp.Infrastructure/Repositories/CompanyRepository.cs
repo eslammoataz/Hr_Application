@@ -61,4 +61,22 @@ public class CompanyRepository : Repository<Company>, ICompanyRepository
 
         return PagedResult<Company>.Create(items, pageNumber, pageSize, totalCount);
     }
+
+    public async Task<(int TotalActive, int TotalInactive, int TotalSuspended)> GetStatusCountsAsync(CancellationToken cancellationToken = default)
+    {
+        var stats = await _dbSet
+            .GroupBy(_ => 1)
+            .Select(g => new
+            {
+                Active = g.Count(c => c.Status == CompanyStatus.Active),
+                Inactive = g.Count(c => c.Status == CompanyStatus.Inactive),
+                Suspended = g.Count(c => c.Status == CompanyStatus.Suspended)
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (stats == null)
+            return (0, 0, 0);
+
+        return (stats.Active, stats.Inactive, stats.Suspended);
+    }
 }

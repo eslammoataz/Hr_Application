@@ -15,4 +15,6 @@ public interface ICompanyRepository : IRepository<Company>
         bool includeLocations = false,
         bool includeDepartments = false,
         CancellationToken cancellationToken = default);
+
+    Task<(int TotalActive, int TotalInactive, int TotalSuspended)> GetStatusCountsAsync(CancellationToken cancellationToken = default);
 }

@@ -56,7 +56,7 @@ public class CompaniesController : BaseApiController
     /// <summary>Get all companies. (SuperAdmin only)</summary>
     [HttpGet]
     [Authorize(Roles = Roles.SuperAdminOnly)]
-    [ProducesResponseType(typeof(PagedResult<CompanyResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(CompaniesPagedResult), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAll(
         [FromQuery] string? searchTerm,
         [FromQuery] CompanyStatus? status,
