@@ -47,7 +47,8 @@ public abstract class BaseApiController : ControllerBase
         return error.Code switch
         {
             "Auth.InvalidCredentials" or "Auth.InvalidOtp" => Unauthorized(errorResponse),
-            "Auth.Unauthorized" => Forbid(),
+            "Auth.Unauthorized" => Unauthorized(errorResponse),
+            "General.Forbidden" or "Auth.Forbidden" => Forbid(),
             var code when code.Contains("NotFound") => NotFound(errorResponse),
             _ => BadRequest(errorResponse)
         };
