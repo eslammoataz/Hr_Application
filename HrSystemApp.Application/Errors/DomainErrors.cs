@@ -90,6 +90,9 @@ public static class DomainErrors
 
         public static readonly Error AlreadyInactive = new(
             "Employee.AlreadyInactive", "Employee is already inactive.");
+
+        public static readonly Error InvalidEmploymentStatus = new(
+            "Employee.InvalidEmploymentStatus", "Employment status value is invalid.");
     }
 
     public static class Company

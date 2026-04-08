@@ -2,6 +2,7 @@ using System.Net.Http.Headers;
 using HrSystemApp.Domain.Enums;
 using HrSystemApp.Domain.Models;
 using HrSystemApp.Infrastructure.Data;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -143,6 +144,39 @@ public sealed class IntegrationTestFixture : IAsyncLifetime
         await context.SaveChangesAsync();
 
         return employee.Id;
+    }
+
+    public async Task AssignRoleToUserAsync(string userId, string roleName)
+    {
+        EnsureDockerAvailable();
+
+        using var scope = Factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+        var role = await context.Roles.FirstOrDefaultAsync(x => x.Name == roleName);
+        if (role is null)
+        {
+            role = new IdentityRole
+            {
+                Id = Guid.NewGuid().ToString(),
+                Name = roleName,
+                NormalizedName = roleName.ToUpperInvariant()
+            };
+
+            await context.Roles.AddAsync(role);
+        }
+
+        var mappingExists = await context.UserRoles.AnyAsync(x => x.UserId == userId && x.RoleId == role.Id);
+        if (!mappingExists)
+        {
+            await context.UserRoles.AddAsync(new IdentityUserRole<string>
+            {
+                UserId = userId,
+                RoleId = role.Id
+            });
+        }
+
+        await context.SaveChangesAsync();
     }
 
     private async Task InitializeRespawnerAsync()

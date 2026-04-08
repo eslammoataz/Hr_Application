@@ -21,6 +21,9 @@ public interface IUserRepository : IRepository<ApplicationUser>
     Task RemoveTokenAsync(string userId, string token, CancellationToken cancellationToken = default);
     Task<bool> ValidateTokenAsync(string userId, string token, CancellationToken cancellationToken = default);
     Task<IList<string>> GetRolesAsync(ApplicationUser user);
+    Task<Dictionary<string, string>> GetPrimaryRolesByUserIdsAsync(
+        IEnumerable<string> userIds,
+        CancellationToken cancellationToken = default);
 
     Task<(bool Succeeded, IEnumerable<string> Errors)> ChangePasswordAsync(ApplicationUser user, string currentPassword,
         string newPassword);

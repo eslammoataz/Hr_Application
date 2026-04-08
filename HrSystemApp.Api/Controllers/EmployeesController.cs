@@ -1,8 +1,8 @@
 using HrSystemApp.Api.Authorization;
 using HrSystemApp.Application.DTOs.Employees;
 using HrSystemApp.Application.Features.Employees.Commands.AssignEmployeeToTeam;
+using HrSystemApp.Application.Features.Employees.Commands.ChangeEmployeeStatus;
 using HrSystemApp.Application.Features.Employees.Commands.CreateEmployee;
-using HrSystemApp.Application.Features.Employees.Commands.DeactivateEmployee;
 using HrSystemApp.Application.Features.Employees.Commands.UpdateEmployee;
 using HrSystemApp.Application.Features.Employees.Queries.GetEmployeeById;
 using HrSystemApp.Application.Features.Employees.Queries.GetEmployees;
@@ -112,12 +112,15 @@ public class EmployeesController : BaseApiController
         return HandleResult(result);
     }
 
-    /// <summary>Deactivate an employee.</summary>
-    [HttpPut("{id:guid}/deactivate")]
+    /// <summary>Change employee employment status.</summary>
+    [HttpPatch("{id:guid}/status")]
     [Authorize(Roles = Roles.HierarchyManagers)]
-    public async Task<IActionResult> Deactivate(Guid id, CancellationToken cancellationToken)
+    public async Task<IActionResult> ChangeStatus(
+        Guid id,
+        [FromBody] ChangeEmployeeStatusRequest request,
+        CancellationToken cancellationToken)
     {
-        var result = await _sender.Send(new DeactivateEmployeeCommand(id), cancellationToken);
+        var result = await _sender.Send(new ChangeEmployeeStatusCommand(id, request.Status), cancellationToken);
         return HandleResult(result);
     }
 

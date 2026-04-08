@@ -147,7 +147,8 @@ public class AuthorizationMatrixEndpointTests : IAsyncLifetime
             """{"fullName":"Ali","phoneNumber":"01000000000","address":"x","departmentId":null,"unitId":null,"teamId":null,"managerId":null,"medicalClass":null,"contractEndDate":null}""");
         yield return Case("PUT", "/api/employees/00000000-0000-0000-0000-000000000001/assign-team",
             """{"teamId":"00000000-0000-0000-0000-000000000001"}""");
-        yield return Case("PUT", "/api/employees/00000000-0000-0000-0000-000000000001/deactivate", null);
+        yield return Case("PATCH", "/api/employees/00000000-0000-0000-0000-000000000001/status",
+            """{"status":1}""");
         yield return Case("POST", "/api/employees/me/profile-update-requests", """{"phoneNumber":"01000000000"}""");
         yield return Case("GET", "/api/employees/me/profile-update-requests?page=1&pageSize=10", null);
         yield return Case("GET", "/api/employees/profile-update-requests?page=1&pageSize=10", null);
@@ -232,7 +233,8 @@ public class AuthorizationMatrixEndpointTests : IAsyncLifetime
         yield return Case("POST", "/api/employees", "{}");
         yield return Case("PUT", "/api/employees/00000000-0000-0000-0000-000000000001", "{}");
         yield return Case("PUT", "/api/employees/00000000-0000-0000-0000-000000000001/assign-team", "{}");
-        yield return Case("PUT", "/api/employees/00000000-0000-0000-0000-000000000001/deactivate", null);
+        yield return Case("PATCH", "/api/employees/00000000-0000-0000-0000-000000000001/status",
+            """{"status":1}""");
         yield return Case("GET", "/api/employees/profile-update-requests", null);
         yield return Case("PATCH", "/api/employees/profile-update-requests/00000000-0000-0000-0000-000000000001/handle", "{}");
 

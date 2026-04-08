@@ -73,6 +73,83 @@ public class EmployeesEndpointTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task GetEmployees_ReturnsEmployeeRole_WhenUserHasRole()
+    {
+        if (_fixture.DockerUnavailable)
+        {
+            return;
+        }
+
+        var companyId = await _fixture.SeedCompanyAsync("Role Corp");
+        await _fixture.SeedEmployeeAsync(companyId, "role-user", "Role User", "role.user@corp.com");
+        await _fixture.AssignRoleToUserAsync("role-user", Roles.HR);
+
+        using var client = _fixture.CreateAuthenticatedClient("viewer-user", Roles.HR);
+
+        var response = await client.GetAsync("/api/employees?companyId=" + companyId + "&search=role.user@corp.com&page=1&pageSize=10");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var json = await response.Content.ReadAsStringAsync();
+        using var doc = JsonDocument.Parse(json);
+        var items = doc.RootElement.GetProperty("data").GetProperty("items");
+
+        items.GetArrayLength().Should().Be(1);
+        items[0].GetProperty("role").GetString().Should().Be(Roles.HR);
+    }
+
+    [Fact]
+    public async Task GetEmployees_WithPaging_ReturnsExpectedPagingMetadata()
+    {
+        if (_fixture.DockerUnavailable)
+        {
+            return;
+        }
+
+        var companyId = await _fixture.SeedCompanyAsync("Paging Corp");
+        await _fixture.SeedEmployeeAsync(companyId, "paging-user-1", "Paging User One", "paging.user1@corp.com");
+        await _fixture.SeedEmployeeAsync(companyId, "paging-user-2", "Paging User Two", "paging.user2@corp.com");
+        await _fixture.SeedEmployeeAsync(companyId, "paging-user-3", "Paging User Three", "paging.user3@corp.com");
+
+        using var client = _fixture.CreateAuthenticatedClient("viewer-user", Roles.HR);
+
+        var response = await client.GetAsync("/api/employees?companyId=" + companyId + "&page=1&pageSize=2");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var json = await response.Content.ReadAsStringAsync();
+        using var doc = JsonDocument.Parse(json);
+        var data = doc.RootElement.GetProperty("data");
+
+        data.GetProperty("items").GetArrayLength().Should().Be(2);
+        data.GetProperty("pageNumber").GetInt32().Should().Be(1);
+        data.GetProperty("pageSize").GetInt32().Should().Be(2);
+        data.GetProperty("totalCount").GetInt32().Should().Be(3);
+    }
+
+    [Fact]
+    public async Task GetEmployees_ReturnsEmptyRole_WhenUserHasNoRole()
+    {
+        if (_fixture.DockerUnavailable)
+        {
+            return;
+        }
+
+        var companyId = await _fixture.SeedCompanyAsync("No Role Corp");
+        await _fixture.SeedEmployeeAsync(companyId, "norole-user", "No Role User", "norole.user@corp.com");
+
+        using var client = _fixture.CreateAuthenticatedClient("viewer-user", Roles.HR);
+
+        var response = await client.GetAsync("/api/employees?companyId=" + companyId + "&search=norole.user@corp.com&page=1&pageSize=10");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var json = await response.Content.ReadAsStringAsync();
+        using var doc = JsonDocument.Parse(json);
+        var items = doc.RootElement.GetProperty("data").GetProperty("items");
+
+        items.GetArrayLength().Should().Be(1);
+        items[0].GetProperty("role").GetString().Should().Be(string.Empty);
+    }
+
+    [Fact]
     public async Task GetEmployeeById_WhenMissing_ReturnsNotFound()
     {
         if (_fixture.DockerUnavailable)

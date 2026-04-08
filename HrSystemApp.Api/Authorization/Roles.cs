@@ -27,28 +27,28 @@ public static class Roles
         SuperAdmin;
 
     public const string CeoOrAbove =
-        $"{SuperAdmin},{CEO}";
+        $"{SuperAdmin},{CEO},{CompanyAdmin}";
 
     public const string VpOrAbove =
-        $"{SuperAdmin},{CEO},{VicePresident}";
+        $"{SuperAdmin},{CEO},{VicePresident},{CompanyAdmin}";
 
     public const string ManagerOrAbove =
-        $"{SuperAdmin},{CEO},{VicePresident},{DepartmentManager}";
+        $"{SuperAdmin},{CEO},{VicePresident},{DepartmentManager},{CompanyAdmin}";
 
     public const string HrOrAbove =
         $"{SuperAdmin},{CEO},{VicePresident},{DepartmentManager},{UnitLeader},{TeamLeader},{HR},{CompanyAdmin}";
 
     public const string HierarchyManagers =
-        $"{SuperAdmin},{CEO},{DepartmentManager},{HR}";
+        $"{SuperAdmin},{CEO},{DepartmentManager},{HR},{CompanyAdmin}";
 
     public const string UnitManagers =
-        $"{SuperAdmin},{CEO},{VicePresident},{DepartmentManager},{UnitLeader},{HR}";
+        $"{SuperAdmin},{CEO},{VicePresident},{DepartmentManager},{UnitLeader},{HR},{CompanyAdmin}";
 
     public const string TeamManagers =
-        $"{SuperAdmin},{CEO},{VicePresident},{DepartmentManager},{UnitLeader},{HR}";
+        $"{SuperAdmin},{CEO},{VicePresident},{DepartmentManager},{UnitLeader},{HR},{CompanyAdmin}";
 
     public const string AssetAdmins =
-        $"{SuperAdmin},{AssetAdmin}";
+        $"{SuperAdmin},{AssetAdmin},{CompanyAdmin}";
 
     public const string Viewers =
         $"{SuperAdmin},{CEO},{VicePresident},{DepartmentManager},{UnitLeader},{TeamLeader},{HR},{CompanyAdmin}";

@@ -117,6 +117,39 @@ public class UserRepository : Repository<ApplicationUser>, IUserRepository
         return await _userManager.GetRolesAsync(user);
     }
 
+    public async Task<Dictionary<string, string>> GetPrimaryRolesByUserIdsAsync(
+        IEnumerable<string> userIds,
+        CancellationToken cancellationToken = default)
+    {
+        var ids = userIds
+            .Where(id => !string.IsNullOrWhiteSpace(id))
+            .Distinct()
+            .ToList();
+
+        if (ids.Count == 0)
+        {
+            return new Dictionary<string, string>();
+        }
+
+        var userRoles = await (
+            from userRole in _context.Set<IdentityUserRole<string>>().AsNoTracking()
+            join role in _context.Roles.AsNoTracking() on userRole.RoleId equals role.Id
+            where ids.Contains(userRole.UserId)
+            orderby userRole.UserId, role.Name
+            select new
+            {
+                userRole.UserId,
+                RoleName = role.Name
+            })
+            .ToListAsync(cancellationToken);
+
+        return userRoles
+            .GroupBy(x => x.UserId)
+            .ToDictionary(
+                x => x.Key,
+                x => x.Select(v => v.RoleName).FirstOrDefault() ?? string.Empty);
+    }
+
     public async Task<(bool Succeeded, IEnumerable<string> Errors)> ChangePasswordAsync(ApplicationUser user,
         string currentPassword, string newPassword)
     {

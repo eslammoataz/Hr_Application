@@ -57,6 +57,7 @@ public class EmployeeRepository : Repository<Employee>, IEmployeeRepository
         int pageNumber, int pageSize, CancellationToken cancellationToken = default)
     {
         var query = _dbSet
+            .AsNoTracking()
             .Include(e => e.Department)
             .Include(e => e.Unit)
             .Include(e => e.Team)
