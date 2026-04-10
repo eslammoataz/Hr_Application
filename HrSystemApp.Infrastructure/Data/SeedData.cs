@@ -246,15 +246,15 @@ public static class SeedData
         // 2. VP of Engineering (Reports to CEO)
         var vp = await CreateHierarchyUserAsync(userManager, context, company, location, null, null, null, ceo.Id,
             "Jane Smith", UserRole.VicePresident.ToString(), "vp.eng@hrms.com", "2222222222", logger);
-
         // 3. Engineering Department (Led by VP)
         var engineering = await context.Departments.FirstOrDefaultAsync(d => d.CompanyId == company.Id && d.Name == "Engineering");
         if (engineering == null)
         {
-            engineering = new Department { Id = Guid.NewGuid(), CompanyId = company.Id, Name = "Engineering", VicePresidentId = vp?.Id, CreatedAt = DateTime.UtcNow };
+            engineering = new Department { Id = Guid.NewGuid(), CompanyId = company.Id, Name = "Engineering", CreatedAt = DateTime.UtcNow };
             context.Departments.Add(engineering);
-            await context.SaveChangesAsync();
         }
+        engineering.VicePresidentId = vp?.Id;
+        await context.SaveChangesAsync();
 
         // 4. Engineering Manager (Reports to VP)
         var engManager = await CreateHierarchyUserAsync(userManager, context, company, location, engineering.Id, null, null, vp?.Id,
@@ -262,6 +262,7 @@ public static class SeedData
         
         engineering.ManagerId = engManager?.Id;
         await context.SaveChangesAsync();
+
 
         // 5. Software Dev Unit Leader (Reports to Mgr)
         var unitLeader = await CreateHierarchyUserAsync(userManager, context, company, location, engineering.Id, null, null, engManager?.Id,
@@ -271,10 +272,12 @@ public static class SeedData
         var softDev = await context.Units.FirstOrDefaultAsync(u => u.DepartmentId == engineering.Id && u.Name == "Software Development");
         if (softDev == null)
         {
-            softDev = new Unit { Id = Guid.NewGuid(), DepartmentId = engineering.Id, Name = "Software Development", UnitLeaderId = unitLeader?.Id, CreatedAt = DateTime.UtcNow };
+            softDev = new Unit { Id = Guid.NewGuid(), DepartmentId = engineering.Id, Name = "Software Development", CreatedAt = DateTime.UtcNow };
             context.Units.Add(softDev);
-            await context.SaveChangesAsync();
         }
+        softDev.UnitLeaderId = unitLeader?.Id;
+        if (unitLeader != null) unitLeader.UnitId = softDev.Id;
+        await context.SaveChangesAsync();
 
         // 7. Backend Team Leader (Reports to UL)
         var teamLeader = await CreateHierarchyUserAsync(userManager, context, company, location, engineering.Id, softDev.Id, null, unitLeader?.Id,
@@ -284,10 +287,12 @@ public static class SeedData
         var backendTeam = await context.Teams.FirstOrDefaultAsync(t => t.UnitId == softDev.Id && t.Name == "Backend Team");
         if (backendTeam == null)
         {
-            backendTeam = new Team { Id = Guid.NewGuid(), UnitId = softDev.Id, Name = "Backend Team", TeamLeaderId = teamLeader?.Id, CreatedAt = DateTime.UtcNow };
+            backendTeam = new Team { Id = Guid.NewGuid(), UnitId = softDev.Id, Name = "Backend Team", CreatedAt = DateTime.UtcNow };
             context.Teams.Add(backendTeam);
-            await context.SaveChangesAsync();
         }
+        backendTeam.TeamLeaderId = teamLeader?.Id;
+        if (teamLeader != null) teamLeader.TeamId = backendTeam.Id;
+        await context.SaveChangesAsync();
 
         // 9. Staff Developer (Reports to TL)
         await CreateHierarchyUserAsync(userManager, context, company, location, engineering.Id, softDev.Id, backendTeam.Id, teamLeader?.Id,
@@ -305,10 +310,11 @@ public static class SeedData
         var marketing = await context.Departments.FirstOrDefaultAsync(d => d.CompanyId == company.Id && d.Name == "Marketing");
         if (marketing == null)
         {
-            marketing = new Department { Id = Guid.NewGuid(), CompanyId = company.Id, Name = "Marketing", VicePresidentId = vpMark?.Id, CreatedAt = DateTime.UtcNow };
+            marketing = new Department { Id = Guid.NewGuid(), CompanyId = company.Id, Name = "Marketing", CreatedAt = DateTime.UtcNow };
             context.Departments.Add(marketing);
-            await context.SaveChangesAsync();
         }
+        marketing.VicePresidentId = vpMark?.Id;
+        await context.SaveChangesAsync();
 
         // 3. Marketing Manager (Reports to VP)
         var markManager = await CreateHierarchyUserAsync(userManager, context, company, location, marketing.Id, null, null, vpMark?.Id,
@@ -325,10 +331,12 @@ public static class SeedData
         var contentUnit = await context.Units.FirstOrDefaultAsync(u => u.DepartmentId == marketing.Id && u.Name == "Content & Media");
         if (contentUnit == null)
         {
-            contentUnit = new Unit { Id = Guid.NewGuid(), DepartmentId = marketing.Id, Name = "Content & Media", UnitLeaderId = ulContent?.Id, CreatedAt = DateTime.UtcNow };
+            contentUnit = new Unit { Id = Guid.NewGuid(), DepartmentId = marketing.Id, Name = "Content & Media", CreatedAt = DateTime.UtcNow };
             context.Units.Add(contentUnit);
-            await context.SaveChangesAsync();
         }
+        contentUnit.UnitLeaderId = ulContent?.Id;
+        if (ulContent != null) ulContent.UnitId = contentUnit.Id;
+        await context.SaveChangesAsync();
 
         var tlSocial = await CreateHierarchyUserAsync(userManager, context, company, location, marketing.Id, contentUnit.Id, null, ulContent?.Id,
             "Elena Vance", UserRole.TeamLeader.ToString(), "tl.social@hrms.com", "7744444444", logger);
@@ -336,10 +344,12 @@ public static class SeedData
         var socialTeam = await context.Teams.FirstOrDefaultAsync(t => t.UnitId == contentUnit.Id && t.Name == "Social Ops");
         if (socialTeam == null)
         {
-            socialTeam = new Team { Id = Guid.NewGuid(), UnitId = contentUnit.Id, Name = "Social Ops", TeamLeaderId = tlSocial?.Id, CreatedAt = DateTime.UtcNow };
+            socialTeam = new Team { Id = Guid.NewGuid(), UnitId = contentUnit.Id, Name = "Social Ops", CreatedAt = DateTime.UtcNow };
             context.Teams.Add(socialTeam);
-            await context.SaveChangesAsync();
         }
+        socialTeam.TeamLeaderId = tlSocial?.Id;
+        if (tlSocial != null) tlSocial.TeamId = socialTeam.Id;
+        await context.SaveChangesAsync();
 
         await CreateHierarchyUserAsync(userManager, context, company, location, marketing.Id, contentUnit.Id, socialTeam.Id, tlSocial?.Id,
             "Fiona Gallagher", UserRole.Employee.ToString(), "emp.fiona@hrms.com", "7755555555", logger);
@@ -352,10 +362,12 @@ public static class SeedData
         var digitalUnit = await context.Units.FirstOrDefaultAsync(u => u.DepartmentId == marketing.Id && u.Name == "Digital Performance");
         if (digitalUnit == null)
         {
-            digitalUnit = new Unit { Id = Guid.NewGuid(), DepartmentId = marketing.Id, Name = "Digital Performance", UnitLeaderId = ulDigital?.Id, CreatedAt = DateTime.UtcNow };
+            digitalUnit = new Unit { Id = Guid.NewGuid(), DepartmentId = marketing.Id, Name = "Digital Performance", CreatedAt = DateTime.UtcNow };
             context.Units.Add(digitalUnit);
-            await context.SaveChangesAsync();
         }
+        digitalUnit.UnitLeaderId = ulDigital?.Id;
+        if (ulDigital != null) ulDigital.UnitId = digitalUnit.Id;
+        await context.SaveChangesAsync();
 
         var tlSearch = await CreateHierarchyUserAsync(userManager, context, company, location, marketing.Id, digitalUnit.Id, null, ulDigital?.Id,
             "Gina Torres", UserRole.TeamLeader.ToString(), "tl.search@hrms.com", "7777777777", logger);
@@ -363,10 +375,12 @@ public static class SeedData
         var searchTeam = await context.Teams.FirstOrDefaultAsync(t => t.UnitId == digitalUnit.Id && t.Name == "Growth SEO");
         if (searchTeam == null)
         {
-            searchTeam = new Team { Id = Guid.NewGuid(), UnitId = digitalUnit.Id, Name = "Growth SEO", TeamLeaderId = tlSearch?.Id, CreatedAt = DateTime.UtcNow };
+            searchTeam = new Team { Id = Guid.NewGuid(), UnitId = digitalUnit.Id, Name = "Growth SEO", CreatedAt = DateTime.UtcNow };
             context.Teams.Add(searchTeam);
-            await context.SaveChangesAsync();
         }
+        searchTeam.TeamLeaderId = tlSearch?.Id;
+        if (tlSearch != null) tlSearch.TeamId = searchTeam.Id;
+        await context.SaveChangesAsync();
 
         await CreateHierarchyUserAsync(userManager, context, company, location, marketing.Id, digitalUnit.Id, searchTeam.Id, tlSearch?.Id,
             "Harvey Specter", UserRole.Employee.ToString(), "emp.harvey@hrms.com", "7788888888", logger);
@@ -379,10 +393,12 @@ public static class SeedData
         var brandUnit = await context.Units.FirstOrDefaultAsync(u => u.DepartmentId == marketing.Id && u.Name == "Brand Identity");
         if (brandUnit == null)
         {
-            brandUnit = new Unit { Id = Guid.NewGuid(), DepartmentId = marketing.Id, Name = "Brand Identity", UnitLeaderId = ulBrand?.Id, CreatedAt = DateTime.UtcNow };
+            brandUnit = new Unit { Id = Guid.NewGuid(), DepartmentId = marketing.Id, Name = "Brand Identity", CreatedAt = DateTime.UtcNow };
             context.Units.Add(brandUnit);
-            await context.SaveChangesAsync();
         }
+        brandUnit.UnitLeaderId = ulBrand?.Id;
+        if (ulBrand != null) ulBrand.UnitId = brandUnit.Id;
+        await context.SaveChangesAsync();
 
         var tlVisual = await CreateHierarchyUserAsync(userManager, context, company, location, marketing.Id, brandUnit.Id, null, ulBrand?.Id,
             "Iris West", UserRole.TeamLeader.ToString(), "tl.visual@hrms.com", "7700000000", logger);
@@ -390,10 +406,12 @@ public static class SeedData
         var visualTeam = await context.Teams.FirstOrDefaultAsync(t => t.UnitId == brandUnit.Id && t.Name == "Visual Arts");
         if (visualTeam == null)
         {
-            visualTeam = new Team { Id = Guid.NewGuid(), UnitId = brandUnit.Id, Name = "Visual Arts", TeamLeaderId = tlVisual?.Id, CreatedAt = DateTime.UtcNow };
+            visualTeam = new Team { Id = Guid.NewGuid(), UnitId = brandUnit.Id, Name = "Visual Arts", CreatedAt = DateTime.UtcNow };
             context.Teams.Add(visualTeam);
-            await context.SaveChangesAsync();
         }
+        visualTeam.TeamLeaderId = tlVisual?.Id;
+        if (tlVisual != null) tlVisual.TeamId = visualTeam.Id;
+        await context.SaveChangesAsync();
 
         await CreateHierarchyUserAsync(userManager, context, company, location, marketing.Id, brandUnit.Id, visualTeam.Id, tlVisual?.Id,
             "Jack Reacher", UserRole.Employee.ToString(), "emp.jack@hrms.com", "7711223344", logger);
