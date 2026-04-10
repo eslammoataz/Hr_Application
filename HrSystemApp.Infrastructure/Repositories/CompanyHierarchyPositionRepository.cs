@@ -17,6 +17,7 @@ public class CompanyHierarchyPositionRepository : Repository<CompanyHierarchyPos
         CancellationToken cancellationToken = default)
     {
         return await _context.CompanyHierarchyPositions
+            .AsNoTracking()
             .Where(p => p.CompanyId == companyId && !p.IsDeleted)
             .OrderBy(p => p.SortOrder)
             .ToListAsync(cancellationToken);

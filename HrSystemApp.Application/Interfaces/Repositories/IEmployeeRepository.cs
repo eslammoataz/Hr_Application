@@ -9,5 +9,6 @@ public interface IEmployeeRepository : IRepository<Employee>
     Task<Employee?> GetByUserIdAsync(string userId, CancellationToken cancellationToken = default);
     Task<Employee?> GetWithDetailsAsync(Guid id, CancellationToken cancellationToken = default);
     Task<EmployeeProfileDto?> GetProfileByUserIdAsync(string userId, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<Employee>> GetByCompanyAsync(Guid companyId, CancellationToken cancellationToken = default);
     Task<PagedResult<Employee>> GetPagedAsync(Guid? companyId, Guid? teamId, string? searchTerm, int pageNumber, int pageSize, CancellationToken cancellationToken = default);
 }

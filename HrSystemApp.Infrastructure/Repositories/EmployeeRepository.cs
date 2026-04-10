@@ -51,7 +51,14 @@ public class EmployeeRepository : Repository<Employee>, IEmployeeRepository
             .FirstOrDefaultAsync(cancellationToken);
     }
 
-// for me "needs some query optimization"  
+    public async Task<IReadOnlyList<Employee>> GetByCompanyAsync(Guid companyId,
+        CancellationToken cancellationToken = default)
+        => await _dbSet
+            .AsNoTracking()
+            .Where(e => e.CompanyId == companyId && !e.IsDeleted)
+            .ToListAsync(cancellationToken);
+
+    // for me "needs some query optimization"
     public async Task<PagedResult<Employee>> GetPagedAsync(
         Guid? companyId, Guid? teamId, string? searchTerm,
         int pageNumber, int pageSize, CancellationToken cancellationToken = default)

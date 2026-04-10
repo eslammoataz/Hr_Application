@@ -146,6 +146,152 @@ public sealed class IntegrationTestFixture : IAsyncLifetime
         return employee.Id;
     }
 
+    public async Task<Guid> SeedEmployeeWithOrgAsync(
+        Guid companyId,
+        string userId,
+        string fullName,
+        string email,
+        Guid? departmentId = null,
+        Guid? unitId = null,
+        Guid? teamId = null)
+    {
+        EnsureDockerAvailable();
+
+        using var scope = Factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var normalizedEmail = email.ToUpperInvariant();
+
+        var existingUser = await context.Users.FirstOrDefaultAsync(x => x.Id == userId);
+        if (existingUser is null)
+        {
+            var user = new ApplicationUser
+            {
+                Id = userId,
+                UserName = email,
+                NormalizedUserName = normalizedEmail,
+                Email = email,
+                NormalizedEmail = normalizedEmail,
+                Name = fullName,
+                EmailConfirmed = true
+            };
+
+            await context.Users.AddAsync(user);
+        }
+
+        var employee = new Employee
+        {
+            CompanyId = companyId,
+            UserId = userId,
+            EmployeeCode = $"EMP-{Guid.NewGuid():N}"[..10],
+            FullName = fullName,
+            Email = email,
+            PhoneNumber = "01000000000",
+            EmploymentStatus = EmploymentStatus.Active,
+            DepartmentId = departmentId,
+            UnitId = unitId,
+            TeamId = teamId
+        };
+
+        await context.Employees.AddAsync(employee);
+        await context.SaveChangesAsync();
+
+        return employee.Id;
+    }
+
+    public async Task<Guid> SeedDepartmentAsync(
+        Guid companyId,
+        string name,
+        Guid? vicePresidentId = null,
+        Guid? managerId = null)
+    {
+        EnsureDockerAvailable();
+
+        using var scope = Factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+        var department = new Department
+        {
+            CompanyId = companyId,
+            Name = name,
+            VicePresidentId = vicePresidentId,
+            ManagerId = managerId
+        };
+
+        await context.Departments.AddAsync(department);
+        await context.SaveChangesAsync();
+
+        return department.Id;
+    }
+
+    public async Task<Guid> SeedUnitAsync(Guid departmentId, string name, Guid? unitLeaderId = null)
+    {
+        EnsureDockerAvailable();
+
+        using var scope = Factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+        var unit = new Unit
+        {
+            DepartmentId = departmentId,
+            Name = name,
+            UnitLeaderId = unitLeaderId
+        };
+
+        await context.Units.AddAsync(unit);
+        await context.SaveChangesAsync();
+
+        return unit.Id;
+    }
+
+    public async Task<Guid> SeedTeamAsync(Guid unitId, string name, Guid? teamLeaderId = null)
+    {
+        EnsureDockerAvailable();
+
+        using var scope = Factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+        var team = new Team
+        {
+            UnitId = unitId,
+            Name = name,
+            TeamLeaderId = teamLeaderId
+        };
+
+        await context.Teams.AddAsync(team);
+        await context.SaveChangesAsync();
+
+        return team.Id;
+    }
+
+    public async Task SeedHierarchyPositionsAsync(Guid companyId, params (UserRole Role, string Title, int SortOrder)[] positions)
+    {
+        EnsureDockerAvailable();
+
+        using var scope = Factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+        var existing = await context.CompanyHierarchyPositions
+            .Where(x => x.CompanyId == companyId)
+            .ToListAsync();
+        if (existing.Count > 0)
+        {
+            context.CompanyHierarchyPositions.RemoveRange(existing);
+        }
+
+        foreach (var position in positions)
+        {
+            await context.CompanyHierarchyPositions.AddAsync(new CompanyHierarchyPosition
+            {
+                CompanyId = companyId,
+                Role = position.Role,
+                PositionTitle = position.Title,
+                SortOrder = position.SortOrder
+            });
+        }
+
+        await context.SaveChangesAsync();
+    }
+
     public async Task AssignRoleToUserAsync(string userId, string roleName)
     {
         EnsureDockerAvailable();
