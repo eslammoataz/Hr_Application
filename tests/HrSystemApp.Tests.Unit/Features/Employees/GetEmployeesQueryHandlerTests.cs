@@ -17,8 +17,12 @@ public class GetEmployeesQueryHandlerTests
         MapsterTestConfig.EnsureInitialized();
 
         var employeeRepo = new Mock<IEmployeeRepository>();
+        var userRepo = new Mock<IUserRepository>();
         var unitOfWork = new Mock<IUnitOfWork>();
         unitOfWork.SetupGet(x => x.Employees).Returns(employeeRepo.Object);
+        unitOfWork.SetupGet(x => x.Users).Returns(userRepo.Object);
+
+        var userId = Guid.NewGuid().ToString();
 
         var employee = new Employee
         {
@@ -31,8 +35,15 @@ public class GetEmployeesQueryHandlerTests
             Department = new Department { Name = "People" },
             Unit = new HrSystemApp.Domain.Models.Unit { Name = "Operations" },
             Team = new Team { Name = "Core" },
-            Manager = new Employee { FullName = "Manager One" }
+            Manager = new Employee { FullName = "Manager One" },
+            UserId = userId
         };
+
+        userRepo
+            .Setup(x => x.GetPrimaryRolesByUserIdsAsync(
+                It.Is<IEnumerable<string>>(ids => ids.Contains(userId)),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Dictionary<string, string> { { userId, "HR Admin" } });
 
         var paged = PagedResult<Employee>.Create(new List<Employee> { employee }, 1, 20, 1);
 
@@ -52,6 +63,7 @@ public class GetEmployeesQueryHandlerTests
         result.Value.Items[0].UnitName.Should().Be("Operations");
         result.Value.Items[0].TeamName.Should().Be("Core");
         result.Value.Items[0].ManagerName.Should().Be("Manager One");
+        result.Value.Items[0].Role.Should().Be("HR Admin");
     }
 
     [Fact]
@@ -60,8 +72,14 @@ public class GetEmployeesQueryHandlerTests
         MapsterTestConfig.EnsureInitialized();
 
         var employeeRepo = new Mock<IEmployeeRepository>();
+        var userRepo = new Mock<IUserRepository>();
         var unitOfWork = new Mock<IUnitOfWork>();
         unitOfWork.SetupGet(x => x.Employees).Returns(employeeRepo.Object);
+        unitOfWork.SetupGet(x => x.Users).Returns(userRepo.Object);
+
+        userRepo
+            .Setup(x => x.GetPrimaryRolesByUserIdsAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Dictionary<string, string>());
 
         employeeRepo
             .Setup(x => x.GetPagedAsync(Guid.Empty, Guid.Empty, null, 2, 10, It.IsAny<CancellationToken>()))

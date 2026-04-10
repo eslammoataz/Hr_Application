@@ -11,9 +11,26 @@ public class TeamRepository : Repository<Team>, ITeamRepository
 
     public async Task<IReadOnlyList<Team>> GetByUnitAsync(Guid unitId, CancellationToken cancellationToken = default)
         => await _context.Teams
+            .AsNoTracking()
             .Include(t => t.TeamLeader)
             .Where(t => t.UnitId == unitId && !t.IsDeleted)
             .ToListAsync(cancellationToken);
+
+    public async Task<IReadOnlyList<Team>> GetByUnitIdsAsync(
+        IReadOnlyCollection<Guid> unitIds,
+        CancellationToken cancellationToken = default)
+    {
+        if (unitIds.Count == 0)
+        {
+            return Array.Empty<Team>();
+        }
+
+        return await _context.Teams
+            .AsNoTracking()
+            .Include(t => t.TeamLeader)
+            .Where(t => unitIds.Contains(t.UnitId) && !t.IsDeleted)
+            .ToListAsync(cancellationToken);
+    }
 
     public async Task<Team?> GetWithMembersAsync(Guid id, CancellationToken cancellationToken = default)
         => await _context.Teams

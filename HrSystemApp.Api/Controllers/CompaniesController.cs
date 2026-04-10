@@ -232,13 +232,16 @@ public class CompaniesController : BaseApiController
     }
 
     /// <summary>
-    /// Gets the full organizational hierarchy for the current user's company.
+    /// Gets the organizational hierarchy for the current user's company (Lazy loading supported).
     /// </summary>
     [HttpGet("hierarchy")]
     [Authorize(Roles = Roles.Viewers)]
-    public async Task<IActionResult> GetHierarchy(CancellationToken ct)
+    public async Task<IActionResult> GetHierarchy(
+        [FromQuery] Guid? parentId,
+        [FromQuery] string? parentType,
+        CancellationToken ct)
     {
-        var result = await _sender.Send(new GetCompanyHierarchyQuery(), ct);
+        var result = await _sender.Send(new GetCompanyHierarchyQuery(parentId, parentType), ct);
         return HandleResult(result);
     }
 
