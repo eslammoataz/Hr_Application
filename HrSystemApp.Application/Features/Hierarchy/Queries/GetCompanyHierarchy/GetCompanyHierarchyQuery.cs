@@ -171,55 +171,109 @@ public class GetCompanyHierarchyQueryHandler : IRequestHandler<GetCompanyHierarc
     private async Task<List<HierarchyNodeDto>> GetEmployeeChildrenAsync(Guid companyId, Guid employeeId, CancellationToken ct)
     {
         var nodes = new List<HierarchyNodeDto>();
+        var positions = await _unitOfWork.HierarchyPositions.FindAsync(p => p.CompanyId == companyId && !p.IsDeleted, ct);
+        var rankMap = positions.ToDictionary(p => p.Role.ToString(), p => p.SortOrder, StringComparer.OrdinalIgnoreCase);
 
-        // 1. Organizations led by this person (PRIORITY)
-        var ledDepts = await _unitOfWork.Departments.FindAsync(d => (d.VicePresidentId == employeeId || d.ManagerId == employeeId) && !d.IsDeleted, ct);
-        foreach (var dept in ledDepts)
-            nodes.Add(await MapDepartmentNodeAsync(dept, employeeId, ct));
+        // 1. ORGANIZATIONAL DISCOVERY (Leaders "unbox" the next level)
+        
+        // If Manager of a Department -> Return the Units in that Department
+        var managedDepts = await _unitOfWork.Departments.FindAsync(d => d.ManagerId == employeeId && !d.IsDeleted, ct);
+        foreach (var dept in managedDepts)
+        {
+            var units = await _unitOfWork.Units.GetByDepartmentIdsAsync(new[] { dept.Id }, ct);
+            foreach (var unit in units)
+                nodes.Add(await MapUnitNodeAsync(unit, employeeId, ct));
+                
+            // Also find employees directly in this department (not in a unit)
+            var deptEmps = await _unitOfWork.Employees.FindAsync(e => e.DepartmentId == dept.Id && e.UnitId == null && e.Id != employeeId && !e.IsDeleted, ct);
+            foreach (var emp in deptEmps)
+                nodes.Add(await MapEmployeeNodeAsync(emp, employeeId, null, ct));
+        }
 
+        // If Leader of a Unit -> Return the Teams in that Unit
         var ledUnits = await _unitOfWork.Units.FindAsync(u => u.UnitLeaderId == employeeId && !u.IsDeleted, ct);
         foreach (var unit in ledUnits)
-            nodes.Add(await MapUnitNodeAsync(unit, employeeId, ct));
+        {
+            var teams = await _unitOfWork.Teams.GetByUnitIdsAsync(new[] { unit.Id }, ct);
+            foreach (var team in teams)
+                nodes.Add(await MapTeamNodeAsync(team, employeeId, ct));
+                
+            // Also find employees directly in this unit (not in a team)
+            var unitEmps = await _unitOfWork.Employees.FindAsync(e => e.UnitId == unit.Id && e.TeamId == null && e.Id != employeeId && !e.IsDeleted, ct);
+            foreach (var emp in unitEmps)
+                nodes.Add(await MapEmployeeNodeAsync(emp, employeeId, null, ct));
+        }
 
+        // If Leader of a Team -> Return the Employees in that Team
         var ledTeams = await _unitOfWork.Teams.FindAsync(t => t.TeamLeaderId == employeeId && !t.IsDeleted, ct);
         foreach (var team in ledTeams)
-            nodes.Add(await MapTeamNodeAsync(team, employeeId, ct));
+        {
+            var teamEmps = await _unitOfWork.Employees.FindAsync(e => e.TeamId == team.Id && e.Id != employeeId && !e.IsDeleted, ct);
+            foreach (var emp in teamEmps)
+                nodes.Add(await MapEmployeeNodeAsync(emp, employeeId, null, ct));
+        }
 
-        // 2. Direct Reports (via ManagerId)
-        // ALIGNMENT LOGIC: To match the "Structural First" view, we filter out reports 
-        // who will already be discovered through the organizational nodes mapped above.
+        // If VP of a Department -> Return the Department itself
+        var vpDepts = await _unitOfWork.Departments.FindAsync(d => d.VicePresidentId == employeeId && !d.IsDeleted, ct);
+        foreach (var dept in vpDepts)
+            nodes.Add(await MapDepartmentNodeAsync(dept, employeeId, ct));
+
+        // 2. DIRECT REPORTS (Fallback for any other reporting lines)
         var reports = await _unitOfWork.Employees.FindAsync(e => e.ManagerId == employeeId && !e.IsDeleted, ct);
         
-        var ledDeptIds = ledDepts.Select(d => d.Id).ToHashSet();
-        var ledUnitIds = ledUnits.Select(u => u.Id).ToHashSet();
-        var ledTeamIds = ledTeams.Select(t => t.Id).ToHashSet();
+        // Identify leaders of the organizations we just added to the nodes list to prevent "Double Discovery"
+        var leadersToExclude = new HashSet<Guid>();
+        
+        // Exclude Managers of Departments this person leads/VPs
+        var deptsToProbe = managedDepts.Concat(vpDepts).DistinctBy(d => d.Id);
+        foreach (var d in deptsToProbe) if (d.ManagerId.HasValue) leadersToExclude.Add(d.ManagerId.Value);
+        
+        // Exclude Unit Leaders of Units this person "unboxed" (when Manager leads a Dept)
+        foreach (var d in managedDepts)
+        {
+            var units = await _unitOfWork.Units.GetByDepartmentIdsAsync(new[] { d.Id }, ct);
+            foreach (var u in units) if (u.UnitLeaderId.HasValue) leadersToExclude.Add(u.UnitLeaderId.Value);
+        }
 
+        // Exclude Unit Leaders of Units this person leads directly
+        foreach (var u in ledUnits) if (u.UnitLeaderId.HasValue) leadersToExclude.Add(u.UnitLeaderId.Value);
+
+        // Exclude Team Leaders of Teams this person "unboxed" (when Unit Leader leads a Unit)
+        foreach (var u in ledUnits)
+        {
+            var teams = await _unitOfWork.Teams.GetByUnitIdsAsync(new[] { u.Id }, ct);
+            foreach (var t in teams) if (t.TeamLeaderId.HasValue) leadersToExclude.Add(t.TeamLeaderId.Value);
+        }
+
+        // Exclude Team Leaders of Teams this person leads directly
+        foreach (var t in ledTeams) if (t.TeamLeaderId.HasValue) leadersToExclude.Add(t.TeamLeaderId.Value);
+
+        // Filter: If they are the Leader of an Org just mapped, or part of a sub-org expansion above, skip
+        var currentIds = nodes.Select(n => n.Id).ToHashSet();
         foreach (var report in reports)
         {
-            // If the report is in an org that the parent leads, they will appear inside that Org node instead
-            if (report.DepartmentId.HasValue && ledDeptIds.Contains(report.DepartmentId.Value)) continue;
-            if (report.UnitId.HasValue && ledUnitIds.Contains(report.UnitId.Value)) continue;
-            if (report.TeamId.HasValue && ledTeamIds.Contains(report.TeamId.Value)) continue;
+            if (currentIds.Contains(report.Id)) continue;
+            if (leadersToExclude.Contains(report.Id)) continue;
 
             nodes.Add(await MapEmployeeNodeAsync(report, employeeId, null, ct));
         }
 
-        return nodes.DistinctBy(x => x.Id).ToList();
+        return nodes.DistinctBy(x => x.Id)
+            .OrderBy(n => n.NodeType switch { "Department" => 1, "Unit" => 2, "Team" => 3, _ => 4 })
+            .ThenBy(n => n.Role != null && rankMap.TryGetValue(n.Role, out var rank) ? rank : 999)
+            .ToList();
     }
 
     private async Task<List<HierarchyNodeDto>> GetDepartmentChildrenAsync(Guid companyId, Guid deptId, CancellationToken ct)
     {
         var nodes = new List<HierarchyNodeDto>();
+        var dept = await _unitOfWork.Departments.GetByIdAsync(deptId);
+        if (dept == null || !dept.ManagerId.HasValue) return nodes;
 
-        // Units in Department
-        var units = await _unitOfWork.Units.GetByDepartmentIdsAsync(new[] { deptId }, ct);
-        foreach (var unit in units)
-            nodes.Add(await MapUnitNodeAsync(unit, deptId, ct));
-
-        // Direct Dept Employees
-        var emps = await _unitOfWork.Employees.FindAsync(e => e.DepartmentId == deptId && e.UnitId == null && !e.IsDeleted, ct);
-        foreach (var emp in emps)
-            nodes.Add(await MapEmployeeNodeAsync(emp, deptId, null, ct));
+        // Departmet expands ONLY to its primary leader (Manager)
+        var manager = await _unitOfWork.Employees.GetByIdAsync(dept.ManagerId.Value);
+        if (manager != null && !manager.IsDeleted)
+            nodes.Add(await MapEmployeeNodeAsync(manager, deptId, null, ct));
 
         return nodes;
     }
@@ -227,26 +281,28 @@ public class GetCompanyHierarchyQueryHandler : IRequestHandler<GetCompanyHierarc
     private async Task<List<HierarchyNodeDto>> GetUnitChildrenAsync(Guid companyId, Guid unitId, CancellationToken ct)
     {
         var nodes = new List<HierarchyNodeDto>();
+        var unit = await _unitOfWork.Units.GetByIdAsync(unitId);
+        if (unit == null || !unit.UnitLeaderId.HasValue) return nodes;
 
-        // Teams in Unit
-        var teams = await _unitOfWork.Teams.GetByUnitIdsAsync(new[] { unitId }, ct);
-        foreach (var team in teams)
-            nodes.Add(await MapTeamNodeAsync(team, unitId, ct));
-
-        // Direct Unit Employees
-        var emps = await _unitOfWork.Employees.FindAsync(e => e.UnitId == unitId && e.TeamId == null && !e.IsDeleted, ct);
-        foreach (var emp in emps)
-            nodes.Add(await MapEmployeeNodeAsync(emp, unitId, null, ct));
+        // Unit expands ONLY to its primary leader (Unit Leader)
+        var leader = await _unitOfWork.Employees.GetByIdAsync(unit.UnitLeaderId.Value);
+        if (leader != null && !leader.IsDeleted)
+            nodes.Add(await MapEmployeeNodeAsync(leader, unitId, null, ct));
 
         return nodes;
     }
 
     private async Task<List<HierarchyNodeDto>> GetTeamChildrenAsync(Guid companyId, Guid teamId, CancellationToken ct)
     {
-        var emps = await _unitOfWork.Employees.FindAsync(e => e.TeamId == teamId && !e.IsDeleted, ct);
         var nodes = new List<HierarchyNodeDto>();
-        foreach (var emp in emps)
-            nodes.Add(await MapEmployeeNodeAsync(emp, teamId, null, ct));
+        var team = await _unitOfWork.Teams.GetByIdAsync(teamId);
+        if (team == null || !team.TeamLeaderId.HasValue) return nodes;
+
+        // Team expands ONLY to its primary leader (Team Leader)
+        var leader = await _unitOfWork.Employees.GetByIdAsync(team.TeamLeaderId.Value);
+        if (leader != null && !leader.IsDeleted)
+            nodes.Add(await MapEmployeeNodeAsync(leader, teamId, null, ct));
+
         return nodes;
     }
 
@@ -273,8 +329,7 @@ public class GetCompanyHierarchyQueryHandler : IRequestHandler<GetCompanyHierarc
 
     private async Task<HierarchyNodeDto> MapDepartmentNodeAsync(Department dept, Guid? parentId, CancellationToken ct)
     {
-        var hasChildren = await _unitOfWork.Units.ExistsAsync(u => u.DepartmentId == dept.Id, ct)
-            || await _unitOfWork.Employees.ExistsAsync(e => e.DepartmentId == dept.Id && e.UnitId == null && !e.IsDeleted, ct);
+        var hasChildren = dept.ManagerId.HasValue;
 
         return new HierarchyNodeDto(
             dept.Id,
@@ -288,8 +343,7 @@ public class GetCompanyHierarchyQueryHandler : IRequestHandler<GetCompanyHierarc
 
     private async Task<HierarchyNodeDto> MapUnitNodeAsync(DomainUnit unit, Guid? parentId, CancellationToken ct)
     {
-        var hasChildren = await _unitOfWork.Teams.ExistsAsync(t => t.UnitId == unit.Id, ct)
-            || await _unitOfWork.Employees.ExistsAsync(e => e.UnitId == unit.Id && e.TeamId == null && !e.IsDeleted, ct);
+        var hasChildren = unit.UnitLeaderId.HasValue;
 
         return new HierarchyNodeDto(
             unit.Id,
@@ -303,7 +357,7 @@ public class GetCompanyHierarchyQueryHandler : IRequestHandler<GetCompanyHierarc
 
     private async Task<HierarchyNodeDto> MapTeamNodeAsync(Team team, Guid? parentId, CancellationToken ct)
     {
-        var hasChildren = await _unitOfWork.Employees.ExistsAsync(e => e.TeamId == team.Id && !e.IsDeleted, ct);
+        var hasChildren = team.TeamLeaderId.HasValue;
 
         return new HierarchyNodeDto(
             team.Id,
