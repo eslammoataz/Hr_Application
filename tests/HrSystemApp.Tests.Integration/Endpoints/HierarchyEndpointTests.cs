@@ -175,11 +175,14 @@ public class HierarchyEndpointTests : IAsyncLifetime
         using var vpOneDoc = JsonDocument.Parse(json);
         nodes = vpOneDoc.RootElement.GetProperty("data").GetProperty("nodes").EnumerateArray().ToList();
 
-        // Should return Engineering Department (led by VP One) and Manager One
+        // VP One should return the Department they lead (Engineering)
         nodes.Any(x => x.GetProperty("nodeType").GetString() == "Department" && x.GetProperty("name").GetString() == "Engineering")
             .Should().BeTrue();
+        
+        // IMPORTANT: The Manager should NOT appear here under the VP anymore. 
+        // They will appear when the Department node is expanded.
         nodes.Any(x => x.GetProperty("nodeType").GetString() == "Employee" && x.GetProperty("name").GetString() == "Manager One")
-            .Should().BeTrue();
+            .Should().BeFalse();
 
         var engDept = nodes.First(x => x.GetProperty("nodeType").GetString() == "Department");
         var engDeptIdStr = engDept.GetProperty("id").GetString();
@@ -190,23 +193,80 @@ public class HierarchyEndpointTests : IAsyncLifetime
         using var engDoc = JsonDocument.Parse(json);
         nodes = engDoc.RootElement.GetProperty("data").GetProperty("nodes").EnumerateArray().ToList();
 
-        // Should return Platform Unit
+        // Engineering Department expands ONLY to its Manager
+        nodes.Should().HaveCount(1);
+        nodes.Any(x => x.GetProperty("nodeType").GetString() == "Employee" && x.GetProperty("name").GetString() == "Manager One")
+            .Should().BeTrue();
+
+        var managerOne = nodes.First();
+        var managerOneIdStr = managerOne.GetProperty("id").GetString();
+
+        // 5. Expand Manager One
+        response = await client.GetAsync($"/api/companies/hierarchy?parentId={managerOneIdStr}&parentType=Employee");
+        json = await response.Content.ReadAsStringAsync();
+        using var mgrDoc = JsonDocument.Parse(json);
+        nodes = mgrDoc.RootElement.GetProperty("data").GetProperty("nodes").EnumerateArray().ToList();
+
+        // Manager One unboxes the Units and direct employees
         nodes.Any(x => x.GetProperty("nodeType").GetString() == "Unit" && x.GetProperty("name").GetString() == "Platform")
             .Should().BeTrue();
 
         var platformUnit = nodes.First(x => x.GetProperty("nodeType").GetString() == "Unit");
         var platformUnitIdStr = platformUnit.GetProperty("id").GetString();
 
-        // 5. Expand Platform Unit
+        // 6. Expand Platform Unit
         response = await client.GetAsync($"/api/companies/hierarchy?parentId={platformUnitIdStr}&parentType=Unit");
         json = await response.Content.ReadAsStringAsync();
         using var platformDoc = JsonDocument.Parse(json);
         nodes = platformDoc.RootElement.GetProperty("data").GetProperty("nodes").EnumerateArray().ToList();
 
-        // Should return Backend Team and Unit Direct Employee
+        // Unit expands ONLY to its Leader
+        nodes.Should().HaveCount(1);
+        nodes.Any(x => x.GetProperty("nodeType").GetString() == "Employee" && x.GetProperty("name").GetString() == "Unit Leader One")
+            .Should().BeTrue();
+
+        var unitLeaderOne = nodes.First();
+        var unitLeaderOneIdStr = unitLeaderOne.GetProperty("id").GetString();
+
+        // 7. Expand Unit Leader One
+        response = await client.GetAsync($"/api/companies/hierarchy?parentId={unitLeaderOneIdStr}&parentType=Employee");
+        json = await response.Content.ReadAsStringAsync();
+        using var leadDoc = JsonDocument.Parse(json);
+        nodes = leadDoc.RootElement.GetProperty("data").GetProperty("nodes").EnumerateArray().ToList();
+
+        // Unit Leader One unboxes the Teams and Unit Direct Employees
+        nodes.Any(x => x.GetProperty("nodeType").GetString() == "Team" && x.GetProperty("name").GetString() == "Platform")
+            .Should().BeFalse(); // Unit doesn't reappear
         nodes.Any(x => x.GetProperty("nodeType").GetString() == "Team" && x.GetProperty("name").GetString() == "Backend")
             .Should().BeTrue();
         nodes.Any(x => x.GetProperty("nodeType").GetString() == "Employee" && x.GetProperty("name").GetString() == "Unit Direct Employee")
+            .Should().BeTrue();
+
+        var backendTeam = nodes.First(x => x.GetProperty("nodeType").GetString() == "Team");
+        var backendTeamIdStr = backendTeam.GetProperty("id").GetString();
+
+        // 8. Expand Backend Team
+        response = await client.GetAsync($"/api/companies/hierarchy?parentId={backendTeamIdStr}&parentType=Team");
+        json = await response.Content.ReadAsStringAsync();
+        using var teamDoc = JsonDocument.Parse(json);
+        nodes = teamDoc.RootElement.GetProperty("data").GetProperty("nodes").EnumerateArray().ToList();
+
+        // Team expands ONLY to Team Leader
+        nodes.Should().HaveCount(1);
+        nodes.Any(x => x.GetProperty("nodeType").GetString() == "Employee" && x.GetProperty("name").GetString() == "Team Leader One")
+            .Should().BeTrue();
+
+        var teamLeaderOne = nodes.First();
+        var teamLeaderOneIdStr = teamLeaderOne.GetProperty("id").GetString();
+
+        // 9. Expand Team Leader
+        response = await client.GetAsync($"/api/companies/hierarchy?parentId={teamLeaderOneIdStr}&parentType=Employee");
+        json = await response.Content.ReadAsStringAsync();
+        using var tlDoc = JsonDocument.Parse(json);
+        nodes = tlDoc.RootElement.GetProperty("data").GetProperty("nodes").EnumerateArray().ToList();
+
+        // Team Leader unboxes the team members
+        nodes.Any(x => x.GetProperty("nodeType").GetString() == "Employee" && x.GetProperty("name").GetString() == "Team Member A")
             .Should().BeTrue();
     }
 
