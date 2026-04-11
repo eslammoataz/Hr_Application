@@ -25,6 +25,12 @@ public class SendNotificationToEmployeeCommandHandler : IRequestHandler<SendNoti
         _logger = logger;
     }
 
+    /// <summary>
+    /// Sends the notification described by the request to the specified employee.
+    /// </summary>
+    /// <param name="request">Request carrying the employee ID, notification title, message, and type.</param>
+    /// <param name="cancellationToken">Token to cancel the send operation.</param>
+    /// <returns>`Result.Success()` if the notification was sent; otherwise `Result.Failure(Errors.DomainErrors.Notification.SendFailed)`.</returns>
     public async Task<Result> Handle(SendNotificationToEmployeeCommand request, CancellationToken cancellationToken)
     {
         try

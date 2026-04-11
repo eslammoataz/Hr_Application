@@ -43,6 +43,9 @@ public class GetCompanyHierarchyQueryHandler : IRequestHandler<GetCompanyHierarc
     private readonly IHierarchyService _hierarchyService;
     private readonly ILogger<GetCompanyHierarchyQueryHandler> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of GetCompanyHierarchyQueryHandler with required dependencies.
+    /// </summary>
     public GetCompanyHierarchyQueryHandler(
         IUnitOfWork unitOfWork,
         ICurrentUserService currentUserService,
@@ -55,6 +58,15 @@ public class GetCompanyHierarchyQueryHandler : IRequestHandler<GetCompanyHierarc
         _logger = logger;
     }
 
+    /// <summary>
+    /// Builds the company hierarchy payload for the current user's company according to the query.
+    /// </summary>
+    /// <param name="request">Query parameters; when <c>ParentId</c> is null the handler returns root nodes, otherwise it returns the children of the specified parent. <c>ParentType</c> defaults to "Employee" when expanding.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>
+    /// A Result containing a CompanyHierarchyDto with the company's id, name, and the resolved hierarchy nodes on success;
+    /// a failure Result when the current user is unauthorized, the corresponding employee record is not found, or the company is not found.
+    /// </returns>
     public async Task<Result<CompanyHierarchyDto>> Handle(GetCompanyHierarchyQuery request,
         CancellationToken cancellationToken)
     {
@@ -112,6 +124,12 @@ public class GetCompanyHierarchyQueryHandler : IRequestHandler<GetCompanyHierarc
         return Result.Success(new CompanyHierarchyDto(companyId, company.CompanyName, nodes));
     }
 
+    /// <summary>
+    /// Determines the root nodes for the specified company’s hierarchy, choosing roots in the following priority: top-role employees, unmanaged employees ranked by position sort order, then root departments.
+    /// </summary>
+    /// <param name="companyId">The company identifier to load roots for.</param>
+    /// <param name="ct">Cancellation token to cancel the operation.</param>
+    /// <returns>A list of HierarchyNodeDto representing root nodes for the company; the list may be empty if no roots are found.</returns>
     private async Task<List<HierarchyNodeDto>> GetRootsAsync(Guid companyId, CancellationToken ct)
     {
         var nodes = new List<HierarchyNodeDto>();

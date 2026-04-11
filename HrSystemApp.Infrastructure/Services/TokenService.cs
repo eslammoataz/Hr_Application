@@ -18,6 +18,12 @@ public class TokenService : ITokenService
         _configuration = configuration;
     }
 
+    /// <summary>
+    /// Creates a signed JWT for the specified user containing their identity and primary role.
+    /// </summary>
+    /// <param name="user">The user for whom the token will be issued.</param>
+    /// <param name="roles">The user's roles; the first role (if any) is used as the token's primary role claim.</param>
+    /// <returns>A tuple where `Token` is the serialized JWT string and `ExpiresAt` is the token's UTC expiration time.</returns>
     public (string Token, DateTime ExpiresAt) GenerateToken(ApplicationUser user, IEnumerable<string> roles)
     {
         var jwtSettings = _configuration.GetSection("JwtSettings");
@@ -76,6 +82,11 @@ public class TokenService : ITokenService
         return result.IsValid;
     }
 
+    /// <summary>
+    /// Extracts the user identifier from a JWT's subject claim.
+    /// </summary>
+    /// <param name="token">The JWT string to read.</param>
+    /// <returns>The subject claim value representing the user id, or <c>null</c> if the token is invalid or the subject claim is missing.</returns>
     public string? GetUserIdFromToken(string token)
     {
         var handler = new JsonWebTokenHandler();

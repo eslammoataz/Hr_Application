@@ -12,6 +12,10 @@ public class CurrentUserService : ICurrentUserService
 {
     private readonly IHttpContextAccessor _httpContextAccessor;
 
+    /// <summary>
+    /// Initializes a new instance of <see cref="CurrentUserService"/> that retrieves user information from the current HTTP context.
+    /// </summary>
+    /// <param name="httpContextAccessor">An <see cref="IHttpContextAccessor"/> used to access the current <see cref="Microsoft.AspNetCore.Http.HttpContext"/> and its user claims.</param>
     public CurrentUserService(IHttpContextAccessor httpContextAccessor)
     {
         _httpContextAccessor = httpContextAccessor;

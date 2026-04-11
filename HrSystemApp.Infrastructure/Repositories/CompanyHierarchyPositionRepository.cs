@@ -13,6 +13,12 @@ public class CompanyHierarchyPositionRepository : Repository<CompanyHierarchyPos
     {
     }
 
+    /// <summary>
+    /// Retrieves all hierarchy positions for the specified company, ordered by <c>SortOrder</c>, including records regardless of soft-delete state.
+    /// </summary>
+    /// <param name="companyId">The identifier of the company whose positions to retrieve.</param>
+    /// <param name="cancellationToken">A token to cancel the query.</param>
+    /// <returns>A read-only list of <see cref="CompanyHierarchyPosition"/> for the specified company ordered by <c>SortOrder</c>.</returns>
     public async Task<IReadOnlyList<CompanyHierarchyPosition>> GetByCompanyAsync(Guid companyId,
         CancellationToken cancellationToken = default)
     {
@@ -36,6 +42,12 @@ public class CompanyHierarchyPositionRepository : Repository<CompanyHierarchyPos
         }
     }
 
+    /// <summary>
+    /// Determines whether any CompanyHierarchyPosition exists for the specified company with the specified role, including soft-deleted records.
+    /// </summary>
+    /// <param name="companyId">The company identifier to check.</param>
+    /// <param name="role">The user role to check for.</param>
+    /// <returns>true if a matching CompanyHierarchyPosition exists, false otherwise.</returns>
     public async Task<bool> RoleExistsForCompanyAsync(Guid companyId, UserRole role,
         CancellationToken cancellationToken = default)
     {

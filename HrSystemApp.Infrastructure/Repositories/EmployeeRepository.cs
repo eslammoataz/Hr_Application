@@ -18,7 +18,13 @@ public class EmployeeRepository : Repository<Employee>, IEmployeeRepository
     public async Task<Employee?> GetByUserIdAsync(string userId, CancellationToken cancellationToken = default)
         => await _dbSet.FirstOrDefaultAsync(e => e.UserId == userId, cancellationToken);
 
-    public async Task<Employee?> GetWithDetailsAsync(Guid id, CancellationToken cancellationToken = default)
+    /// <summary>
+            /// Loads an Employee by its identifier and includes related Department, Unit, Team, Manager, and User navigation properties.
+            /// </summary>
+            /// <param name="id">The employee's unique identifier.</param>
+            /// <param name="cancellationToken">A token to observe while waiting for the task to complete.</param>
+            /// <returns>The matching Employee with related entities loaded, or <c>null</c> if none is found.</returns>
+            public async Task<Employee?> GetWithDetailsAsync(Guid id, CancellationToken cancellationToken = default)
         => await _dbSet
             .Include(e => e.Department)
             .Include(e => e.Unit)
@@ -27,6 +33,12 @@ public class EmployeeRepository : Repository<Employee>, IEmployeeRepository
             .Include(e => e.User)
             .FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
 
+    /// <summary>
+    /// Gets the employee profile DTO for the employee associated with the specified user id.
+    /// </summary>
+    /// <param name="userId">The identifier of the user whose employee profile to retrieve.</param>
+    /// <param name="cancellationToken">Token to cancel the database operation.</param>
+    /// <returns>The matching EmployeeProfileDto, or null if no employee is found.</returns>
     public async Task<EmployeeProfileDto?> GetProfileByUserIdAsync(string userId,
         CancellationToken cancellationToken = default)
     {
@@ -53,14 +65,28 @@ public class EmployeeRepository : Repository<Employee>, IEmployeeRepository
             .FirstOrDefaultAsync(cancellationToken);
     }
 
-    public async Task<IReadOnlyList<Employee>> GetByCompanyAsync(Guid companyId,
+    /// <summary>
+            /// Retrieves all employees that belong to the specified company.
+            /// </summary>
+            /// <param name="companyId">The unique identifier of the company whose employees to retrieve.</param>
+            /// <param name="cancellationToken">Token to cancel the database query.</param>
+            /// <returns>A read-only list of Employee entities for the given company; an empty list if no employees are found.</returns>
+            public async Task<IReadOnlyList<Employee>> GetByCompanyAsync(Guid companyId,
         CancellationToken cancellationToken = default)
         => await _dbSet
             .AsNoTracking()
             .Where(e => e.CompanyId == companyId)
             .ToListAsync(cancellationToken);
 
-    // for me "needs some query optimization"
+    /// <summary>
+    /// Retrieves a paginated list of employees, optionally filtered by company, team, and a case-insensitive search term.
+    /// </summary>
+    /// <param name="companyId">If provided, limits results to employees belonging to the specified company.</param>
+    /// <param name="teamId">If provided, limits results to employees belonging to the specified team.</param>
+    /// <param name="searchTerm">If provided and not empty, performs a case-insensitive substring match against FullName, Email, and EmployeeCode.</param>
+    /// <param name="pageNumber">1-based page index to return.</param>
+    /// <param name="pageSize">Number of items per page.</param>
+    /// <returns>A PagedResult&lt;Employee&gt; containing the employees for the requested page and the total matching item count.</returns>
     public async Task<PagedResult<Employee>> GetPagedAsync(
         Guid? companyId, Guid? teamId, string? searchTerm,
         int pageNumber, int pageSize, CancellationToken cancellationToken = default)
@@ -99,6 +125,25 @@ public class EmployeeRepository : Repository<Employee>, IEmployeeRepository
         return PagedResult<Employee>.Create(items, pageNumber, pageSize, totalCount);
     }
 
+    /// <summary>
+    /// Retrieves a paginated list of employees with optional filters and returns the page items along with aggregate counts.
+    /// </summary>
+    /// <param name="companyId">Optional company filter; when provided, limits results to employees in this company.</param>
+    /// <param name="teamId">Optional team filter; when provided, limits results to employees in this team.</param>
+    /// <param name="searchTerm">Optional free-text filter applied to full name, email, and employee code.</param>
+    /// <param name="role">Optional user role filter; when provided, limits results to employees who have this role.</param>
+    /// <param name="employmentStatus">Optional employment status filter; when provided, limits results to employees with this status.</param>
+    /// <param name="pageNumber">1-based page number to return.</param>
+    /// <param name="pageSize">Number of items per page.</param>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns>
+    /// An EmployeesPagedResult containing:
+    /// - Items: the list of EmployeeResponse for the requested page;
+    /// - PageNumber and PageSize matching the request;
+    /// - TotalCount: total number of matching employees;
+    /// - TotalActive: count of matching employees considered active (Active, Probation, OnLeave);
+    /// - TotalInactive: count of matching employees considered inactive (Inactive, Suspended, Terminated).
+    /// </returns>
     public async Task<EmployeesPagedResult> GetPagedForListAsync(
         Guid? companyId,
         Guid? teamId,

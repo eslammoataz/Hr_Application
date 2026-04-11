@@ -14,6 +14,9 @@ public class NotificationService : INotificationService
     private readonly ILogger<NotificationService> _logger;
     private readonly FcmSender _fcmSender;
 
+    /// <summary>
+    /// Initializes a new NotificationService with the application's database context, a logger, and an FCM sender.
+    /// </summary>
     public NotificationService(
         ApplicationDbContext context,
         ILogger<NotificationService> logger,
@@ -24,6 +27,15 @@ public class NotificationService : INotificationService
         _fcmSender = fcmSender;
     }
 
+    /// <summary>
+    /// Creates and persists a notification for the specified employee and, if the employee has a Firebase Cloud Messaging (FCM) token, schedules a push delivery to that token.
+    /// </summary>
+    /// <param name="employeeId">The target employee's identifier.</param>
+    /// <param name="title">The notification title.</param>
+    /// <param name="message">The notification body message.</param>
+    /// <param name="type">The notification type.</param>
+    /// <param name="cancellationToken">Token to cancel database operations and the optional FCM delivery.</param>
+    /// <exception cref="KeyNotFoundException">Thrown when no employee with <paramref name="employeeId"/> exists.</exception>
     public async Task SendNotificationAsync(Guid employeeId, string title, string message, NotificationType type, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation(
@@ -76,6 +88,13 @@ public class NotificationService : INotificationService
             employeeId);
     }
 
+    /// <summary>
+    /// Creates notifications for all active employees who have an FCM token, saves them to the database, and schedules a Firebase Cloud Messaging batch delivery.
+    /// </summary>
+    /// <param name="title">The notification title.</param>
+    /// <param name="message">The notification message/body.</param>
+    /// <param name="type">The notification type.</param>
+    /// <param name="cancellationToken">Token to cancel database and FCM operations.</param>
     public async Task SendBroadcastAsync(string title, string message, NotificationType type, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation(
@@ -136,6 +155,11 @@ public class NotificationService : INotificationService
             activeEmployees.Count);
     }
 
+    /// <summary>
+    /// Retrieves notifications for the specified employee, ordered from newest to oldest.
+    /// </summary>
+    /// <param name="employeeId">The identifier of the employee whose notifications to retrieve.</param>
+    /// <returns>An enumerable of <see cref="DomainNotification"/> objects for the employee, ordered by <c>CreatedAt</c> descending.</returns>
     public async Task<IEnumerable<DomainNotification>> GetUserNotifications(Guid employeeId, CancellationToken cancellationToken = default)
     {
         return await _context.Notifications
@@ -145,6 +169,10 @@ public class NotificationService : INotificationService
             .ToListAsync(cancellationToken);
     }
 
+    /// <summary>
+    /// Marks the specified unread notification as read for the given employee.
+    /// </summary>
+    /// <returns>The number of rows updated: `1` if the notification was marked as read, `0` if no matching unread notification was found.</returns>
     public async Task<int> MarkAsReadAsync(Guid notificationId, Guid employeeId, CancellationToken cancellationToken = default)
     {
         var rowsAffected = await _context.Notifications

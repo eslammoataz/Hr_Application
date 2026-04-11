@@ -14,12 +14,28 @@ public class FcmSender
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<FcmSender> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of <see cref="FcmSender"/> configured to send Firebase notifications using scoped services.
+    /// </summary>
+    /// <param name="scopeFactory">Factory for creating DI scopes to resolve per-delivery scoped services.</param>
+    /// <param name="logger">Logger used to record delivery queueing, start/end events, and errors.</param>
     public FcmSender(IServiceScopeFactory scopeFactory, ILogger<FcmSender> logger)
     {
         _scopeFactory = scopeFactory;
         _logger = logger;
     }
 
+    /// <summary>
+    /// Queues a Firebase Cloud Messaging delivery for the specified notification and recipient token.
+    /// </summary>
+    /// <param name="token">The recipient's FCM registration token.</param>
+    /// <param name="notification">The notification payload to send.</param>
+    /// <param name="type">The classification of the notification to send.</param>
+    /// <param name="cancellationToken">Optional token forwarded to the send operation to cancel delivery.</param>
+    /// <returns>A Task representing the queued background delivery operation.</returns>
+    /// <remarks>
+    /// If Firebase reports the token as unregistered or invalid, the sender clears that token from the database for the associated user.
+    /// </remarks>
     public Task SendAsync(string token, DomainNotification notification, NotificationType type, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation(
@@ -63,6 +79,12 @@ public class FcmSender
         });
     }
 
+    /// <summary>
+    /// Queues individual Firebase deliveries for a batch of notifications.
+    /// </summary>
+    /// <param name="batch">A collection of tuples containing the target FCM token, the notification to send, and the notification type.</param>
+    /// <param name="cancellationToken">A token propagated to each send operation to allow cancellation of individual deliveries.</param>
+    /// <returns>A <see cref="Task"/> that completes after all send operations have been started; it does not wait for delivery completion.</returns>
     public Task SendBatchAsync(
         IEnumerable<(string Token, DomainNotification Notification, NotificationType Type)> batch,
         CancellationToken cancellationToken = default)

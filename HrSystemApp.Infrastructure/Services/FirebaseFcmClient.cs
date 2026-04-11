@@ -25,6 +25,14 @@ public class FirebaseFcmClient : IFcmClient
             firebaseMessaging.GetType().Name);
     }
 
+    /// <summary>
+    /// Sends a Firebase Cloud Messaging notification to the specified device token.
+    /// </summary>
+    /// <param name="token">The device FCM registration token to target.</param>
+    /// <param name="notification">The domain notification containing Title, Message, Id, and EmployeeId to include in the FCM payload.</param>
+    /// <param name="type">The notification type to include in the FCM message data under the "type" key.</param>
+    /// <param name="cancellationToken">Token to cancel the send operation.</param>
+    /// <exception cref="InvalidOperationException">Thrown when the provided <paramref name="token"/> is null, empty, or whitespace.</exception>
     public async Task SendAsync(string token, Domain.Models.Notification notification, NotificationType type,
         CancellationToken cancellationToken = default)
     {

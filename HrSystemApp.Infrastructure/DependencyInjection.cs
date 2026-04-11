@@ -21,6 +21,10 @@ namespace HrSystemApp.Infrastructure;
 /// </summary>
 public static class DependencyInjection
 {
+    /// <summary>
+    /// Registers infrastructure-layer services and configuration-driven dependencies (data protection, EF Core/PostgreSQL, Identity, repositories, external services like MinIO and Firebase, email/SMS, and application services) into the provided service collection.
+    /// </summary>
+    /// <returns>The modified <see cref="IServiceCollection"/> with infrastructure services registered.</returns>
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
         var dataProtectionSettings = new DataProtectionSettings();

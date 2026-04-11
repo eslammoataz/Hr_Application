@@ -51,7 +51,11 @@ public class EmployeesController : BaseApiController
         return HandleResult(result);
     }
 
-    /// <summary>Get my own employee profile (any authenticated user).</summary>
+    /// <summary>
+    /// Retrieves the authenticated user's employee profile.
+    /// </summary>
+    /// <param name="cancellationToken">Token to cancel the request.</param>
+    /// <returns>An IActionResult containing the user's profile on success; an UnauthorizedResult if the user ID claim is missing; otherwise an appropriate error response.</returns>
     [HttpGet("me/profile")]
     public async Task<IActionResult> GetMyProfile(CancellationToken cancellationToken)
     {
@@ -62,7 +66,11 @@ public class EmployeesController : BaseApiController
         return HandleResult(result);
     }
 
-    /// <summary>Get my own leave balance (Total, Used, Remaining).</summary>
+    /// <summary>
+    /// Gets the current user's leave balances (total, used, remaining).
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token to cancel the request.</param>
+    /// <returns>An IActionResult containing the user's leave balances: total, used, and remaining.</returns>
     [HttpGet("me/balances")]
     public async Task<IActionResult> GetMyBalances(CancellationToken cancellationToken)
     {
@@ -130,7 +138,14 @@ public class EmployeesController : BaseApiController
 
     // ── Profile Update Requests (Employee) ──────────────────────────────
 
-    /// <summary>Submit a new profile update request.</summary>
+    /// <summary>
+    /// Creates a new profile update request for the currently authenticated user.
+    /// </summary>
+    /// <param name="request">The profile update data submitted by the user.</param>
+    /// <param name="cancellationToken">Token to cancel the operation.</param>
+    /// <returns>
+    /// An <see cref="IActionResult"/> representing the command result; returns 401 Unauthorized if the user id claim is missing.
+    /// </returns>
     [HttpPost("me/profile-update-requests")]
     public async Task<IActionResult> CreateProfileUpdateRequest([FromBody] CreateProfileUpdateRequestDto request,
         CancellationToken cancellationToken)
@@ -142,7 +157,12 @@ public class EmployeesController : BaseApiController
         return HandleResult(result);
     }
 
-    /// <summary>Get my own profile update requests.</summary>
+    /// <summary>
+    /// Retrieves the authenticated user's profile update requests using optional pagination.
+    /// </summary>
+    /// <param name="page">Page number to retrieve; defaults to 1.</param>
+    /// <param name="pageSize">Number of items per page; defaults to 20.</param>
+    /// <returns>An <see cref="IActionResult"/> containing a paginated list of the user's profile update requests on success, or an Unauthorized result if the caller's user id claim is missing.</returns>
     [HttpGet("me/profile-update-requests")]
     public async Task<IActionResult> GetMyProfileUpdateRequests(
         [FromQuery] int page = 1,
@@ -158,7 +178,16 @@ public class EmployeesController : BaseApiController
 
     // ── Profile Update Requests (HR) ────────────────────────────────────
 
-    /// <summary>Get all profile update requests (HR only).</summary>
+    /// <summary>
+    /// Retrieves profile update requests for HR users, optionally filtered by status and paginated.
+    /// </summary>
+    /// <param name="status">Optional filter to return only requests with the specified status.</param>
+    /// <param name="page">Page number to return (1-based).</param>
+    /// <param name="pageSize">Number of items per page.</param>
+    /// <returns>
+    /// An <see cref="IActionResult"/> containing a paginated list of profile update requests when successful;
+    /// returns 401 Unauthorized if the HR user id claim is missing.
+    /// </returns>
     [HttpGet("profile-update-requests")]
     [Authorize(Roles = Roles.HR)]
     public async Task<IActionResult> GetAllProfileUpdateRequests(
@@ -175,7 +204,16 @@ public class EmployeesController : BaseApiController
         return HandleResult(result);
     }
 
-    /// <summary>Handle a profile update request (HR only).</summary>
+    /// <summary>
+    /// Processes an HR user's decision to approve or reject a profile update request identified by the given id.
+    /// </summary>
+    /// <param name="id">The identifier of the profile update request to handle.</param>
+    /// <param name="request">The HR decision and any accompanying data for handling the request.</param>
+    /// <param name="cancellationToken">Token to observe while waiting for the operation to complete.</param>
+    /// <returns>
+    /// An <see cref="IActionResult"/> representing the outcome of the operation:
+    /// returns <see cref="UnauthorizedResult"/> if the HR user id claim is missing; otherwise returns the result produced by handling the command.
+    /// </returns>
     [HttpPatch("profile-update-requests/{id:guid}/handle")]
     [Authorize(Roles = Roles.HR)]
     public async Task<IActionResult> HandleProfileUpdateRequest(Guid id,
