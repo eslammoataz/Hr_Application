@@ -171,8 +171,11 @@ public class EmployeeRepository : Repository<Employee>, IEmployeeRepository
                 EF.Functions.ILike(e.EmployeeCode, pattern));
         }
 
+        if (employmentStatus.HasValue)
+            query = query.Where(e => e.EmploymentStatus == employmentStatus.Value);
+
         // ──────────────────────────────────────────────────────────
-        // 3. Aggregates — single round-trip
+        // 3. Aggregates — single round-trip, after ALL filters
         // ──────────────────────────────────────────────────────────
         var aggregates = await query
             .GroupBy(_ => 1)
@@ -180,18 +183,13 @@ public class EmployeeRepository : Repository<Employee>, IEmployeeRepository
             {
                 TotalActive = g.Count(e => e.EmploymentStatus == EmploymentStatus.Active),
                 TotalInactive = g.Count(e => e.EmploymentStatus == EmploymentStatus.Inactive),
-                TotalCount = employmentStatus.HasValue
-                    ? g.Count(e => e.EmploymentStatus == employmentStatus.Value)
-                    : g.Count()
+                TotalCount = g.Count()
             })
             .FirstOrDefaultAsync(cancellationToken);
 
         // ──────────────────────────────────────────────────────────
-        // 4. Apply employment status filter and paginate
+        // 4. Paginate
         // ──────────────────────────────────────────────────────────
-        if (employmentStatus.HasValue)
-            query = query.Where(e => e.EmploymentStatus == employmentStatus.Value);
-
         var rows = await query
             .OrderBy(e => e.FullName)
             .Skip((pageNumber - 1) * pageSize)
