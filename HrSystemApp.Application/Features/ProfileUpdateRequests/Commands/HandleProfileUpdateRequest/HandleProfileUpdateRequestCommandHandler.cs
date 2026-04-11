@@ -147,6 +147,12 @@ public class HandleProfileUpdateRequestCommandHandler : IRequestHandler<HandlePr
                 employee.Address = newValue;
                 break;
 
+            case nameof(Employee.FullName):
+                employee.FullName = newValue ?? string.Empty;
+                if (employee.User is not null)
+                    employee.User.Name = newValue ?? string.Empty;
+                break;
+
             case nameof(Employee.CompanyLocationId):
                 if (!string.IsNullOrEmpty(newValue))
                 {

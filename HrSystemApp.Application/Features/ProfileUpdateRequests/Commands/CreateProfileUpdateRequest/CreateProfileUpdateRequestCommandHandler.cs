@@ -16,7 +16,13 @@ public class CreateProfileUpdateRequestCommandHandler : IRequestHandler<CreatePr
         _unitOfWork = unitOfWork;
     }
 
-    private static readonly string[] AllowedFields = { "PhoneNumber", "Address", "CompanyLocationId" };
+    private static readonly string[] AllowedFields =
+    {
+        nameof(Employee.FullName),
+        nameof(Employee.PhoneNumber),
+        nameof(Employee.Address),
+        nameof(Employee.CompanyLocationId)
+    };
 
     public async Task<Result> Handle(CreateProfileUpdateRequestCommand request, CancellationToken cancellationToken)
     {
@@ -36,6 +42,9 @@ public class CreateProfileUpdateRequestCommandHandler : IRequestHandler<CreatePr
         {
             if (!AllowedFields.Contains(pair.Key))
                 return Result.Failure(DomainErrors.ProfileUpdate.InvalidField);
+
+            if (pair.Key == nameof(Employee.FullName) && string.IsNullOrWhiteSpace(pair.Value))
+                return Result.Failure(DomainErrors.Validation.FieldRequired);
 
             var oldValue = GetValue(employee, pair.Key);
 
@@ -71,9 +80,10 @@ public class CreateProfileUpdateRequestCommandHandler : IRequestHandler<CreatePr
     {
         return field switch
         {
-            "PhoneNumber" => employee.PhoneNumber,
-            "Address" => employee.Address,
-            "CompanyLocationId" => employee.CompanyLocationId?.ToString(),
+            nameof(Employee.FullName) => employee.FullName,
+            nameof(Employee.PhoneNumber) => employee.PhoneNumber,
+            nameof(Employee.Address) => employee.Address,
+            nameof(Employee.CompanyLocationId) => employee.CompanyLocationId?.ToString(),
             _ => null
         };
     }
