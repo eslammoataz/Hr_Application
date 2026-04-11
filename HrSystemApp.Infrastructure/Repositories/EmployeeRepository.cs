@@ -181,8 +181,14 @@ public class EmployeeRepository : Repository<Employee>, IEmployeeRepository
             .GroupBy(_ => 1)
             .Select(g => new
             {
-                TotalActive = g.Count(e => e.EmploymentStatus == EmploymentStatus.Active),
-                TotalInactive = g.Count(e => e.EmploymentStatus == EmploymentStatus.Inactive),
+                // Active: Active, Probation, OnLeave
+                TotalActive = g.Count(e => e.EmploymentStatus == EmploymentStatus.Active || 
+                                           e.EmploymentStatus == EmploymentStatus.Probation || 
+                                           e.EmploymentStatus == EmploymentStatus.OnLeave),
+                // Inactive: Inactive, Suspended, Terminated
+                TotalInactive = g.Count(e => e.EmploymentStatus == EmploymentStatus.Inactive || 
+                                             e.EmploymentStatus == EmploymentStatus.Suspended || 
+                                             e.EmploymentStatus == EmploymentStatus.Terminated),
                 TotalCount = g.Count()
             })
             .FirstOrDefaultAsync(cancellationToken);
