@@ -23,6 +23,15 @@ public class CurrentUserService : ICurrentUserService
 
     public string? Role => _httpContextAccessor.HttpContext?.User?.FindFirstValue("role");
 
+    public Guid? CompanyId
+    {
+        get
+        {
+            var rawValue = _httpContextAccessor.HttpContext?.User?.FindFirstValue("companyId");
+            return Guid.TryParse(rawValue, out var companyId) ? companyId : null;
+        }
+    }
+
     public bool IsAuthenticated => _httpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated ?? false;
 }
 

@@ -1,5 +1,4 @@
 using HrSystemApp.Api.Authorization;
-using HrSystemApp.Application.DTOs.Employees;
 using HrSystemApp.Application.Features.Employees.Commands.AssignEmployeeToTeam;
 using HrSystemApp.Application.Features.Employees.Commands.ChangeEmployeeStatus;
 using HrSystemApp.Application.Features.Employees.Commands.CreateEmployee;
@@ -38,13 +37,16 @@ public class EmployeesController : BaseApiController
     public async Task<IActionResult> GetAll(
         [FromQuery] Guid? companyId,
         [FromQuery] Guid? teamId,
+        [FromQuery] UserRole? role,
+        [FromQuery] EmploymentStatus? status,
         [FromQuery] string? search,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
         CancellationToken cancellationToken = default)
     {
         var result = await _sender.Send(
-            new GetEmployeesQuery(companyId, teamId, search, page, pageSize), cancellationToken);
+            new GetEmployeesQuery(companyId, teamId, search, role, status, page, pageSize),
+            cancellationToken);
         return HandleResult(result);
     }
 

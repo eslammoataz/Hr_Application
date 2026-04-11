@@ -57,12 +57,12 @@ public sealed class IntegrationTestFixture : IAsyncLifetime
         }
     }
 
-    public HttpClient CreateAuthenticatedClient(string userId, string role)
+    public HttpClient CreateAuthenticatedClient(string userId, string role, Guid? companyId = null)
     {
         EnsureDockerAvailable();
 
         var configuration = Factory.Services.GetRequiredService<IConfiguration>();
-        var token = JwtTokenFactory.CreateToken(configuration, userId, role);
+        var token = JwtTokenFactory.CreateToken(configuration, userId, role, companyId);
 
         var client = Factory.CreateClient();
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
@@ -104,7 +104,12 @@ public sealed class IntegrationTestFixture : IAsyncLifetime
         return company.Id;
     }
 
-    public async Task<Guid> SeedEmployeeAsync(Guid companyId, string userId, string fullName, string email)
+    public async Task<Guid> SeedEmployeeAsync(
+        Guid companyId,
+        string userId,
+        string fullName,
+        string email,
+        EmploymentStatus employmentStatus = EmploymentStatus.Active)
     {
         EnsureDockerAvailable();
 
@@ -137,7 +142,7 @@ public sealed class IntegrationTestFixture : IAsyncLifetime
             FullName = fullName,
             Email = email,
             PhoneNumber = "01000000000",
-            EmploymentStatus = EmploymentStatus.Active
+            EmploymentStatus = employmentStatus
         };
 
         await context.Employees.AddAsync(employee);
