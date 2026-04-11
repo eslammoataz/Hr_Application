@@ -37,4 +37,6 @@ public interface IUserRepository : IRepository<ApplicationUser>
 
     Task<(bool Succeeded, IEnumerable<string> Errors)> SetPasswordAsync(ApplicationUser user, string newPassword);
     Task<ApplicationUser?> GetByEmailWithDetailsAsync(string email, CancellationToken cancellationToken = default);
+    Task<bool> AddToRoleAsync(ApplicationUser user, string role, CancellationToken cancellationToken = default);
+    Task<bool> RemoveFromRoleAsync(ApplicationUser user, string role, CancellationToken cancellationToken = default);
 }

@@ -10,4 +10,7 @@ public record CreateEmployeeCommand(
     string Email,
     string PhoneNumber,
     Guid CompanyId,
-    UserRole Role) : IRequest<Result<CreateEmployeeResponse>>;
+    UserRole Role,
+    Guid? DepartmentId = null,
+    Guid? UnitId = null,
+    Guid? TeamId = null) : IRequest<Result<CreateEmployeeResponse>>;

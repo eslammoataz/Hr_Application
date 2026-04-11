@@ -83,7 +83,8 @@ public class EmployeesController : BaseApiController
     {
         var command = new CreateEmployeeCommand(
             request.FullName, request.Email, request.PhoneNumber,
-            request.CompanyId, request.Role);
+            request.CompanyId, request.Role, request.DepartmentId,
+            request.UnitId, request.TeamId);
         var result = await _sender.Send(command, cancellationToken);
         return HandleResult(result);
     }
