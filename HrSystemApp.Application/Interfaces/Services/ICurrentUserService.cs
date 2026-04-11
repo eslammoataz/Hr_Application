@@ -8,5 +8,6 @@ public interface ICurrentUserService
     string? UserId { get; }
     string? PhoneNumber { get; }
     string? Role { get; }
+    Guid? CompanyId { get; }
     bool IsAuthenticated { get; }
 }

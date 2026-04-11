@@ -30,6 +30,7 @@ public static class SeedData
         var location = await SeedLocationAsync(context, company, logger);
         
         await SeedHierarchyPositionsAsync(context, company, logger);
+        await SeedCompanyAdminAsync(userManager, context, company, location, logger);
         await SeedOrganizationalHierarchyAsync(userManager, context, company, location, logger);
 
         if (environment.IsDevelopment())
@@ -134,6 +135,28 @@ public static class SeedData
         {
             await userManager.AddToRoleAsync(existing, UserRole.SuperAdmin.ToString());
             logger.LogInformation("SuperAdmin role assigned to existing user.");
+        }
+    }
+
+    // -------------------------------------------------------------------------
+
+    private static async Task SeedCompanyAdminAsync(
+        UserManager<ApplicationUser> userManager,
+        ApplicationDbContext context,
+        Company company,
+        CompanyLocation location,
+        ILogger logger)
+    {
+        var email = "companyadmin@hrms.com";
+        var name = "Company Admin";
+        var phone = "01000000000";
+
+        var admin = await CreateHierarchyUserAsync(userManager, context, company, location, null, null, null, null,
+            name, UserRole.CompanyAdmin.ToString(), email, phone, logger);
+
+        if (admin != null)
+        {
+            logger.LogInformation("CompanyAdmin created successfully for {Company}.", company.CompanyName);
         }
     }
 
@@ -495,6 +518,7 @@ public static class SeedData
 
         logger.LogInformation("================== TEST CREDENTIALS (HIERARCHY) ==================");
         logger.LogInformation("SuperAdmin     => {Email} / {Password}", superEmail, superPassword);
+        logger.LogInformation("CompanyAdmin   => companyadmin@hrms.com / Pass@123");
         logger.LogInformation("CEO            => ceo@hrms.com / Pass@123");
         logger.LogInformation("VP Eng         => vp.eng@hrms.com / Pass@123");
         logger.LogInformation("Manager Eng    => manager.eng@hrms.com / Pass@123");

@@ -112,6 +112,7 @@ public static class DependencyInjection
         services.AddScoped<IHierarchyService, HierarchyService>();
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
+        services.AddScoped<IDataScopeService, DataScopeService>();
         services.AddScoped<IWorkflowService, WorkflowService>();
         services.AddScoped<IRequestSchemaValidator, RequestSchemaValidator>();
         services.AddScoped<IHierarchyService, HierarchyService>();

@@ -8,7 +8,7 @@ namespace HrSystemApp.Tests.Integration.Infrastructure;
 
 public static class JwtTokenFactory
 {
-    public static string CreateToken(IConfiguration configuration, string userId, string role)
+    public static string CreateToken(IConfiguration configuration, string userId, string role, Guid? companyId = null)
     {
         var secret = configuration["JwtSettings:Secret"] ?? throw new InvalidOperationException("JwtSettings:Secret is missing.");
         var issuer = configuration["JwtSettings:Issuer"] ?? throw new InvalidOperationException("JwtSettings:Issuer is missing.");
@@ -20,6 +20,11 @@ public static class JwtTokenFactory
             new("role", role),
             new("name", $"Test User {userId}")
         };
+
+        if (companyId.HasValue)
+        {
+            claims.Add(new Claim("companyId", companyId.Value.ToString()));
+        }
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);

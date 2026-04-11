@@ -32,7 +32,8 @@ public class TokenService : ITokenService
             ["email"] = user.Email ?? "",
             ["name"] = user.Name,
             ["role"] = roles.FirstOrDefault() ?? string.Empty,
-            ["phone"] = user.PhoneNumber ?? ""
+            ["phone"] = user.PhoneNumber ?? "",
+            ["companyId"] = user.Employee?.CompanyId.ToString() ?? "",
         };
 
         if (user.EmployeeId.HasValue)
@@ -101,6 +102,6 @@ public class TokenService : ITokenService
         return BitConverter.ToString(hashedBytes).Replace("-", "").ToLower();
     }
 
-    public int RefreshTokenExpirationInDays => 
+    public int RefreshTokenExpirationInDays =>
         int.TryParse(_configuration["JwtSettings:RefreshTokenExpirationInDays"], out int days) ? days : 30;
 }
