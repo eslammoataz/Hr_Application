@@ -176,7 +176,7 @@ public class EmployeesEndpointTests : IAsyncLifetime
 
         using var client = _fixture.CreateAuthenticatedClient("viewer-user", Roles.HR, companyId);
         var response = await client.GetAsync(
-            "/api/employees?role=HR&employmentStatus=Active&search=Filter&page=1&pageSize=20");
+            "/api/employees?role=HR&status=Active&search=Filter&page=1&pageSize=20");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var json = await response.Content.ReadAsStringAsync();
