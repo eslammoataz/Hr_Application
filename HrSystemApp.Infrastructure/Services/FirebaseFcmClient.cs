@@ -1,3 +1,4 @@
+using FirebaseAdmin.Messaging;
 using HrSystemApp.Application.Interfaces.Services;
 using HrSystemApp.Domain.Constants;
 using HrSystemApp.Domain.Enums;
@@ -60,7 +61,7 @@ public class FirebaseFcmClient : IFcmClient
                 token[..10] + "...");
 
             var response = await _firebaseMessaging.SendAsync(message, cancellationToken);
-            
+
             _logger.LogInformation(
                 "Firebase message for notification {NotificationId} sent successfully. Firebase response id: {Response}",
                 notification.Id,
@@ -68,13 +69,13 @@ public class FirebaseFcmClient : IFcmClient
         }
         catch (FirebaseMessagingException ex)
         {
-            _logger.LogError(ex, "Firebase Messaging error sending notification {NotificationId}: {Error} - {Message}", 
+            _logger.LogError(ex, "Firebase Messaging error sending notification {NotificationId}: {Error} - {Message}",
                 notification.Id, ex.MessagingErrorCode, ex.Message);
             throw;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Unexpected error sending FCM notification {NotificationId}: {Message}", 
+            _logger.LogError(ex, "Unexpected error sending FCM notification {NotificationId}: {Message}",
                 notification.Id, ex.Message);
             throw;
         }

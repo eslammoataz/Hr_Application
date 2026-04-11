@@ -17,6 +17,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using HrSystemApp.Domain.Constants;
 using HrSystemApp.Domain.Enums;
 
 namespace HrSystemApp.Api.Controllers;

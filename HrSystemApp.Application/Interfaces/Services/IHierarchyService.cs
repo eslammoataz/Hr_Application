@@ -24,4 +24,17 @@ public interface IHierarchyService
     /// of head-employees (TeamLeader → UnitLeader → DeptManager → VP → CEO).
     /// </summary>
     Task<List<Employee>> GetEmployeeHierarchyPathAsync(Guid employeeId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Implements the standardized "Zig-Zag" organizational discovery.
+    /// Organizations (Dept/Unit/Team) expand to their leader.
+    /// Leaders expand to their direct reports AND organizations they lead.
+    /// </summary>
+    Task<List<(Guid Id, string Type)>> GetHierarchyChildrenAsync(Guid companyId, Guid parentId, string parentType, CancellationToken ct = default);
+
+    /// <summary>
+    /// Fetches metadata (Name, Position, Role, hasChildren) for a list of mixed node types.
+    /// Used for batching to prevent N+1 queries during tree mapping.
+    /// </summary>
+    Task<Dictionary<Guid, dynamic>> GetNodesMetadataAsync(IEnumerable<(Guid Id, string Type)> nodes, CancellationToken ct = default);
 }
