@@ -18,6 +18,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using HrSystemApp.Application.Features.Hierarchy.Commands.ConfigureHierarchyPositions;
 using HrSystemApp.Application.Features.Hierarchy.Queries.GetCompanyHierarchy;
+using HrSystemApp.Application.Features.Hierarchy.Queries.GetCompanyPositions;
 
 namespace HrSystemApp.Api.Controllers;
 
@@ -255,6 +256,18 @@ public class CompaniesController : BaseApiController
         CancellationToken ct)
     {
         var result = await _sender.Send(new ConfigureHierarchyPositionsCommand(positions), ct);
+        return HandleResult(result);
+    }
+
+    /// <summary>
+    /// Gets the allowed roles and their order in the company hierarchy.
+    /// </summary>
+    [HttpGet("me/positions")]
+    [Authorize(Roles = Roles.Viewers)]
+    [ProducesResponseType(typeof(IReadOnlyList<CompanyPositionResponse>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetPositions(CancellationToken ct)
+    {
+        var result = await _sender.Send(new GetCompanyPositionsQuery(), ct);
         return HandleResult(result);
     }
 }
