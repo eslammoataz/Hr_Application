@@ -150,7 +150,7 @@ public class EmployeesEndpointTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task GetEmployees_WithRoleAndStatusFilter_ReturnsCountersIgnoringStatusFilter()
+    public async Task GetEmployees_WithRoleAndStatusFilter_ReturnsCountersReflectingAppliedFilter()
     {
         if (_fixture.DockerUnavailable)
         {
@@ -185,7 +185,7 @@ public class EmployeesEndpointTests : IAsyncLifetime
 
         data.GetProperty("totalCount").GetInt32().Should().Be(1);
         data.GetProperty("totalActive").GetInt32().Should().Be(1);
-        data.GetProperty("totalInactive").GetInt32().Should().Be(1);
+        data.GetProperty("totalInactive").GetInt32().Should().Be(0); // Reflects the 'Active' filter
         data.GetProperty("items").GetArrayLength().Should().Be(1);
         data.GetProperty("items")[0].GetProperty("employmentStatus").GetString().Should().Be("Active");
     }
