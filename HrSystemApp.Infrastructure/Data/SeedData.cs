@@ -30,8 +30,11 @@ public static class SeedData
         var location = await SeedLocationAsync(context, company, logger);
         
         await SeedHierarchyPositionsAsync(context, company, logger);
-        await SeedCompanyAdminAsync(userManager, context, company, location, logger);
-        await SeedOrganizationalHierarchyAsync(userManager, context, company, location, logger);
+        await SeedCompanyAdminAsync(userManager, configuration, context, company, location, logger);
+        await SeedOrganizationalHierarchyAsync(userManager, configuration, context, company, location, logger);
+
+        // Phase 1: Security Hardening - Force reset for all non-admin legacy accounts
+        await HardenExistingAccountsAsync(context, logger);
 
         if (environment.IsDevelopment())
             LogTestCredentials(logger, configuration);
@@ -138,20 +141,34 @@ public static class SeedData
         }
     }
 
+    private static async Task HardenExistingAccountsAsync(ApplicationDbContext context, ILogger logger)
+    {
+        var count = await context.Users
+            .Where(u => !u.MustChangePassword && u.UserName != "superadmin@hrms.com")
+            .ExecuteUpdateAsync(s => s.SetProperty(u => u.MustChangePassword, true));
+
+        if (count > 0)
+        {
+            logger.LogInformation("Security Hardening: {Count} accounts flagged for mandatory password reset.", count);
+        }
+    }
+
     // -------------------------------------------------------------------------
 
     private static async Task SeedCompanyAdminAsync(
         UserManager<ApplicationUser> userManager,
+        IConfiguration configuration,
         ApplicationDbContext context,
         Company company,
         CompanyLocation location,
         ILogger logger)
     {
+        var seedPassword = configuration["SeedPasswordSettings"] ?? Guid.NewGuid().ToString();
         var email = "companyadmin@hrms.com";
         var name = "Company Admin";
         var phone = "01000000000";
 
-        var admin = await CreateHierarchyUserAsync(userManager, context, company, location, null, null, null, null,
+        var admin = await CreateHierarchyUserAsync(userManager, configuration, context, company, location, null, null, null, null,
             name, UserRole.CompanyAdmin.ToString(), email, phone, logger);
 
         if (admin != null)
@@ -255,13 +272,14 @@ public static class SeedData
     // -------------------------------------------------------------------------
     private static async Task SeedOrganizationalHierarchyAsync(
         UserManager<ApplicationUser> userManager,
+        IConfiguration configuration,
         ApplicationDbContext context,
         Company company,
         CompanyLocation location,
         ILogger logger)
     {
         // 1. CEO (Root)
-        var ceo = await CreateHierarchyUserAsync(userManager, context, company, location, null, null, null, null,
+        var ceo = await CreateHierarchyUserAsync(userManager, configuration, context, company, location, null, null, null, null,
             "John Doe", UserRole.CEO.ToString(), "ceo@hrms.com", "1111111111", logger);
 
         if (ceo == null) return;
@@ -444,6 +462,7 @@ public static class SeedData
 
     private static async Task<Employee?> CreateHierarchyUserAsync(
         UserManager<ApplicationUser> userManager,
+        IConfiguration configuration,
         ApplicationDbContext context,
         Company company,
         CompanyLocation location,
@@ -493,7 +512,8 @@ public static class SeedData
             EmployeeId = employee.Id
         };
 
-        var result = await userManager.CreateAsync(user, "Pass@123");
+        var seedPassword = configuration["SeedPasswordSettings"] ?? "Pass@123";
+        var result = await userManager.CreateAsync(user, seedPassword);
         if (!result.Succeeded)
         {
             logger.LogWarning("Failed to create user {Email}: {Errors}", email, string.Join(", ", result.Errors.Select(e => e.Description)));
@@ -509,24 +529,14 @@ public static class SeedData
 
 
     // -------------------------------------------------------------------------
-
     private static void LogTestCredentials(ILogger logger, IConfiguration configuration)
     {
-        var settings = configuration.GetSection("SuperAdminSettings").Get<SuperAdminSettings>() ?? new();
-        var superEmail = settings.Email.NullIfWhiteSpace() ?? "superadmin@hrms.com";
-        var superPassword = settings.Password.NullIfWhiteSpace() ?? "SuperAdmin@123";
-
         logger.LogInformation("================== TEST CREDENTIALS (HIERARCHY) ==================");
-        logger.LogInformation("SuperAdmin     => {Email} / {Password}", superEmail, superPassword);
-        logger.LogInformation("CompanyAdmin   => companyadmin@hrms.com / Pass@123");
-        logger.LogInformation("CEO            => ceo@hrms.com / Pass@123");
-        logger.LogInformation("VP Eng         => vp.eng@hrms.com / Pass@123");
-        logger.LogInformation("Manager Eng    => manager.eng@hrms.com / Pass@123");
-        logger.LogInformation("Unit Leader    => ul.softdev@hrms.com / Pass@123");
-        logger.LogInformation("Team Leader    => tl.backend@hrms.com / Pass@123");
-        logger.LogInformation("Developer      => dev.charlie@hrms.com / Pass@123");
+        logger.LogInformation("Credentials are now managed via configuration (SeedPasswordSettings).");
+        logger.LogInformation("Please check your appsettings.json or environment variables for access.");
         logger.LogInformation("==================================================================");
     }
+
 
     // -------------------------------------------------------------------------
 

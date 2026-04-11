@@ -1,4 +1,5 @@
 using HrSystemApp.Application.Interfaces.Services;
+using HrSystemApp.Domain.Constants;
 using Microsoft.AspNetCore.Http;
 using System.Security.Claims;
 
@@ -16,22 +17,21 @@ public class CurrentUserService : ICurrentUserService
         _httpContextAccessor = httpContextAccessor;
     }
 
-    // MapInboundClaims = false in JWT config → claims stay as raw names ("sub", "role")
-    public string? UserId => _httpContextAccessor.HttpContext?.User?.FindFirstValue("sub");
+    // MapInboundClaims = false in JWT config → claims stay as raw names
+    public string? UserId => _httpContextAccessor.HttpContext?.User?.FindFirstValue(AppClaimTypes.Subject);
 
-    public string? PhoneNumber => _httpContextAccessor.HttpContext?.User?.FindFirstValue("phone");
+    public string? PhoneNumber => _httpContextAccessor.HttpContext?.User?.FindFirstValue(AppClaimTypes.PhoneNumber);
 
-    public string? Role => _httpContextAccessor.HttpContext?.User?.FindFirstValue("role");
+    public string? Role => _httpContextAccessor.HttpContext?.User?.FindFirstValue(AppClaimTypes.Role);
 
     public Guid? CompanyId
     {
         get
         {
-            var rawValue = _httpContextAccessor.HttpContext?.User?.FindFirstValue("companyId");
+            var rawValue = _httpContextAccessor.HttpContext?.User?.FindFirstValue(AppClaimTypes.CompanyId);
             return Guid.TryParse(rawValue, out var companyId) ? companyId : null;
         }
     }
 
     public bool IsAuthenticated => _httpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated ?? false;
-}
 

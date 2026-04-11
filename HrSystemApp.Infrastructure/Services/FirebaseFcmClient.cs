@@ -1,5 +1,5 @@
-using FirebaseAdmin.Messaging;
 using HrSystemApp.Application.Interfaces.Services;
+using HrSystemApp.Domain.Constants;
 using HrSystemApp.Domain.Enums;
 using Microsoft.Extensions.Logging;
 
@@ -8,7 +8,7 @@ namespace HrSystemApp.Infrastructure.Services;
 public class FirebaseFcmClient : IFcmClient
 {
     private const string NotificationIdDataKey = "notificationId";
-    private const string EmployeeIdDataKey = "employeeId";
+    private readonly string EmployeeIdDataKey = AppClaimTypes.EmployeeId;
     private const string TypeDataKey = "type";
 
     private readonly FirebaseMessaging _firebaseMessaging;

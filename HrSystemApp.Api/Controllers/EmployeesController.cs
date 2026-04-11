@@ -54,7 +54,7 @@ public class EmployeesController : BaseApiController
     [HttpGet("me/profile")]
     public async Task<IActionResult> GetMyProfile(CancellationToken cancellationToken)
     {
-        var userId = User.FindFirstValue("sub");
+        var userId = User.FindFirstValue(AppClaimTypes.Subject);
         if (string.IsNullOrEmpty(userId)) return Unauthorized();
 
         var result = await _sender.Send(new GetMyProfileQuery(userId), cancellationToken);
@@ -134,7 +134,7 @@ public class EmployeesController : BaseApiController
     public async Task<IActionResult> CreateProfileUpdateRequest([FromBody] CreateProfileUpdateRequestDto request,
         CancellationToken cancellationToken)
     {
-        var userId = User.FindFirstValue("sub");
+        var userId = User.FindFirstValue(AppClaimTypes.Subject);
         if (string.IsNullOrEmpty(userId)) return Unauthorized();
 
         var result = await _sender.Send(new CreateProfileUpdateRequestCommand(userId, request), cancellationToken);
@@ -148,7 +148,7 @@ public class EmployeesController : BaseApiController
         [FromQuery] int pageSize = 20,
         CancellationToken cancellationToken = default)
     {
-        var userId = User.FindFirstValue("sub");
+        var userId = User.FindFirstValue(AppClaimTypes.Subject);
         if (string.IsNullOrEmpty(userId)) return Unauthorized();
 
         var result = await _sender.Send(new GetMyProfileUpdateRequestsQuery(userId, page, pageSize), cancellationToken);

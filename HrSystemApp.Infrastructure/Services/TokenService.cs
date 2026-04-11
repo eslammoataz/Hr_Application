@@ -5,6 +5,7 @@ using System.Security.Cryptography;
 using System.Text;
 using HrSystemApp.Application.Interfaces.Services;
 using HrSystemApp.Domain.Models;
+using HrSystemApp.Domain.Constants;
 
 namespace HrSystemApp.Infrastructure.Services;
 
@@ -27,17 +28,19 @@ public class TokenService : ITokenService
 
         var claims = new Dictionary<string, object>
         {
-            ["sub"] = user.Id,
             ["jti"] = Guid.NewGuid().ToString(),
-            ["email"] = user.Email ?? "",
-            ["name"] = user.Name,
-            ["role"] = roles.FirstOrDefault() ?? string.Empty,
-            ["phone"] = user.PhoneNumber ?? "",
-            ["companyId"] = user.Employee?.CompanyId.ToString() ?? "",
+            [AppClaimTypes.Subject] = user.Id,
+            [AppClaimTypes.Email] = user.Email ?? string.Empty,
+            [AppClaimTypes.Name] = user.Name,
+            [AppClaimTypes.Role] = roles.FirstOrDefault() ?? string.Empty,
+            [AppClaimTypes.PhoneNumber] = user.PhoneNumber ?? string.Empty,
+            [AppClaimTypes.CompanyId] = user.Employee?.CompanyId.ToString() ?? "",
         };
 
         if (user.EmployeeId.HasValue)
-            claims["employeeId"] = user.EmployeeId.Value.ToString();
+        {
+            claims[AppClaimTypes.EmployeeId] = user.EmployeeId.Value.ToString();
+        }
 
         var tokenDescriptor = new SecurityTokenDescriptor
         {
