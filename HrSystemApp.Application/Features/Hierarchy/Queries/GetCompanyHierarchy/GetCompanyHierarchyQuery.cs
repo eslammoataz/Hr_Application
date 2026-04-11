@@ -72,6 +72,7 @@ public class GetCompanyHierarchyQueryHandler : IRequestHandler<GetCompanyHierarc
 
         var nodes = new List<HierarchyNodeDto>();
 
+        if (request.ParentId == null)
         {
             // Initial Load: Discover Roots
             nodes.AddRange(await GetRootsAsync(companyId, cancellationToken));
@@ -93,7 +94,7 @@ public class GetCompanyHierarchyQueryHandler : IRequestHandler<GetCompanyHierarc
                             child.Type == "Employee" ? data.FullName : data.Name,
                             child.Type,
                             child.Type == "Employee" ? data.Role : null,
-                            child.Type == "Employee" ? data.Role : null, // Default position to role for now
+                            child.Type == "Employee" ? data.Role : null, 
                             data.HasChildren,
                             new HierarchyMetadata(
                                 child.Type == "Employee" ? data.Email : null,
@@ -114,19 +115,15 @@ public class GetCompanyHierarchyQueryHandler : IRequestHandler<GetCompanyHierarc
     {
         var nodes = new List<HierarchyNodeDto>();
 
-        // 1. Get ordered positions to understand role hierarchy
         var positions = await _unitOfWork.HierarchyPositions.GetByCompanyAsync(companyId, ct);
         if (!positions.Any()) return nodes;
 
-        // 2. Load all employees for the company
         var allEmployees = await _unitOfWork.Employees.GetByCompanyAsync(companyId, ct);
         if (!allEmployees.Any()) return nodes;
 
-        // 3. Find roles for candidates
         var userIds = allEmployees.Where(e => e.UserId != null).Select(e => e.UserId!).ToList();
         var roles = await _unitOfWork.Users.GetPrimaryRolesByUserIdsAsync(userIds, ct);
 
-        // STAGE 1: Strict match - Highest configured role AND no manager
         var topRole = positions.OrderBy(p => p.SortOrder).First();
         var rootEmployees = allEmployees
             .Where(e => e.ManagerId == null &&
@@ -137,14 +134,19 @@ public class GetCompanyHierarchyQueryHandler : IRequestHandler<GetCompanyHierarc
 
         if (rootEmployees.Any())
         {
+            var metadata = await _hierarchyService.GetNodesMetadataAsync(rootEmployees.Select(e => (e.Id, "Employee")), ct);
             foreach (var emp in rootEmployees)
             {
-                nodes.Add(await MapEmployeeNodeAsync(emp, null, topRole.PositionTitle, ct));
+                if (metadata.TryGetValue(emp.Id, out var data))
+                {
+                    nodes.Add(new HierarchyNodeDto(
+                        emp.Id, null, data.FullName, "Employee", data.Role, data.Role, data.HasChildren,
+                        new HierarchyMetadata(data.Email, data.EmployeeCode, null, data.ManagerName, data.ManagerId)));
+                }
             }
             return nodes;
         }
 
-        // STAGE 2: Fallback - Highest role found among ANY unmanaged employees
         var unmanagedEmployees = allEmployees.Where(e => e.ManagerId == null).ToList();
         if (unmanagedEmployees.Any())
         {
@@ -163,25 +165,37 @@ public class GetCompanyHierarchyQueryHandler : IRequestHandler<GetCompanyHierarc
                 .Where(c => (c.Position?.SortOrder ?? int.MaxValue) == topSortOrder)
                 .ToList();
 
+            var metadata = await _hierarchyService.GetNodesMetadataAsync(finalRoots.Select(c => (c.Employee.Id, "Employee")), ct);
             foreach (var candidate in finalRoots)
             {
-                var posTitle = candidate.Position?.PositionTitle ?? "Staff";
-                nodes.Add(await MapEmployeeNodeAsync(candidate.Employee, null, posTitle, ct));
+                if (metadata.TryGetValue(candidate.Employee.Id, out var data))
+                {
+                    nodes.Add(new HierarchyNodeDto(
+                        candidate.Employee.Id, null, data.FullName, "Employee", data.Role, data.Role, data.HasChildren,
+                        new HierarchyMetadata(data.Email, data.EmployeeCode, null, data.ManagerName, data.ManagerId)));
+                }
             }
+            return nodes;
         }
 
-        // STAGE 3: Final Fallback - Unmanaged departments
         if (!nodes.Any())
         {
             var depts = await _unitOfWork.Departments.GetByCompanyAsync(companyId, ct);
-            foreach (var dept in depts.Where(d => d.VicePresidentId == null && d.ManagerId == null))
+            var rootDepts = depts.Where(d => d.VicePresidentId == null && d.ManagerId == null).ToList();
+            if (rootDepts.Any())
             {
-                nodes.Add(await MapDepartmentNodeAsync(dept, null, ct));
+                var metadata = await _hierarchyService.GetNodesMetadataAsync(rootDepts.Select(d => (d.Id, "Department")), ct);
+                foreach (var dept in rootDepts)
+                {
+                    if (metadata.TryGetValue(dept.Id, out var data))
+                    {
+                        nodes.Add(new HierarchyNodeDto(
+                            dept.Id, null, data.Name, "Department", null, null, data.HasChildren,
+                            new HierarchyMetadata(null, null, null, data.LeaderName)));
+                    }
+                }
             }
         }
-
-        return nodes;
-    }
 
         return nodes;
     }

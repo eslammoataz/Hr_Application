@@ -34,6 +34,16 @@ public class Repository<T> : IRepository<T> where T : class
         return await _dbSet.Where(predicate).ToListAsync(cancellationToken);
     }
 
+    public virtual async Task<IReadOnlyList<T>> FindAsync(Expression<Func<T, bool>> predicate, CancellationToken cancellationToken = default, params Expression<Func<T, object>>[] includes)
+    {
+        IQueryable<T> query = _dbSet.Where(predicate);
+        if (includes != null)
+        {
+            query = includes.Aggregate(query, (current, include) => current.Include(include));
+        }
+        return await query.ToListAsync(cancellationToken);
+    }
+
     public virtual async Task<T> AddAsync(T entity, CancellationToken cancellationToken = default)
     {
         var entry = await _dbSet.AddAsync(entity, cancellationToken);
