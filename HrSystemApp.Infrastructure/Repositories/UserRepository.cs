@@ -204,4 +204,23 @@ public class UserRepository : Repository<ApplicationUser>, IUserRepository
             .ThenInclude(e => e.Company)
             .FirstOrDefaultAsync(u => u.NormalizedEmail == email.ToUpper(), cancellationToken);
     }
+
+    public async Task<bool> AddToRoleAsync(ApplicationUser user, string role, CancellationToken cancellationToken = default)
+    {
+        if (await _userManager.IsInRoleAsync(user, role))
+            return true;
+
+        var result = await _userManager.AddToRoleAsync(user, role);
+        return result.Succeeded;
+    }
+
+    public async Task<bool> RemoveFromRoleAsync(ApplicationUser user, string role,
+        CancellationToken cancellationToken = default)
+    {
+        if (!await _userManager.IsInRoleAsync(user, role))
+            return true;
+
+        var result = await _userManager.RemoveFromRoleAsync(user, role);
+        return result.Succeeded;
+    }
 }

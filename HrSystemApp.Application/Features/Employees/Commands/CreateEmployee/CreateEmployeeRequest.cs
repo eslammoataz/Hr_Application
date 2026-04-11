@@ -7,4 +7,7 @@ public record CreateEmployeeRequest(
     string Email,
     string PhoneNumber,
     Guid CompanyId,
-    UserRole Role);
+    UserRole Role,
+    Guid? DepartmentId = null,
+    Guid? UnitId = null,
+    Guid? TeamId = null);

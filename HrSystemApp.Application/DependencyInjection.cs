@@ -35,7 +35,7 @@ public static class DependencyInjection
         // Request Strategies
         services.AddScoped<IRequestStrategyFactory, RequestStrategyFactory>();
         services.AddScoped<IRequestBusinessStrategy, LeaveRequestStrategy>();
-
+        
         return services;
     }
 }
