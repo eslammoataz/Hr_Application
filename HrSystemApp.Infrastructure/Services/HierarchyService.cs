@@ -1,3 +1,4 @@
+using HrSystemApp.Application.DTOs.Hierarchy;
 using HrSystemApp.Application.Interfaces;
 using HrSystemApp.Application.Interfaces.Services;
 using HrSystemApp.Domain.Enums;
@@ -21,78 +22,25 @@ public class HierarchyService : IHierarchyService
     public async Task<List<UserRole>> GetAvailableRolesAsync(Guid companyId, CancellationToken ct = default)
     {
         var positions = await _unitOfWork.HierarchyPositions.GetByCompanyAsync(companyId, ct);
-        return positions.Select(p => p.Role).ToList();
+        return positions.OrderBy(p => p.SortOrder).Select(p => p.Role).ToList();
     }
 
     public async Task<bool> AreRolesValidForCompanyAsync(Guid companyId, IEnumerable<UserRole> roles,
         CancellationToken ct = default)
     {
-        var availableRoles = await GetAvailableRolesAsync(companyId, ct);
-        return roles.All(r => availableRoles.Contains(r));
+        var available = await GetAvailableRolesAsync(companyId, ct);
+        return roles.All(r => available.Contains(r));
     }
 
     public async Task<List<Employee>> GetEmployeeHierarchyPathAsync(Guid employeeId, CancellationToken ct = default)
     {
         var path = new List<Employee>();
-        
-        // Eager load everything needed for the path to avoid N+1
-        var employee = await _unitOfWork.Employees.FindAsync(e => e.Id == employeeId && !e.IsDeleted, ct, 
-            e => e.Team!, 
-            e => e.Unit!, 
-            e => e.Department!);
-        
-        var emp = employee.FirstOrDefault();
-        if (emp == null) return path;
+        var current = await _unitOfWork.Employees.GetByIdAsync(employeeId, ct);
 
-        // 1. Team Leader
-        if (emp.TeamId.HasValue && emp.Team != null)
+        while (current?.ManagerId != null)
         {
-            if (emp.Team.TeamLeaderId.HasValue && emp.Team.TeamLeaderId != employeeId)
-            {
-                var leader = await _unitOfWork.Employees.GetByIdAsync(emp.Team.TeamLeaderId.Value, ct);
-                if (leader != null) path.Add(leader);
-            }
-        }
-
-        // 2. Unit Leader
-        if (emp.UnitId.HasValue && emp.Unit != null)
-        {
-            if (emp.Unit.UnitLeaderId.HasValue && emp.Unit.UnitLeaderId != employeeId)
-            {
-                var leader = await _unitOfWork.Employees.GetByIdAsync(emp.Unit.UnitLeaderId.Value, ct);
-                if (leader != null && !path.Any(e => e.Id == leader.Id)) path.Add(leader);
-            }
-        }
-
-        // 3. Department Manager
-        if (emp.DepartmentId.HasValue && emp.Department != null)
-        {
-            if (emp.Department.ManagerId.HasValue && emp.Department.ManagerId != employeeId)
-            {
-                var manager = await _unitOfWork.Employees.GetByIdAsync(emp.Department.ManagerId.Value, ct);
-                if (manager != null && !path.Any(e => e.Id == manager.Id)) path.Add(manager);
-            }
-
-            // 4. Vice President
-            if (emp.Department.VicePresidentId.HasValue && emp.Department.VicePresidentId != employeeId)
-            {
-                var vp = await _unitOfWork.Employees.GetByIdAsync(emp.Department.VicePresidentId.Value, ct);
-                if (vp != null && !path.Any(e => e.Id == vp.Id)) path.Add(vp);
-            }
-        }
-
-        // 5. CEO (Find the employee in this company with CEO identity role)
-        var ceoUsers = await _userManager.GetUsersInRoleAsync("CEO");
-        var ceoUserIds = ceoUsers.Select(u => u.Id).ToHashSet();
-        var ceoEmployees = await _unitOfWork.Employees.FindAsync(
-            e => e.CompanyId == emp.CompanyId && !e.IsDeleted && e.UserId != null &&
-                 ceoUserIds.Contains(e.UserId!),
-            ct);
-
-        var ceo = ceoEmployees.FirstOrDefault();
-        if (ceo != null && ceo.Id != employeeId && !path.Any(e => e.Id == ceo.Id))
-        {
-            path.Add(ceo);
+            current = await _unitOfWork.Employees.GetByIdAsync(current.ManagerId.Value, ct);
+            if (current != null) path.Add(current);
         }
 
         return path;
@@ -103,7 +51,7 @@ public class HierarchyService : IHierarchyService
     {
         var result = new List<(Guid Id, string Type)>();
 
-        switch (parentType?.ToLower())
+        switch (parentType.ToLower())
         {
             case "department":
                 var dept = await _unitOfWork.Departments.GetByIdAsync(parentId, ct);
@@ -125,55 +73,41 @@ public class HierarchyService : IHierarchyService
 
             case "employee":
                 // 1. Unbox sub-organizations led by this person
-                // VP -> Depts
-                var vpDepts = await _unitOfWork.Departments.FindAsync(d => d.VicePresidentId == parentId && !d.IsDeleted, ct);
-                foreach (var d in vpDepts) result.Add((d.Id, "Department"));
+                var depts = await _unitOfWork.Departments.FindAsync(d => d.VicePresidentId == parentId || d.ManagerId == parentId, ct);
+                var units = await _unitOfWork.Units.FindAsync(u => u.UnitLeaderId == parentId, ct);
+                var teams = await _unitOfWork.Teams.FindAsync(t => t.TeamLeaderId == parentId, ct);
 
-                // Manager -> Depts
-                var managedDepts = await _unitOfWork.Departments.FindAsync(d => d.ManagerId == parentId && !d.IsDeleted, ct);
-                foreach (var d in managedDepts) result.Add((d.Id, "Department"));
+                foreach (var d in depts) result.Add((d.Id, "Department"));
+                foreach (var u in units) result.Add((u.Id, "Unit"));
+                foreach (var t in teams) result.Add((t.Id, "Team"));
 
-                // UL -> Units
-                var ledUnits = await _unitOfWork.Units.FindAsync(u => u.UnitLeaderId == parentId && !u.IsDeleted, ct);
-                foreach (var u in ledUnits) result.Add((u.Id, "Unit"));
-
-                // TL -> Teams
-                var ledTeams = await _unitOfWork.Teams.FindAsync(t => t.TeamLeaderId == parentId && !t.IsDeleted, ct);
-                foreach (var t in ledTeams) result.Add((t.Id, "Team"));
-
-                // 2. Direct reports (Reports to this person)
-                var directReports = await _unitOfWork.Employees.FindAsync(e => e.ManagerId == parentId && !e.IsDeleted, ct);
+                // 2. Direct reports
+                var directReports = await _unitOfWork.Employees.FindAsync(e => e.ManagerId == parentId, ct);
                 
-                // Exclude people who were already "unboxed" as leaders of the above orgs to prevent Double Discovery
                 var leadersToExclude = new HashSet<Guid>();
-                
-                // If this employee is a VP/Manager of a Dept, they unbox the Dept.
-                // The Dept expands to the Manager.
-                // The Manager then unboxes the UNITS in that Dept.
-                // We must exclude the Unit Leaders from the Manager's direct reports list.
-                foreach (var d in managedDepts)
+                // Exclude leaders of DEPARTMENTS being unboxed
+                foreach (var d in depts)
                 {
-                    var subUnits = await _unitOfWork.Units.FindAsync(u => u.DepartmentId == d.Id && !u.IsDeleted, ct);
-                    foreach (var u in subUnits) if (u.UnitLeaderId.HasValue) leadersToExclude.Add(u.UnitLeaderId.Value);
+                    if (d.ManagerId.HasValue && d.ManagerId != parentId) 
+                        leadersToExclude.Add(d.ManagerId.Value);
+                }
+                // Exclude leaders of UNITS being unboxed
+                foreach (var u in units)
+                {
+                    if (u.UnitLeaderId.HasValue && u.UnitLeaderId != parentId) 
+                        leadersToExclude.Add(u.UnitLeaderId.Value);
+                }
+                // Exclude leaders of TEAMS being unboxed
+                foreach (var t in teams)
+                {
+                    if (t.TeamLeaderId.HasValue && t.TeamLeaderId != parentId) 
+                        leadersToExclude.Add(t.TeamLeaderId.Value);
                 }
 
-                // If they lead a Unit, they unbox TEAMS in that Unit.
-                // We must exclude the Team Leaders from the Unit Leader's direct reports list.
-                foreach (var u in ledUnits)
+                foreach (var emp in directReports)
                 {
-                    var subTeams = await _unitOfWork.Teams.FindAsync(t => t.UnitId == u.Id && !t.IsDeleted, ct);
-                    foreach (var t in subTeams) if (t.TeamLeaderId.HasValue) leadersToExclude.Add(t.TeamLeaderId.Value);
-                }
-
-                // Also exclude leaders of orgs they lead directly
-                foreach (var d in managedDepts) if (d.ManagerId.HasValue) leadersToExclude.Add(d.ManagerId.Value);
-                foreach (var u in ledUnits) if (u.UnitLeaderId.HasValue) leadersToExclude.Add(u.UnitLeaderId.Value);
-                foreach (var t in ledTeams) if (t.TeamLeaderId.HasValue) leadersToExclude.Add(t.TeamLeaderId.Value);
-
-                foreach (var report in directReports)
-                {
-                    if (leadersToExclude.Contains(report.Id)) continue;
-                    result.Add((report.Id, "Employee"));
+                    if (!leadersToExclude.Contains(emp.Id))
+                        result.Add((emp.Id, "Employee"));
                 }
                 break;
         }
@@ -181,10 +115,10 @@ public class HierarchyService : IHierarchyService
         return result.DistinctBy(x => x.Id).ToList();
     }
 
-    public async Task<Dictionary<Guid, dynamic>> GetNodesMetadataAsync(IEnumerable<(Guid Id, string Type)> nodes,
+    public async Task<Dictionary<Guid, HierarchyNodeMetadata>> GetNodesMetadataAsync(IEnumerable<(Guid Id, string Type)> nodes,
         CancellationToken ct = default)
     {
-        var results = new Dictionary<Guid, dynamic>();
+        var results = new Dictionary<Guid, HierarchyNodeMetadata>();
         var nodeSpecs = nodes.ToList();
 
         var employeeIds = nodeSpecs.Where(n => n.Type == "Employee").Select(n => n.Id).ToList();
@@ -205,7 +139,7 @@ public class HierarchyService : IHierarchyService
             foreach (var emp in employees)
             {
                 var role = roles.GetValueOrDefault(emp.UserId ?? "", "");
-                results[emp.Id] = new
+                results[emp.Id] = new HierarchyNodeMetadata
                 {
                     FullName = emp.FullName,
                     Role = role,
@@ -224,7 +158,7 @@ public class HierarchyService : IHierarchyService
             var depts = await _unitOfWork.Departments.FindAsync(d => deptIds.Contains(d.Id), ct);
             foreach (var d in depts)
             {
-                results[d.Id] = new
+                results[d.Id] = new HierarchyNodeMetadata
                 {
                     Name = d.Name,
                     LeaderName = d.Manager?.FullName ?? d.VicePresident?.FullName,
@@ -238,7 +172,7 @@ public class HierarchyService : IHierarchyService
             var units = await _unitOfWork.Units.FindAsync(u => unitIds.Contains(u.Id), ct);
             foreach (var u in units)
             {
-                results[u.Id] = new
+                results[u.Id] = new HierarchyNodeMetadata
                 {
                     Name = u.Name,
                     LeaderName = u.UnitLeader?.FullName,
@@ -252,7 +186,7 @@ public class HierarchyService : IHierarchyService
             var teams = await _unitOfWork.Teams.FindAsync(t => teamIds.Contains(t.Id), ct);
             foreach (var t in teams)
             {
-                results[t.Id] = new
+                results[t.Id] = new HierarchyNodeMetadata
                 {
                     Name = t.Name,
                     LeaderName = t.TeamLeader?.FullName,
@@ -264,22 +198,27 @@ public class HierarchyService : IHierarchyService
         return results;
     }
 
-    private async Task<HashSet<Guid>> GetEmployeesWithChildrenAsync(List<Guid> employeeIds, CancellationToken ct)
+    private async Task<List<Guid>> GetEmployeesWithChildrenAsync(List<Guid> employeeIds, CancellationToken ct)
     {
-        // Check if any of these employees is a Manager, VP, UL, or TL
-        var managers = await _unitOfWork.Employees.FindAsync(e => e.ManagerId != null && employeeIds.Contains(e.ManagerId.Value), ct);
-        var vps = await _unitOfWork.Departments.FindAsync(d => d.VicePresidentId != null && employeeIds.Contains(d.VicePresidentId.Value), ct);
-        var deptMgrs = await _unitOfWork.Departments.FindAsync(d => d.ManagerId != null && employeeIds.Contains(d.ManagerId.Value), ct);
-        var units = await _unitOfWork.Units.FindAsync(u => u.UnitLeaderId != null && employeeIds.Contains(u.UnitLeaderId.Value), ct);
-        var teams = await _unitOfWork.Teams.FindAsync(t => t.TeamLeaderId != null && employeeIds.Contains(t.TeamLeaderId.Value), ct);
+        var hasChildrenIds = new List<Guid>();
 
-        var hasChildren = new HashSet<Guid>();
-        foreach (var m in managers) if (m.ManagerId.HasValue) hasChildren.Add(m.ManagerId.Value);
-        foreach (var v in vps) if (v.VicePresidentId.HasValue) hasChildren.Add(v.VicePresidentId.Value);
-        foreach (var d in deptMgrs) if (d.ManagerId.HasValue) hasChildren.Add(d.ManagerId.Value);
-        foreach (var u in units) if (u.UnitLeaderId.HasValue) hasChildren.Add(u.UnitLeaderId.Value);
-        foreach (var t in teams) if (t.TeamLeaderId.HasValue) hasChildren.Add(t.TeamLeaderId.Value);
+        // 1. Check if they are managers of others
+        var childReports = await _unitOfWork.Employees.FindAsync(e => e.ManagerId.HasValue && employeeIds.Contains(e.ManagerId.Value), ct);
+        hasChildrenIds.AddRange(childReports.Select(e => e.ManagerId!.Value));
 
-        return hasChildren;
+        // 2. Check if they lead organizations
+        var vps = await _unitOfWork.Departments.FindAsync(d => d.VicePresidentId.HasValue && employeeIds.Contains(d.VicePresidentId.Value), ct);
+        hasChildrenIds.AddRange(vps.Select(d => d.VicePresidentId!.Value));
+
+        var deptManagers = await _unitOfWork.Departments.FindAsync(d => d.ManagerId.HasValue && employeeIds.Contains(d.ManagerId.Value), ct);
+        hasChildrenIds.AddRange(deptManagers.Select(d => d.ManagerId!.Value));
+
+        var unitLeaders = await _unitOfWork.Units.FindAsync(u => u.UnitLeaderId.HasValue && employeeIds.Contains(u.UnitLeaderId.Value), ct);
+        hasChildrenIds.AddRange(unitLeaders.Select(u => u.UnitLeaderId!.Value));
+
+        var teamLeaders = await _unitOfWork.Teams.FindAsync(t => t.TeamLeaderId.HasValue && employeeIds.Contains(t.TeamLeaderId.Value), ct);
+        hasChildrenIds.AddRange(teamLeaders.Select(t => t.TeamLeaderId!.Value));
+
+        return hasChildrenIds.Distinct().ToList();
     }
 }

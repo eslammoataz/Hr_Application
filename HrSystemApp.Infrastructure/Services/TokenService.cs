@@ -82,7 +82,7 @@ public class TokenService : ITokenService
         try
         {
             var jwtToken = handler.ReadJsonWebToken(token);
-            return jwtToken.Claims.FirstOrDefault(c => c.Type == "sub")?.Value;
+            return jwtToken.Claims.FirstOrDefault(c => c.Type == AppClaimTypes.Subject)?.Value;
         }
         catch
         {

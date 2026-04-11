@@ -13,7 +13,7 @@ public class UnitRepository : Repository<Unit>, IUnitRepository
         => await _context.Units
             .AsNoTracking()
             .Include(u => u.UnitLeader)
-            .Where(u => u.DepartmentId == departmentId && !u.IsDeleted)
+            .Where(u => u.DepartmentId == departmentId)
             .ToListAsync(cancellationToken);
 
     public async Task<IReadOnlyList<Unit>> GetByDepartmentIdsAsync(
@@ -28,7 +28,7 @@ public class UnitRepository : Repository<Unit>, IUnitRepository
         return await _context.Units
             .AsNoTracking()
             .Include(u => u.UnitLeader)
-            .Where(u => departmentIds.Contains(u.DepartmentId) && !u.IsDeleted)
+            .Where(u => departmentIds.Contains(u.DepartmentId))
             .ToListAsync(cancellationToken);
     }
 }

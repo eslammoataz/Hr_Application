@@ -113,9 +113,7 @@ public static class DependencyInjection
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<IDataScopeService, DataScopeService>();
-        services.AddScoped<IWorkflowService, WorkflowService>();
         services.AddScoped<IRequestSchemaValidator, RequestSchemaValidator>();
-        services.AddScoped<IHierarchyService, HierarchyService>();
         services.AddScoped<INotificationService, NotificationService>();
         services.AddScoped<IAttendanceRulesProvider, AttendanceRulesProvider>();
         services.AddScoped<IAttendanceReminderService, AttendanceReminderService>();

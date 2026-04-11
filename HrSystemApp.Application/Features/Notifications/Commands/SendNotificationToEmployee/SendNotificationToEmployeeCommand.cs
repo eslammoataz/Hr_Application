@@ -33,7 +33,8 @@ public class SendNotificationToEmployeeCommandHandler : IRequestHandler<SendNoti
                 request.EmployeeId,
                 request.Title,
                 request.Message,
-                request.Type);
+                request.Type,
+                cancellationToken);
 
             _logger.LogInformation("Notification {Type} sent to employee {EmployeeId}", request.Type,
                 request.EmployeeId);

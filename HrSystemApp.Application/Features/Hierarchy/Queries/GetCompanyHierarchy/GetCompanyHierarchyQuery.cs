@@ -1,5 +1,6 @@
 using HrSystemApp.Application.Common;
 using HrSystemApp.Application.Errors;
+using HrSystemApp.Application.DTOs.Hierarchy;
 using HrSystemApp.Application.Interfaces;
 using HrSystemApp.Application.Interfaces.Services;
 using HrSystemApp.Domain.Enums;
@@ -171,7 +172,7 @@ public class GetCompanyHierarchyQueryHandler : IRequestHandler<GetCompanyHierarc
                 if (metadata.TryGetValue(candidate.Employee.Id, out var data))
                 {
                     nodes.Add(new HierarchyNodeDto(
-                        candidate.Employee.Id, null, data.FullName, "Employee", data.Role, data.Role, data.HasChildren,
+                        candidate.Employee.Id, null, data.FullName!, "Employee", data.Role!, data.Role!, data.HasChildren,
                         new HierarchyMetadata(data.Email, data.EmployeeCode, null, data.ManagerName, data.ManagerId)));
                 }
             }

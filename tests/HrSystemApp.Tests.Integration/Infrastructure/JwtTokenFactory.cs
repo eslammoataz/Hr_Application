@@ -3,6 +3,7 @@ using System.Security.Claims;
 using System.Text;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
+using HrSystemApp.Domain.Constants;
 
 namespace HrSystemApp.Tests.Integration.Infrastructure;
 
@@ -16,14 +17,14 @@ public static class JwtTokenFactory
 
         var claims = new List<Claim>
         {
-            new("sub", userId),
-            new("role", role),
-            new("name", $"Test User {userId}")
+            new(AppClaimTypes.Subject, userId),
+            new(AppClaimTypes.Role, role),
+            new(AppClaimTypes.Name, $"Test User {userId}")
         };
 
         if (companyId.HasValue)
         {
-            claims.Add(new Claim("companyId", companyId.Value.ToString()));
+            claims.Add(new Claim(AppClaimTypes.CompanyId, companyId.Value.ToString()));
         }
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));

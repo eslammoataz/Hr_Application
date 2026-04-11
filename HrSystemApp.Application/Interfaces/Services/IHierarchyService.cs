@@ -1,3 +1,4 @@
+using HrSystemApp.Application.DTOs.Hierarchy;
 using HrSystemApp.Domain.Enums;
 using HrSystemApp.Domain.Models;
 
@@ -36,5 +37,5 @@ public interface IHierarchyService
     /// Fetches metadata (Name, Position, Role, hasChildren) for a list of mixed node types.
     /// Used for batching to prevent N+1 queries during tree mapping.
     /// </summary>
-    Task<Dictionary<Guid, dynamic>> GetNodesMetadataAsync(IEnumerable<(Guid Id, string Type)> nodes, CancellationToken ct = default);
+    Task<Dictionary<Guid, HierarchyNodeMetadata>> GetNodesMetadataAsync(IEnumerable<(Guid Id, string Type)> nodes, CancellationToken ct = default);
 }

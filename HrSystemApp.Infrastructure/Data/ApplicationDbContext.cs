@@ -1,9 +1,9 @@
 using HrSystemApp.Domain.Common;
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore;
 using HrSystemApp.Domain.Models;
 using Microsoft.AspNetCore.Identity;
-using BaseEntity = HrSystemApp.Domain.Models.BaseEntity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
+using System.Reflection;
 
 namespace HrSystemApp.Infrastructure.Data;
 
@@ -17,60 +17,34 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     {
     }
 
-    // Phase 1
-    public DbSet<Company> Companies => Set<Company>();
-    public DbSet<CompanyLocation> CompanyLocations => Set<CompanyLocation>();
-    public DbSet<CompanyHierarchyPosition> CompanyHierarchyPositions => Set<CompanyHierarchyPosition>();
-    public DbSet<Employee> Employees => Set<Employee>();
-
-    public DbSet<ContactAdminRequest> ContactAdminRequests => Set<ContactAdminRequest>();
-
-    // Phase 2
-    public DbSet<Department> Departments => Set<Department>();
-    public DbSet<Unit> Units => Set<Unit>();
-    public DbSet<Team> Teams => Set<Team>();
-
-    // Phase 4
-    public DbSet<LeaveBalance> LeaveBalances => Set<LeaveBalance>();
-    public DbSet<ProfileUpdateRequest> ProfileUpdateRequests => Set<ProfileUpdateRequest>();
-    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
-    public DbSet<Notification> Notifications => Set<Notification>();
-    public DbSet<Attendance> Attendances => Set<Attendance>();
-    public DbSet<AttendanceLog> AttendanceLogs => Set<AttendanceLog>();
-    public DbSet<AttendanceReminderLog> AttendanceReminderLogs => Set<AttendanceReminderLog>();
-    public DbSet<AttendanceAdjustment> AttendanceAdjustments => Set<AttendanceAdjustment>();
-
-    // Requests Feature
-    public DbSet<RequestDefinition> RequestDefinitions => Set<RequestDefinition>();
-    public DbSet<RequestWorkflowStep> RequestWorkflowSteps => Set<RequestWorkflowStep>();
-    public DbSet<Request> Requests => Set<Request>();
-    public DbSet<RequestApprovalHistory> RequestApprovalHistory => Set<RequestApprovalHistory>();
-    public DbSet<RequestAttachment> RequestAttachments => Set<RequestAttachment>();
+    public DbSet<Employee> Employees { get; set; } = null!;
+    public DbSet<Department> Departments { get; set; } = null!;
+    public DbSet<Unit> Units { get; set; } = null!;
+    public DbSet<Team> Teams { get; set; } = null!;
+    public DbSet<Attendance> Attendances { get; set; } = null!;
+    public DbSet<AttendanceLog> AttendanceLogs { get; set; } = null!;
+    public DbSet<AttendanceAdjustment> AttendanceAdjustments { get; set; } = null!;
+    public DbSet<AttendanceReminderLog> AttendanceReminderLogs { get; set; } = null!;
+    public DbSet<Notification> Notifications { get; set; } = null!;
+    public DbSet<RefreshToken> RefreshTokens { get; set; } = null!;
+    public DbSet<Company> Companies { get; set; } = null!;
+    public DbSet<CompanyLocation> CompanyLocations { get; set; } = null!;
+    public DbSet<CompanyHierarchyPosition> CompanyHierarchyPositions { get; set; } = null!;
+    public DbSet<LeaveBalance> LeaveBalances { get; set; } = null!;
+    public DbSet<ContactAdminRequest> ContactAdminRequests { get; set; } = null!;
+    public DbSet<ProfileUpdateRequest> ProfileUpdateRequests { get; set; } = null!;
+    public DbSet<RequestDefinition> RequestDefinitions { get; set; } = null!;
+    public DbSet<Request> Requests { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
 
-        // Configure ApplicationUser
-        builder.Entity<ApplicationUser>(entity => { entity.HasIndex(e => e.PhoneNumber).IsUnique(); });
-
-
-        builder.Entity<ApplicationUser>(b => b.ToTable("Users"));
-        builder.Entity<IdentityRole>(b => b.ToTable("Roles"));
-        builder.Entity<IdentityUserRole<string>>(b => b.ToTable("UserRoles"));
-        builder.Entity<IdentityUserClaim<string>>(b => b.ToTable("UserClaims"));
-        builder.Entity<IdentityUserLogin<string>>(b => b.ToTable("UserLogins"));
-        builder.Entity<IdentityUserToken<string>>(b => b.ToTable("UserTokens"));
-        builder.Entity<IdentityRoleClaim<string>>(b => b.ToTable("RoleClaims"));
-
-
+        // Apply all configurations from the current assembly
         builder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
-    }
 
-    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
-    {
-        HandleEntityStateChanges();
-        return base.SaveChangesAsync(cancellationToken);
+        // Standardize Soft Delete Global Query Filter
+        ApplySoftDeleteQueryFilter(builder);
     }
 
     public override int SaveChanges()
@@ -79,9 +53,35 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
         return base.SaveChanges();
     }
 
+    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        HandleEntityStateChanges();
+        return base.SaveChangesAsync(cancellationToken);
+    }
+
+    private void ApplySoftDeleteQueryFilter(ModelBuilder builder)
+    {
+        foreach (var entityType in builder.Model.GetEntityTypes())
+        {
+            // Apply to any entity that inherits from our Domain BaseEntity (soft-delete capable)
+            if (typeof(HrSystemApp.Domain.Models.BaseEntity).IsAssignableFrom(entityType.ClrType))
+            {
+                var method = typeof(ApplicationDbContext)
+                    .GetMethod(nameof(SetSoftDeleteFilter), BindingFlags.NonPublic | BindingFlags.Static)
+                    ?.MakeGenericMethod(entityType.ClrType);
+                method?.Invoke(null, new object[] { builder });
+            }
+        }
+    }
+
+    private static void SetSoftDeleteFilter<T>(ModelBuilder builder) where T : HrSystemApp.Domain.Models.BaseEntity
+    {
+        builder.Entity<T>().HasQueryFilter(e => !e.IsDeleted);
+    }
+
     private void HandleEntityStateChanges()
     {
-        foreach (var entry in ChangeTracker.Entries<BaseEntity>())
+        foreach (var entry in ChangeTracker.Entries<HrSystemApp.Domain.Models.BaseEntity>())
         {
             switch (entry.State)
             {
@@ -92,25 +92,20 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 
                 case EntityState.Modified:
                     entry.Entity.UpdatedAt = DateTime.UtcNow;
-                    entry.Property(nameof(BaseEntity.CreatedAt)).IsModified = false;
+                    // Protect CreatedAt from being overwritten
+                    entry.Property(nameof(HrSystemApp.Domain.Models.BaseEntity.CreatedAt)).IsModified = false;
                     break;
 
                 case EntityState.Deleted:
+                    // Hard delete for entities implementing IHardDelete
                     if (entry.Entity is IHardDelete)
                         break;
+
+                    // Standard soft-delete behavior
                     entry.State = EntityState.Modified;
                     entry.Entity.IsDeleted = true;
                     entry.Entity.UpdatedAt = DateTime.UtcNow;
                     break;
-            }
-        }
-
-        // Protect CreatedById from being overwritten on updates
-        foreach (var entry in ChangeTracker.Entries<AuditableEntity>())
-        {
-            if (entry.State == EntityState.Modified)
-            {
-                entry.Property(nameof(AuditableEntity.CreatedById)).IsModified = false;
             }
         }
     }
