@@ -117,7 +117,10 @@ public class AuthController : BaseApiController
         return HandleResult(result);
     }
 
-    /// <summary>Revoke all refresh tokens for the current user</summary>
+    /// <summary>
+    /// Revoke all refresh tokens for the authenticated user.
+    /// </summary>
+    /// <returns>HTTP 204 No Content when successful; HTTP 401 Unauthorized if the user claim is missing.</returns>
     [HttpPost("revoke-all")]
     [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -134,7 +137,12 @@ public class AuthController : BaseApiController
         return HandleResult(result);
     }
 
-    /// <summary>Get all active refresh tokens for the current user</summary>
+    /// <summary>
+    /// Retrieves the active refresh tokens for the authenticated user.
+    /// </summary>
+    /// <returns>
+    /// 200 OK with a list of <see cref="RefreshTokenDto"/> when the user is authenticated; 401 Unauthorized if the user claim is missing.
+    /// </returns>
     [HttpGet("tokens")]
     [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     [ProducesResponseType(typeof(List<RefreshTokenDto>), StatusCodes.Status200OK)]
@@ -151,7 +159,15 @@ public class AuthController : BaseApiController
 
     /// <summary>
     /// For standard users who are already logged in and want to update their password.
+    /// <summary>
+    /// Changes the authenticated user's password using the provided current and new passwords.
     /// </summary>
+    /// <param name="request">A request containing the current password and the new password to set.</param>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns>
+    /// An <see cref="AuthResponse"/> with status 200 when the password change succeeds; 
+    /// 400 for invalid input; 401 when the request lacks a valid authenticated user.
+    /// </returns>
     [HttpPost("change-password")]
     [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status200OK)]
@@ -194,7 +210,11 @@ public class AuthController : BaseApiController
 
     /// <summary>
     /// Update FCM notification token for currently authenticated user.
+    /// <summary>
+    /// Updates the authenticated user's FCM token and device type.
     /// </summary>
+    /// <param name="request">Contains the FCM token and the device type to associate with the current user.</param>
+    /// <returns>`200 OK` when the update succeeds; `401 Unauthorized` if the user claim identifying the current user is missing.</returns>
     [HttpPost("update-fcm-token")]
     [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -215,7 +235,11 @@ public class AuthController : BaseApiController
 
     /// <summary>
     /// Update preferred language for currently authenticated user.
+    /// <summary>
+    /// Updates the authenticated user's preferred language.
     /// </summary>
+    /// <param name="request">Request containing the target language code.</param>
+    /// <returns>`200 OK` with the command result mapped to an `IActionResult`; `401 Unauthorized` if the user is not authenticated.</returns>
     [HttpPost("update-language")]
     [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -298,7 +322,13 @@ public class AuthController : BaseApiController
         return HandleResult(result);
     }
 
-    /// <summary>Get current authenticated user info from token claims</summary>
+    /// <summary>
+    /// Gets the current authenticated user's information from JWT claims.
+    /// </summary>
+    /// <returns>
+    /// An object with the following properties populated from the current user's claims:
+    /// `UserId`, `Email`, `Name`, `Role`, `EmployeeId`, and `PhoneNumber`.
+    /// </returns>
     [HttpGet("me")]
     [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]

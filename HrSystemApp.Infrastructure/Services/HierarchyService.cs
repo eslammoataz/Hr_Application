@@ -19,12 +19,24 @@ public class HierarchyService : IHierarchyService
         _userManager = userManager;
     }
 
+    /// <summary>
+    /// Retrieve the hierarchy roles defined for a company, ordered by each position's SortOrder.
+    /// </summary>
+    /// <param name="companyId">The company identifier whose hierarchy positions to query.</param>
+    /// <param name="ct">A cancellation token to cancel the operation.</param>
+    /// <returns>A list of available <see cref="UserRole"/> values ordered by position <c>SortOrder</c>.</returns>
     public async Task<List<UserRole>> GetAvailableRolesAsync(Guid companyId, CancellationToken ct = default)
     {
         var positions = await _unitOfWork.HierarchyPositions.GetByCompanyAsync(companyId, ct);
         return positions.OrderBy(p => p.SortOrder).Select(p => p.Role).ToList();
     }
 
+    /// <summary>
+    /// Determines whether all specified roles are valid for the given company.
+    /// </summary>
+    /// <param name="companyId">The company identifier to validate roles against.</param>
+    /// <param name="roles">The collection of roles to validate.</param>
+    /// <returns>`true` if every role in <paramref name="roles"/> exists among the company's available roles, `false` otherwise.</returns>
     public async Task<bool> AreRolesValidForCompanyAsync(Guid companyId, IEnumerable<UserRole> roles,
         CancellationToken ct = default)
     {
@@ -32,6 +44,12 @@ public class HierarchyService : IHierarchyService
         return roles.All(r => available.Contains(r));
     }
 
+    /// <summary>
+    /// Build the management chain for the given employee, walking upward from the employee's direct manager to the top-level manager.
+    /// </summary>
+    /// <param name="employeeId">The identifier of the employee whose manager chain is requested.</param>
+    /// <param name="ct">A cancellation token that can be used to cancel the operation.</param>
+    /// <returns>A list of Employee objects representing the management chain ordered from the direct manager upward; empty if the employee has no manager or the employee is not found.</returns>
     public async Task<List<Employee>> GetEmployeeHierarchyPathAsync(Guid employeeId, CancellationToken ct = default)
     {
         var path = new List<Employee>();
@@ -46,6 +64,13 @@ public class HierarchyService : IHierarchyService
         return path;
     }
 
+    /// <summary>
+    /// Gets the immediate child nodes for a hierarchy node identified by <paramref name="parentId"/> and <paramref name="parentType"/>.
+    /// </summary>
+    /// <param name="companyId">The company identifier used to scope the hierarchy query.</param>
+    /// <param name="parentId">The identifier of the parent node whose children are requested.</param>
+    /// <param name="parentType">The parent node type: "Department", "Unit", "Team", or "Employee".</param>
+    /// <returns>A list of distinct tuples where the first item is the child node Id and the second item is the child node Type ("Employee", "Department", "Unit", or "Team").</returns>
     public async Task<List<(Guid Id, string Type)>> GetHierarchyChildrenAsync(Guid companyId, Guid parentId,
         string parentType, CancellationToken ct = default)
     {
@@ -115,6 +140,12 @@ public class HierarchyService : IHierarchyService
         return result.DistinctBy(x => x.Id).ToList();
     }
 
+    /// <summary>
+    /// Builds metadata for the provided hierarchy nodes.
+    /// </summary>
+    /// <param name="nodes">A collection of node specs where each item is a tuple of (Id, Type). Supported Type values are "Employee", "Department", "Unit", and "Team".</param>
+    /// <param name="ct">A cancellation token.</param>
+    /// <returns>A dictionary mapping each found node Id to its HierarchyNodeMetadata. Nodes that do not exist in the data store are omitted. For employee nodes, the returned metadata includes whether the employee has children.</returns>
     public async Task<Dictionary<Guid, HierarchyNodeMetadata>> GetNodesMetadataAsync(IEnumerable<(Guid Id, string Type)> nodes,
         CancellationToken ct = default)
     {
@@ -198,6 +229,11 @@ public class HierarchyService : IHierarchyService
         return results;
     }
 
+    /// <summary>
+    /// Determines which of the specified employees should be marked as having children in the hierarchy.
+    /// </summary>
+    /// <param name="employeeIds">Employee IDs to evaluate for having children.</param>
+    /// <returns>A distinct list of employee IDs that have at least one direct report or lead at least one department, unit, or team.</returns>
     private async Task<List<Guid>> GetEmployeesWithChildrenAsync(List<Guid> employeeIds, CancellationToken ct)
     {
         var hasChildrenIds = new List<Guid>();

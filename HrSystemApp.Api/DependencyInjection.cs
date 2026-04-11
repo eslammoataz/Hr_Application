@@ -10,6 +10,12 @@ namespace HrSystemApp.Api;
 
 public static class DependencyInjection
 {
+    /// <summary>
+    /// Registers API framework services and configures JWT Bearer authentication using the
+    /// "JwtSettings" configuration section.
+    /// </summary>
+    /// <returns>The same <see cref="IServiceCollection"/> instance for chaining.</returns>
+    /// <exception cref="InvalidOperationException">Thrown if the JWT secret is missing ("JWT Secret not configured") or shorter than 32 characters ("JWT Secret must be at least 32 characters.").</exception>
     public static IServiceCollection AddApi(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddHttpContextAccessor();

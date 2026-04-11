@@ -14,6 +14,12 @@ public static class SeedData
 {
     private static readonly Random _random = new();
 
+    /// <summary>
+    /// Orchestrates one-time database and identity seeding using services resolved from the provided IServiceProvider.
+    /// </summary>
+    /// <remarks>
+    /// Seeds identity roles and a super-admin, ensures a company and main location, creates hierarchy positions, seeds a company admin and the full organizational hierarchy, and then applies security hardening to legacy accounts by flagging them for password reset. If the host environment is Development, logs guidance about test credentials.
+    /// </remarks>
     public static async Task InitializeAsync(IServiceProvider serviceProvider)
     {
         var roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
@@ -94,7 +100,16 @@ public static class SeedData
         }
     }
 
-    // -------------------------------------------------------------------------
+    /// <summary>
+    /// Ensures a super admin account exists and that the account is a member of the SuperAdmin role.
+    /// </summary>
+    /// <remarks>
+    /// Reads the "SuperAdminSettings" configuration section for an email and password, falling back to
+    /// "superadmin@hrms.com" and "SuperAdmin@123" when values are missing or whitespace. If no user
+    /// with the configured email exists, a new enabled super admin user is created and granted the
+    /// SuperAdmin role. If a user exists but is not in the SuperAdmin role, the role is added.
+    /// Creation failures are logged as errors.
+    /// </remarks>
 
     private static async Task SeedSuperAdminAsync(
         UserManager<ApplicationUser> userManager,
@@ -141,6 +156,12 @@ public static class SeedData
         }
     }
 
+    /// <summary>
+    /// Flags all non-superadmin user accounts to require a password change on next sign-in.
+    /// </summary>
+    /// <remarks>
+    /// Sets `MustChangePassword` to true for users whose `MustChangePassword` is currently false and whose username is not "superadmin@hrms.com". Logs the number of accounts updated if any.
+    /// </remarks>
     private static async Task HardenExistingAccountsAsync(ApplicationDbContext context, ILogger logger)
     {
         var count = await context.Users
@@ -153,7 +174,11 @@ public static class SeedData
         }
     }
 
-    // -------------------------------------------------------------------------
+    /// <summary>
+    /// Ensures a company-level admin employee and corresponding identity user exist for the specified company and location, creating them with the configured seed password if absent and logging success.
+    /// </summary>
+    /// <param name="company">The company to which the admin will belong.</param>
+    /// <param name="location">The company location to assign to the admin.</param>
 
     private static async Task SeedCompanyAdminAsync(
         UserManager<ApplicationUser> userManager,
@@ -269,7 +294,19 @@ public static class SeedData
         return location;
     }
 
-    // -------------------------------------------------------------------------
+    /// <summary>
+    /// Seeds a multi-department organizational hierarchy (departments, units, teams, and corresponding users) for the specified company and location.
+    /// </summary>
+    /// <remarks>
+    /// Creates a root CEO and a network of Vice Presidents, department managers, unit leaders, team leaders and employees, along with Department, Unit and Team records as needed.
+    /// The method aborts early if the root CEO cannot be created.
+    /// </remarks>
+    /// <param name="userManager">Identity user manager used to find and create application users.</param>
+    /// <param name="configuration">Application configuration used to read seed password settings.</param>
+    /// <param name="context">Application database context used to create or update Department, Unit, Team and Employee entities.</param>
+    /// <param name="company">The company for which the organizational hierarchy will be seeded.</param>
+    /// <param name="location">The company location assigned to created employees.</param>
+    /// <param name="logger">Logger used to record seeding progress and final completion.</param>
     private static async Task SeedOrganizationalHierarchyAsync(
         UserManager<ApplicationUser> userManager,
         IConfiguration configuration,
@@ -460,6 +497,20 @@ public static class SeedData
         logger.LogInformation("Full organizational hierarchy (Multi-Dept) seeded for {Company}.", company.CompanyName);
     }
 
+    /// <summary>
+    /// Creates or reuses an Employee and its linked ApplicationUser, assigns the user to the specified role, and associates the employee with the provided company hierarchy identifiers.
+    /// </summary>
+    /// <param name="company">The company to which the employee belongs.</param>
+    /// <param name="location">The company location for the employee.</param>
+    /// <param name="departmentId">Optional department identifier to associate with the employee.</param>
+    /// <param name="unitId">Optional unit identifier to associate with the employee.</param>
+    /// <param name="teamId">Optional team identifier to associate with the employee.</param>
+    /// <param name="managerId">Optional manager (employee) identifier that this employee reports to.</param>
+    /// <param name="name">Full name of the employee.</param>
+    /// <param name="role">Identity role name to assign to the created user.</param>
+    /// <param name="email">Email address used as the user's login and employee contact.</param>
+    /// <param name="phone">Phone number for the employee.</param>
+    /// <returns>The existing or newly created Employee linked to the identity user, or `null` if user creation failed.</returns>
     private static async Task<Employee?> CreateHierarchyUserAsync(
         UserManager<ApplicationUser> userManager,
         IConfiguration configuration,
@@ -528,7 +579,9 @@ public static class SeedData
     }
 
 
-    // -------------------------------------------------------------------------
+    /// <summary>
+    /// Logs informational guidance indicating test credentials are managed via configuration.
+    /// </summary>
     private static void LogTestCredentials(ILogger logger, IConfiguration configuration)
     {
         logger.LogInformation("================== TEST CREDENTIALS (HIERARCHY) ==================");
@@ -538,7 +591,11 @@ public static class SeedData
     }
 
 
-    // -------------------------------------------------------------------------
+    /// <summary>
+        /// Concatenates the descriptions of all errors in an IdentityResult into a single comma-separated string.
+        /// </summary>
+        /// <param name="result">The IdentityResult whose error descriptions will be formatted.</param>
+        /// <returns>A comma-separated string of error descriptions; empty string if there are no errors.</returns>
 
     private static string FormatErrors(IdentityResult result) =>
         string.Join(", ", result.Errors.Select(e => e.Description));

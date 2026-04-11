@@ -6,6 +6,15 @@ namespace HrSystemApp.Infrastructure.Data.Configurations;
 
 public class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
 {
+    /// <summary>
+    /// Configures EF Core mappings for the Employee entity.
+    /// </summary>
+    /// <remarks>
+    /// Applies the primary key and a soft-delete query filter; defines indexes (unique EmployeeCode, Email, and a unique UserId constrained to non-null values);
+    /// configures property lengths, required constraints, and string conversions for enum-like fields; and sets up relationships with their foreign keys and delete behaviors:
+    /// Company (Restrict), Department/Unit/Team/Manager/CompanyLocation (SetNull), and a one-to-one User relation (SetNull).
+    /// </remarks>
+    /// <param name="builder">The EntityTypeBuilder for the Employee entity.</param>
     public void Configure(EntityTypeBuilder<Employee> builder)
     {
         builder.HasKey(e => e.Id);

@@ -9,6 +9,19 @@ namespace HrSystemApp.Tests.Integration.Infrastructure;
 
 public static class JwtTokenFactory
 {
+    /// <summary>
+    /// Builds a signed JWT for a test user using values from configuration.
+    /// </summary>
+    /// <remarks>
+    /// The token contains the following claims: subject (userId), role (role), and name ("Test User {userId}").
+    /// If <paramref name="companyId"/> is provided, it is added as the companyId claim. The token expires one hour after creation.
+    /// </remarks>
+    /// <param name="configuration">Configuration containing JwtSettings:Secret, JwtSettings:Issuer, and JwtSettings:Audience.</param>
+    /// <param name="userId">Value to include in the subject claim.</param>
+    /// <param name="role">Value to include in the role claim.</param>
+    /// <param name="companyId">Optional company identifier to include in the companyId claim.</param>
+    /// <returns>The serialized JWT as a string.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when JwtSettings:Secret, JwtSettings:Issuer, or JwtSettings:Audience is missing from configuration.</exception>
     public static string CreateToken(IConfiguration configuration, string userId, string role, Guid? companyId = null)
     {
         var secret = configuration["JwtSettings:Secret"] ?? throw new InvalidOperationException("JwtSettings:Secret is missing.");
