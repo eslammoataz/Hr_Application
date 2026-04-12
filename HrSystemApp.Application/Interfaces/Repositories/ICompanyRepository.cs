@@ -1,13 +1,14 @@
 using HrSystemApp.Domain.Models;
 using HrSystemApp.Domain.Enums;
 using HrSystemApp.Application.Common;
+using HrSystemApp.Application.DTOs.Companies;
 
 namespace HrSystemApp.Application.Interfaces.Repositories;
 
 public interface ICompanyRepository : IRepository<Company>
 {
     Task<Company?> GetWithDetailsAsync(Guid id, bool includeLocations = false, bool includeDepartments = false, CancellationToken cancellationToken = default);
-    Task<PagedResult<Company>> GetPagedAsync(
+    Task<CompaniesPagedResult> GetPagedAsync(
         string? searchTerm,
         CompanyStatus? status,
         int pageNumber,
@@ -16,5 +17,5 @@ public interface ICompanyRepository : IRepository<Company>
         bool includeDepartments = false,
         CancellationToken cancellationToken = default);
 
-    Task<(int TotalActive, int TotalInactive, int TotalSuspended)> GetStatusCountsAsync(CancellationToken cancellationToken = default);
+
 }

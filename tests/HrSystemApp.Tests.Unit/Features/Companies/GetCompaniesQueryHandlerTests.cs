@@ -5,6 +5,8 @@ using HrSystemApp.Application.Interfaces;
 using HrSystemApp.Application.Interfaces.Repositories;
 using HrSystemApp.Domain.Enums;
 using HrSystemApp.Domain.Models;
+using HrSystemApp.Application.DTOs.Companies;
+using HrSystemApp.Application.DTOs.Departments;
 using HrSystemApp.Tests.Unit.Common;
 using Moq;
 
@@ -23,19 +25,30 @@ public class GetCompaniesQueryHandlerTests
 
         companyRepo
             .Setup(x => x.GetPagedAsync("acme", CompanyStatus.Active, 1, 20, true, false, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(PagedResult<Company>.Create(new List<Company>
+            .ReturnsAsync(new CompaniesPagedResult
             {
-                new()
-                {
-                    Id = Guid.NewGuid(),
-                    CompanyName = "Acme",
-                    Status = CompanyStatus.Active
-                }
-            }, 1, 20, 1));
-
-        companyRepo
-            .Setup(x => x.GetStatusCountsAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync((4, 1, 0));
+                Items = new List<CompanyResponse> 
+                { 
+                    new CompanyResponse(
+                        Guid.NewGuid(), 
+                        "Acme", 
+                        null, 
+                        21, 
+                        TimeSpan.FromHours(9), 
+                        TimeSpan.FromHours(17), 
+                        15, 
+                        "UTC", 
+                        CompanyStatus.Active.ToString(), 
+                        new List<CompanyLocationResponse>(), 
+                        new List<DepartmentResponse>()) 
+                },
+                PageNumber = 1,
+                PageSize = 20,
+                TotalCount = 1,
+                TotalActive = 4,
+                TotalInactive = 1,
+                TotalSuspended = 0
+            });
 
         var sut = new GetCompaniesQueryHandler(unitOfWork.Object);
         var query = new GetCompaniesQuery("acme", CompanyStatus.Active, 1, 20, IncludeLocations: true);
@@ -60,10 +73,16 @@ public class GetCompaniesQueryHandlerTests
 
         companyRepo
             .Setup(x => x.GetPagedAsync(null, null, 2, 10, false, false, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(PagedResult<Company>.Create(Array.Empty<Company>(), 2, 10, 0));
-        companyRepo
-            .Setup(x => x.GetStatusCountsAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync((0, 0, 0));
+            .ReturnsAsync(new CompaniesPagedResult
+            {
+                Items = new List<CompanyResponse>(),
+                PageNumber = 2,
+                PageSize = 10,
+                TotalCount = 0,
+                TotalActive = 0,
+                TotalInactive = 0,
+                TotalSuspended = 0
+            });
 
         var sut = new GetCompaniesQueryHandler(unitOfWork.Object);
         var result = await sut.Handle(new GetCompaniesQuery(null, null, 2, 10), CancellationToken.None);

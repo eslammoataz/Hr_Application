@@ -13,4 +13,4 @@ public record UpdateCompanyCommand(
     TimeSpan StartTime,
     TimeSpan EndTime,
     int GraceMinutes,
-    string TimeZoneId) : IRequest<Result<CompanyResponse>>;
+    string? TimeZoneId) : IRequest<Result<CompanyResponse>>;

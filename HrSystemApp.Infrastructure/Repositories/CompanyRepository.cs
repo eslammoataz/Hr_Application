@@ -4,6 +4,8 @@ using Microsoft.EntityFrameworkCore;
 using HrSystemApp.Application.Interfaces.Repositories;
 using HrSystemApp.Domain.Models;
 using HrSystemApp.Infrastructure.Data;
+using HrSystemApp.Application.DTOs.Companies;
+using Mapster;
 
 namespace HrSystemApp.Infrastructure.Repositories;
 
@@ -27,7 +29,7 @@ public class CompanyRepository : Repository<Company>, ICompanyRepository
         return await query.FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
     }
 
-    public async Task<PagedResult<Company>> GetPagedAsync(
+    public async Task<CompaniesPagedResult> GetPagedAsync(
         string? searchTerm,
         CompanyStatus? status,
         int pageNumber,
@@ -52,31 +54,35 @@ public class CompanyRepository : Repository<Company>, ICompanyRepository
             query = query.Where(c => c.CompanyName.ToLower().Contains(term));
         }
 
-        var totalCount = await query.CountAsync(cancellationToken);
+        // Calculate aggregates before pagination
+        var aggregates = await query
+            .GroupBy(_ => 1)
+            .Select(g => new
+            {
+                TotalActive = g.Count(c => c.Status == CompanyStatus.Active),
+                TotalInactive = g.Count(c => c.Status == CompanyStatus.Inactive),
+                TotalSuspended = g.Count(c => c.Status == CompanyStatus.Suspended),
+                TotalCount = g.Count()
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+
         var items = await query
             .OrderBy(c => c.CompanyName)
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync(cancellationToken);
 
-        return PagedResult<Company>.Create(items, pageNumber, pageSize, totalCount);
+        return new CompaniesPagedResult
+        {
+            Items = items.Adapt<List<CompanyResponse>>(),
+            PageNumber = pageNumber,
+            PageSize = pageSize,
+            TotalCount = aggregates?.TotalCount ?? 0,
+            TotalActive = aggregates?.TotalActive ?? 0,
+            TotalInactive = aggregates?.TotalInactive ?? 0,
+            TotalSuspended = aggregates?.TotalSuspended ?? 0
+        };
     }
 
-    public async Task<(int TotalActive, int TotalInactive, int TotalSuspended)> GetStatusCountsAsync(CancellationToken cancellationToken = default)
-    {
-        var stats = await _dbSet
-            .GroupBy(_ => 1)
-            .Select(g => new
-            {
-                Active = g.Count(c => c.Status == CompanyStatus.Active),
-                Inactive = g.Count(c => c.Status == CompanyStatus.Inactive),
-                Suspended = g.Count(c => c.Status == CompanyStatus.Suspended)
-            })
-            .FirstOrDefaultAsync(cancellationToken);
 
-        if (stats == null)
-            return (0, 0, 0);
-
-        return (stats.Active, stats.Inactive, stats.Suspended);
-    }
 }

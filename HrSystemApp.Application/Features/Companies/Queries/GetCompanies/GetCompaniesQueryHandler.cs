@@ -17,7 +17,7 @@ public class GetCompaniesQueryHandler : IRequestHandler<GetCompaniesQuery, Resul
 
     public async Task<Result<CompaniesPagedResult>> Handle(GetCompaniesQuery request, CancellationToken cancellationToken)
     {
-        var paged = await _unitOfWork.Companies.GetPagedAsync(
+        var result = await _unitOfWork.Companies.GetPagedAsync(
             request.SearchTerm, 
             request.Status,
             request.PageNumber, 
@@ -26,19 +26,6 @@ public class GetCompaniesQueryHandler : IRequestHandler<GetCompaniesQuery, Resul
             request.IncludeDepartments, 
             cancellationToken);
         
-        var items = paged.Items.Adapt<List<CompanyResponse>>();
-
-        var (active, inactive, suspended) = await _unitOfWork.Companies.GetStatusCountsAsync(cancellationToken);
-
-        return Result.Success(new CompaniesPagedResult
-        {
-            Items = items,
-            PageNumber = paged.PageNumber,
-            PageSize = paged.PageSize,
-            TotalCount = paged.TotalCount,
-            TotalActive = active,
-            TotalInactive = inactive,
-            TotalSuspended = suspended
-        });
+        return Result.Success(result);
     }
 }
