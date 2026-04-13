@@ -1,4 +1,5 @@
 using HrSystemApp.Application.Common;
+using HrSystemApp.Application.Resources;
 
 namespace HrSystemApp.Application.Errors;
 
@@ -10,363 +11,362 @@ public static class DomainErrors
     public static class Auth
     {
         public static readonly Error InvalidCredentials = new(
-            "Auth.InvalidCredentials", "Invalid email or password.");
+            "Auth.InvalidCredentials", Messages.Errors.InvalidCredentials);
 
         public static readonly Error UserNotFound = new(
-            "Auth.UserNotFound", "User was not found.");
+            "Auth.UserNotFound", Messages.Errors.UserNotFound);
 
         public static readonly Error AccountInactive = new(
-            "Auth.AccountInactive", "Your account is inactive. Please contact HR.");
+            "Auth.AccountInactive", Messages.Errors.AccountInactive);
 
         public static readonly Error CompanyInactive = new(
-            "Auth.CompanyInactive", "Your company's account is currently inactive. Please contact support.");
+            "Auth.CompanyInactive", Messages.Errors.CompanyInactive);
 
         public static readonly Error TokenNotFound = new(
-            "Auth.TokenNotFound", "Authentication token was not found.");
+            "Auth.TokenNotFound", Messages.Errors.TokenNotFound);
 
         public static readonly Error TokenExpired = new(
-            "Auth.TokenExpired", "Authentication token has expired.");
+            "Auth.TokenExpired", Messages.Errors.TokenExpired);
 
         public static readonly Error Unauthorized = new(
-            "Auth.Unauthorized", "You are not authorized to perform this action.");
+            "Auth.Unauthorized", Messages.Errors.Unauthorized);
 
         public static readonly Error EmployeeBlockedStatus = new(
             "Auth.EmployeeBlockedStatus",
-            "Your account is not active. Please contact HR.");
+            Messages.Errors.EmployeeBlockedStatus);
 
         public static readonly Error InvalidRefreshToken = new(
-            "Auth.InvalidRefreshToken", "The refresh token is invalid.");
+            "Auth.InvalidRefreshToken", Messages.Errors.InvalidRefreshToken);
 
         public static readonly Error RefreshTokenExpired = new(
-            "Auth.RefreshTokenExpired", "The refresh token has expired.");
+            "Auth.RefreshTokenExpired", Messages.Errors.RefreshTokenExpired);
 
         public static readonly Error RefreshTokenRevoked = new(
-            "Auth.RefreshTokenRevoked", "The refresh token has been revoked.");
-            
+            "Auth.RefreshTokenRevoked", Messages.Errors.RefreshTokenRevoked);
+
         public static readonly Error RefreshTokenReused = new(
-            "Auth.RefreshTokenReused", "Suspicious activity detected: Refresh token reuse. All sessions revoked.");
+            "Auth.RefreshTokenReused", Messages.Errors.RefreshTokenReused);
 
         public static readonly Error ResetFailed = new(
-            "Auth.ResetFailed", "Failed to reset password.");
+            "Auth.ResetFailed", Messages.Errors.ResetFailed);
 
         public static readonly Error PasswordChangeFailed = new(
-            "Auth.PasswordChangeFailed", "Failed to change password.");
+            "Auth.PasswordChangeFailed", Messages.Errors.PasswordChangeFailed);
 
         public static readonly Error ForcedChangeNotRequired = new(
-            "Auth.ForcedChangeNotRequired", "User is not required to change their password via this endpoint.");
+            "Auth.ForcedChangeNotRequired", Messages.Errors.ForcedChangeNotRequired);
     }
 
     public static class User
     {
         public static readonly Error NotFound = new(
-            "User.NotFound", "User was not found.");
+            "User.NotFound", Messages.Errors.UserNotFoundError);
 
         public static readonly Error AlreadyExists = new(
-            "User.AlreadyExists", "User with this email already exists.");
+            "User.AlreadyExists", Messages.Errors.UserAlreadyExists);
 
         public static readonly Error UpdateFailed = new(
-            "User.UpdateFailed", "Failed to update user.");
+            "User.UpdateFailed", Messages.Errors.UserUpdateFailed);
 
         public static readonly Error DeleteFailed = new(
-            "User.DeleteFailed", "Failed to delete user.");
+            "User.DeleteFailed", Messages.Errors.UserDeleteFailed);
 
         public static readonly Error InvalidOtp = new(
-            "User.InvalidOtp", "Invalid OTP code provided.");
+            "User.InvalidOtp", Messages.Errors.InvalidOtp);
 
         public static readonly Error OtpMaxAttemptsReached = new(
-            "User.OtpMaxAttemptsReached", "Maximum OTP attempts reached. Please request a new code.");
+            "User.OtpMaxAttemptsReached", Messages.Errors.OtpMaxAttemptsReached);
     }
 
     public static class Employee
     {
         public static readonly Error NotFound = new(
-            "Employee.NotFound", "Employee was not found.");
+            "Employee.NotFound", Messages.Errors.EmployeeNotFoundError);
 
         public static readonly Error AlreadyExists = new(
-            "Employee.AlreadyExists", "An employee with this email or phone number already exists.");
+            "Employee.AlreadyExists", Messages.Errors.EmployeeAlreadyExists);
 
         public static readonly Error CreationFailed = new(
-            "Employee.CreationFailed", "Failed to create employee account. Please try again.");
+            "Employee.CreationFailed", Messages.Errors.EmployeeCreationFailed);
 
         public static readonly Error AlreadyInactive = new(
-            "Employee.AlreadyInactive", "Employee is already inactive.");
+            "Employee.AlreadyInactive", Messages.Errors.EmployeeAlreadyInactive);
 
         public static readonly Error InvalidEmploymentStatus = new(
-            "Employee.InvalidEmploymentStatus", "Employment status value is invalid.");
+            "Employee.InvalidEmploymentStatus", Messages.Errors.InvalidEmploymentStatus);
     }
 
     public static class Company
     {
         public static readonly Error NotFound = new(
-            "Company.NotFound", "Company was not found.");
+            "Company.NotFound", Messages.Errors.CompanyNotFoundError);
     }
 
     public static class Department
     {
         public static readonly Error NotFound = new(
-            "Department.NotFound", "Department was not found.");
+            "Department.NotFound", Messages.Errors.DepartmentNotFoundError);
 
         public static readonly Error AlreadyExists = new(
-            "Department.AlreadyExists", "A department with this name already exists in the company.");
+            "Department.AlreadyExists", Messages.Errors.DepartmentAlreadyExists);
     }
 
     public static class Unit
     {
         public static readonly Error NotFound = new(
-            "Unit.NotFound", "Unit was not found.");
+            "Unit.NotFound", Messages.Errors.UnitNotFoundError);
 
         public static readonly Error AlreadyExists = new(
-            "Unit.AlreadyExists", "A unit with this name already exists in the department.");
+            "Unit.AlreadyExists", Messages.Errors.UnitAlreadyExists);
     }
 
     public static class Team
     {
         public static readonly Error NotFound = new(
-            "Team.NotFound", "Team was not found.");
+            "Team.NotFound", Messages.Errors.TeamNotFoundError);
 
         public static readonly Error AlreadyExists = new(
-            "Team.AlreadyExists", "A team with this name already exists in the unit.");
+            "Team.AlreadyExists", Messages.Errors.TeamAlreadyExists);
     }
 
     public static class LeaveBalances
     {
         public static readonly Error NotFound = new(
-            "LeaveBalance.NotFound", "Leave balance record was not found for this employee and year.");
+            "LeaveBalance.NotFound", Messages.Errors.LeaveBalanceNotFound);
 
         public static readonly Error AlreadyInitialized = new(
-            "LeaveBalance.AlreadyInitialized", "Leave balance for this type and year already exists.");
+            "LeaveBalance.AlreadyInitialized", Messages.Errors.LeaveBalanceAlreadyInitialized);
 
         public static readonly Error Insufficient = new(
-            "LeaveBalance.Insufficient", "Insufficient leave balance for the requested duration.");
-            
+            "LeaveBalance.Insufficient", Messages.Errors.InsufficientLeaveBalance);
+
         public static readonly Error InvalidDuration = new(
-            "LeaveBalance.InvalidDuration", "Duration must be positive.");
+            "LeaveBalance.InvalidDuration", Messages.Errors.InvalidDuration);
     }
 
     public static class Requests
     {
         public static readonly Error NotFound = new(
-            "Request.NotFound", "Request was not found.");
+            "Request.NotFound", Messages.Errors.RequestNotFound);
 
         public static readonly Error TypeDisabled = new(
-            "Request.TypeDisabled", "The requested type is not available for your company.");
+            "Request.TypeDisabled", Messages.Errors.RequestTypeDisabled);
 
         public static readonly Error NotPending = new(
-            "Request.NotPending", "Only pending requests can be modified or deleted.");
+            "Request.NotPending", Messages.Errors.RequestNotPending);
 
         public static readonly Error ModificationLocked = new(
-            "Request.ModificationLocked", "Request is locked once approval process has started.");
-            
+            "Request.ModificationLocked", Messages.Errors.RequestModificationLocked);
+
         public static readonly Error DefinitionNotFound = new(
-            "Request.DefinitionNotFound", "Request configuration for this type was not found.");
+            "Request.DefinitionNotFound", Messages.Errors.RequestDefinitionNotFound);
 
         public static readonly Error Unauthorized = new(
-            "Request.Unauthorized", "You are not the designated approver for this request at this stage.");
+            "Request.Unauthorized", Messages.Errors.RequestUnauthorized);
 
         public static readonly Error Locked = new(
-            "Request.Locked", "Request is not in a state that can be approved or handled.");
+            "Request.Locked", Messages.Errors.RequestLocked);
 
         public static readonly Error InvalidDuration = new(
-            "Request.InvalidDuration", "Duration must be positive.");
+            "Request.InvalidDuration", Messages.Errors.InvalidDuration);
     }
 
     public static class LeaveBalance
     {
         public static readonly Error NotFound = new(
-            "LeaveBalance.NotFound", "No leave balance found for this employee and year.");
+            "LeaveBalance.NotFound", Messages.Errors.LeaveBalanceNotFoundError);
 
         public static readonly Error Insufficient = new(
-            "LeaveBalance.Insufficient", "Insufficient leave balance.");
+            "LeaveBalance.Insufficient", Messages.Errors.InsufficientLeaveBalanceError);
     }
 
     public static class Notification
     {
         public static readonly Error NotFound = new(
-            "Notification.NotFound", "Notification was not found.");
+            "Notification.NotFound", Messages.Errors.NotificationNotFound);
 
         public static readonly Error Forbidden = new(
-            "Notification.Forbidden", "You are not allowed to access this notification.");
+            "Notification.Forbidden", Messages.Errors.NotificationForbidden);
 
         public static readonly Error SendFailed = new(
-            "Notification.SendFailed", "Failed to send the notification.");
+            "Notification.SendFailed", Messages.Errors.NotificationSendFailed);
 
         public static readonly Error TokenMissing = new(
-            "Notification.TokenMissing", "The target employee does not have a valid FCM token.");
+            "Notification.TokenMissing", Messages.Errors.NotificationTokenMissing);
     }
 
     public static class Attendance
     {
         public static readonly Error NotFound = new(
-            "Attendance.NotFound", "Attendance record was not found.");
+            "Attendance.NotFound", Messages.Errors.AttendanceNotFound);
 
         public static readonly Error AlreadyClockedIn = new(
-            "Attendance.AlreadyClockedIn", "Employee already has an open attendance record.");
+            "Attendance.AlreadyClockedIn", Messages.Errors.AlreadyClockedIn);
 
         public static readonly Error ClockInRequired = new(
-            "Attendance.ClockInRequired", "Employee must clock in before clocking out.");
+            "Attendance.ClockInRequired", Messages.Errors.ClockInRequired);
 
         public static readonly Error AlreadyClockedOut = new(
-            "Attendance.AlreadyClockedOut", "Employee has already clocked out.");
+            "Attendance.AlreadyClockedOut", Messages.Errors.AlreadyClockedOut);
 
         public static readonly Error InvalidClockOut = new(
-            "Attendance.InvalidClockOut", "Clock-out time must be after clock-in time.");
+            "Attendance.InvalidClockOut", Messages.Errors.InvalidClockOut);
 
         public static readonly Error OverrideReasonRequired = new(
-            "Attendance.OverrideReasonRequired", "Override reason is required.");
+            "Attendance.OverrideReasonRequired", Messages.Errors.OverrideReasonRequired);
     }
 
     public static class Workflows
     {
         public static readonly Error NotFound = new(
-            "Workflow.NotFound", "No approval workflow defined for this request type.");
+            "Workflow.NotFound", Messages.Errors.WorkflowNotFound);
 
         public static readonly Error InvalidStep = new(
-            "Workflow.InvalidStep", "The workflow step is no longer valid or has changed.");
+            "Workflow.InvalidStep", Messages.Errors.WorkflowInvalidStep);
     }
 
     public static class Storage
     {
         public static readonly Error BucketNotFound = new(
-            "Storage.BucketNotFound", "The storage bucket was not found.");
+            "Storage.BucketNotFound", Messages.Errors.StorageBucketNotFound);
 
         public static readonly Error ObjectNotFound = new(
-            "Storage.ObjectNotFound", "The object was not found in storage.");
+            "Storage.ObjectNotFound", Messages.Errors.StorageObjectNotFound);
 
         public static readonly Error UploadFailed = new(
-            "Storage.UploadFailed", "Failed to upload the file to storage.");
+            "Storage.UploadFailed", Messages.Errors.StorageUploadFailed);
 
         public static readonly Error DeleteFailed = new(
-            "Storage.DeleteFailed", "Failed to delete the object from storage.");
+            "Storage.DeleteFailed", Messages.Errors.StorageDeleteFailed);
 
         public static readonly Error ListFailed = new(
-            "Storage.ListFailed", "Failed to list objects in storage.");
+            "Storage.ListFailed", Messages.Errors.StorageListFailed);
 
         public static readonly Error PresignedUrlFailed = new(
-            "Storage.PresignedUrlFailed", "Failed to generate a download URL.");
+            "Storage.PresignedUrlFailed", Messages.Errors.StoragePresignedUrlFailed);
     }
 
     public static class General
     {
         public static readonly Error ServerError = new(
-            "General.ServerError", "An unexpected error occurred.");
+            "General.ServerError", Messages.Errors.ServerError);
 
         public static readonly Error ValidationError = new(
-            "General.ValidationError", "One or more validation errors occurred.");
+            "General.ValidationError", Messages.Errors.ValidationErrorGeneral);
 
         public static readonly Error NotFound = new(
-            "General.NotFound", "The requested resource was not found.");
+            "General.NotFound", Messages.Errors.ResourceNotFound);
 
         public static readonly Error ArgumentError = new(
-            "General.ArgumentError", "An invalid argument was provided.");
+            "General.ArgumentError", Messages.Errors.ArgumentError);
 
         public static readonly Error InvalidOperation = new(
-            "General.InvalidOperation", "The requested operation is not valid in the current state.");
+            "General.InvalidOperation", Messages.Errors.InvalidOperationError);
 
         public static readonly Error Forbidden = new(
-            "General.Forbidden", "You are not authorized to access this resource.");
+            "General.Forbidden", Messages.Errors.ForbiddenError);
     }
 
     public static class ContactAdmin
     {
         public static readonly Error NotFound = new(
-            "ContactAdmin.NotFound", "Contact admin request was not found.");
+            "ContactAdmin.NotFound", Messages.Errors.ContactAdminNotFound);
 
         public static readonly Error AlreadyProcessed = new(
-            "ContactAdmin.AlreadyProcessed", "This request has already been processed.");
+            "ContactAdmin.AlreadyProcessed", Messages.Errors.ContactAdminAlreadyProcessed);
 
         public static readonly Error DuplicatePendingRequest = new(
             "ContactAdmin.DuplicatePendingRequest",
-            "A pending request with this email or company name already exists.");
+            Messages.Errors.DuplicatePendingRequest);
 
         public static readonly Error PhoneNumberAlreadyTaken = new(
-            "ContactAdmin.PhoneNumberAlreadyTaken", "This phone number is already taken.");
+            "ContactAdmin.PhoneNumberAlreadyTaken", Messages.Errors.PhoneNumberAlreadyTaken);
 
         public static readonly Error EmailAlreadyTaken = new(
-            "ContactAdmin.EmailAlreadyTaken", "This email is already taken.");
+            "ContactAdmin.EmailAlreadyTaken", Messages.Errors.EmailAlreadyTaken);
 
         public static readonly Error CompanyNameAlreadyTaken = new(
-            "ContactAdmin.CompanyNameAlreadyTaken", "This company name is already taken.");
+            "ContactAdmin.CompanyNameAlreadyTaken", Messages.Errors.ContactAdminCompanyNameTaken);
     }
 
     public static class Hr
     {
         public static readonly Error EmployeeNotFound = new(
-            "Hr.EmployeeNotFound", "The acting user has no employee record.");
+            "Hr.EmployeeNotFound", Messages.Errors.HrEmployeeNotFound);
     }
 
     public static class ProfileUpdate
     {
         public static readonly Error NotFound = new(
-            "ProfileUpdate.NotFound", "Request not found.");
+            "ProfileUpdate.NotFound", Messages.Errors.ProfileUpdateNotFound);
 
         public static readonly Error NotPending = new(
-            "ProfileUpdate.NotPending", "Only pending requests can be handled.");
+            "ProfileUpdate.NotPending", Messages.Errors.ProfileUpdateNotPending);
 
         public static readonly Error EmployeeNotFound = new(
-            "ProfileUpdate.EmployeeNotFound", "Employee not found. Data may be corrupted.");
+            "ProfileUpdate.EmployeeNotFound", Messages.Errors.ProfileUpdateEmployeeNotFound);
 
         public static readonly Error EmptyChanges = new(
-            "ProfileUpdate.EmptyChanges", "ChangesJson is empty for approved request. Cannot apply changes.");
+            "ProfileUpdate.EmptyChanges", Messages.Errors.ProfileUpdateEmptyChanges);
 
         public static readonly Error DeserializationFailed = new(
-            "ProfileUpdate.DeserializationFailed", "Failed to deserialize ChangesJson for request.");
+            "ProfileUpdate.DeserializationFailed", Messages.Errors.ProfileUpdateDeserializationFailed);
 
         public static readonly Error UnknownField = new(
-            "ProfileUpdate.UnknownField", "Unknown field in ChangesJson.");
+            "ProfileUpdate.UnknownField", Messages.Errors.ProfileUpdateUnknownField);
 
         public static readonly Error HasPending = new(
-            "ProfileUpdate.HasPending", "You already have a pending profile update request.");
+            "ProfileUpdate.HasPending", Messages.Errors.ProfileUpdateHasPending);
 
         public static readonly Error InvalidField = new(
-            "ProfileUpdate.InvalidField", "Field is not allowed for update.");
+            "ProfileUpdate.InvalidField", Messages.Errors.ProfileUpdateInvalidField);
 
         public static readonly Error NoChanges = new(
             "ProfileUpdate.NoChanges",
-            "No new or valid changes provided. The entered values map to your existing profile.");
+            Messages.Errors.ProfileUpdateNoChanges);
 
         public static readonly Error MalformedChanges = new(
             "ProfileUpdate.MalformedChanges",
-            "One or more fields in the changes payload are missing the required 'newValue' key.");
+            Messages.Errors.ProfileUpdateMalformedChanges);
 
         public static readonly Error InvalidLocationId = new(
             "ProfileUpdate.InvalidLocationId",
-            "Invalid CompanyLocationId provided.");
+            Messages.Errors.ProfileUpdateInvalidLocationId);
     }
 
     public static class Hierarchy
     {
         public static readonly Error NotConfigured = new(
-            "Hierarchy.NotConfigured", "The company hierarchy has not been configured yet.");
+            "Hierarchy.NotConfigured", Messages.Errors.HierarchyNotConfigured);
 
         public static readonly Error InvalidRole = new(
-            "Hierarchy.InvalidRole", "One or more roles are not valid for the company hierarchy. SuperAdmin is not allowed.");
+            "Hierarchy.InvalidRole", Messages.Errors.HierarchyInvalidRole);
 
         public static readonly Error DuplicateRole = new(
-            "Hierarchy.DuplicateRole", "Each role can only appear once in the hierarchy configuration.");
+            "Hierarchy.DuplicateRole", Messages.Errors.HierarchyDuplicateRole);
 
         public static readonly Error MultipleCeos = new(
-            "Hierarchy.MultipleCeos", "Only one CEO position can be configured per company.");
+            "Hierarchy.MultipleCeos", Messages.Errors.HierarchyMultipleCeos);
 
         public static readonly Error WorkflowRoleNotInHierarchy = new(
-            "Hierarchy.WorkflowRoleNotInHierarchy", "One or more workflow step roles are not configured in the company hierarchy.");
+            "Hierarchy.WorkflowRoleNotInHierarchy", Messages.Errors.HierarchyWorkflowRoleNotInHierarchy);
 
         public static readonly Error InvalidStepOrder = new(
-            "Hierarchy.InvalidStepOrder", "Workflow steps must strictly escalate in authority order.");
+            "Hierarchy.InvalidStepOrder", Messages.Errors.HierarchyInvalidStepOrder);
 
         public static readonly Error RoleInUse = new(
-            "Hierarchy.RoleInUse", "Cannot remove role because it is currently being used in one or more active Request Definitions.");
+            "Hierarchy.RoleInUse", Messages.Errors.HierarchyRoleInUse);
     }
 
     public static class Validation
     {
         public static readonly Error FieldRequired = new(
-            "Validation.FieldRequired", "A required field is missing.");
+            "Validation.FieldRequired", Messages.Validation.FieldRequired);
 
         public static readonly Error InvalidType = new(
-            "Validation.InvalidType", "Field has an invalid data type.");
+            "Validation.InvalidType", Messages.Validation.InvalidType);
 
         public static readonly Error Error = new(
-            "Validation.Error", "An error occurred during validation.");
+            "Validation.Error", Messages.Validation.ValidationError);
     }
 }
-

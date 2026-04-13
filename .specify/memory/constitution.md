@@ -1,54 +1,58 @@
-<!--
-Sync Impact Report
-- Version: 1.1.0
-- Added Sections: Improved MediatR and Tooling guidance, Added Security & Observability constraints
-- Templates requiring updates: ✅ updated 
-- Follow-up TODOs: None
--->
-
-# HR Management System Constitution
+# HRMS Constitution
 
 ## Core Principles
 
-### I. Code Quality & Clean Architecture
-* Enforce Clean Architecture boundaries: Domain <- Application <- Infrastructure <- API. 
-* Use automated architecture tests (e.g., NetArchTest) to prevent boundary violations.
-* Controllers and EF Entities MUST NOT contain any business logic or I/O calls.
-* Abide strictly by SOLID principles. Prefer composition over inheritance.
+### I. Code Quality & Architecture
 
-### II. MediatR & Cross-Cutting Concerns
-* Keep Handlers lean. 
-* Offload cross-cutting concerns (Logging, Validation, Caching, DB Transactions) exclusively to MediatR Pipeline Behaviors.
-* Use `FluentValidation` for all input validation; avoid Data Annotations on DTOs.
-* Centralize object mapping using Mapster profiles.
+Follow Clean Architecture boundaries: Domain ← Application ← Infrastructure ← API. Controllers and EF Entities MUST NOT contain business logic. Prefer simplicity over abstraction. Avoid unnecessary layers. Use dependency injection for all services.
 
-### III. Testing Standards
-* All core business logic MUST be unit testable and isolated from I/O.
-* MediatR handlers MUST have comprehensive unit tests.
-* Critical flows (e.g., Employee Onboarding, Hierarchy updates) MUST have integration tests.
-* Mock ONLY external boundaries (Databases, Third-party APIs, Clock services).
+### II. MediatR Usage
+
+Use MediatR for commands and queries. Handlers act as orchestration layers only. Use Pipeline Behaviors for Validation (required) and Logging (optional). Avoid overusing behaviors — keep the pipeline simple.
+
+### III. Validation & Mapping
+
+Use FluentValidation for all input validation. Avoid Data Annotations. Use Mapster for complex mappings. Simple mappings can be done inline when clear and readable.
 
 ### IV. Database & Performance
-* Prevent N+1 queries by default.
-* Use Mapster's `ProjectToType()` or LINQ `.Select()` over `.Include()` to prevent over-fetching.
-* Always append `.AsNoTracking()` to read-only queries.
-* Avoid loading large object graphs unnecessarily.
-* Coordinate writes via a centralized `UnitOfWork`. Do not call `SaveChanges` inside repositories.
-* Use `async/await` operations for all I/O calls.
 
-### V. Security, Privacy & Observability
-* Design explicitly for multi-tenant data isolation (HRMS companies). Enforce Data Scopes at the Application layer.
-* Never log PII, salary metrics, or sensitive medical employee data.
-* Use structured logging with contextual correlation IDs for all API requests and MediatR commands.
+Prevent N+1 queries using projection (`Select`) or Mapster. Use `.AsNoTracking()` for read-only queries. Avoid unnecessary `.Include()` calls. All database calls must be async. **Soft delete is mandatory for all entities** using an `IsDeleted` flag.
 
-### VI. API & User Experience Consistency
-* Wrap all endpoint responses in a standardized `Result<T>` structure.
-* Consistent pagination format across all endpoints.
-* Return clear error codes. NEVER leak internal stack traces or database exceptions to the client.
+### V. Security & Multi-Tenancy
+
+Use JWT authentication. Enforce tenant isolation in all queries. Never expose or log sensitive data (PII, salaries, medical info). Keep authorization simple — expand only when needed.
+
+### VI. API Design
+
+Use a consistent `Result<T>` response structure. Implement API versioning via URL (`/api/v1/`). Return clear, safe error messages. Do not expose internal exceptions.
+
+### VII. Error Handling
+
+Use `Result<T>` for expected business errors. Use exceptions only for unexpected failures. Implement global exception handling middleware. Log errors without exposing sensitive data.
+
+### VIII. Testing
+
+Write unit tests for core business logic and handlers. Follow Arrange / Act / Assert pattern. Focus on critical flows first. Avoid over-investing in complex testing strategies early.
+
+## Pull Request Checklist
+
+* [ ] No business logic in controllers
+* [ ] Validation implemented using FluentValidation
+* [ ] No sensitive data logged
+* [ ] Queries avoid N+1 problems
+* [ ] Soft delete implemented where applicable
+* [ ] API responses follow `Result<T>` pattern
+* [ ] Basic unit tests added for new logic
+
+## Guidelines
+
+* Prefer clarity over cleverness
+* Avoid premature optimization
+* Build only what is needed now
+* Refactor when complexity actually appears
 
 ## Governance
-* This Constitution supersedes all other engineering guidelines and implicit practices.
-* Amendments to this document require review and approval by architectural stakeholders.
-* Compliance is mandatory and must be verified via Pull Request checklists before merging.
 
-**Version**: 1.1.0 | **Ratified**: 2026-04-11 | **Last Amended**: 2026-04-11
+This Constitution supersedes all other practices. Amendments require documented rationale, approval, and migration plan. All PRs and reviews must verify compliance with this Constitution. Complexity must be justified. Use runtime guidance docs for development reference.
+
+**Version**: 1.0.0 | **Ratified**: 2026-04-13 | **Last Amended**: 2026-04-13

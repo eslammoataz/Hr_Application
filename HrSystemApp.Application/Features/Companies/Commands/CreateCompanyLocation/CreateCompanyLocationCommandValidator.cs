@@ -1,4 +1,5 @@
 using FluentValidation;
+using HrSystemApp.Application.Resources;
 
 namespace HrSystemApp.Application.Features.Companies.Commands.CreateCompanyLocation;
 
@@ -7,10 +8,10 @@ public class CreateCompanyLocationCommandValidator : AbstractValidator<CreateCom
     public CreateCompanyLocationCommandValidator()
     {
         RuleFor(x => x.CompanyId)
-            .NotEmpty().WithMessage("Company ID is required.");
+            .NotEmpty().WithMessage(Messages.Validation.CompanyIdRequired);
 
         RuleFor(x => x.LocationName)
-            .NotEmpty().WithMessage("Location name is required.")
-            .MaximumLength(100).WithMessage("Location name cannot exceed 100 characters.");
+            .NotEmpty().WithMessage(Messages.Validation.LocationNameRequired)
+            .MaximumLength(100).WithMessage(Messages.Validation.LocationNameMaxLength);
     }
 }

@@ -1,4 +1,5 @@
 using FluentValidation;
+using HrSystemApp.Application.Resources;
 using HrSystemApp.Domain.Enums;
 
 namespace HrSystemApp.Application.Features.Auth.Commands.RegisterUser;
@@ -8,22 +9,22 @@ public class RegisterUserCommandValidator : AbstractValidator<RegisterUserComman
     public RegisterUserCommandValidator()
     {
         RuleFor(x => x.Email)
-            .NotEmpty().WithMessage("Email is required.")
-            .EmailAddress().WithMessage("A valid email is required.");
+            .NotEmpty().WithMessage(Messages.Validation.EmailRequired)
+            .EmailAddress().WithMessage(Messages.Validation.ValidEmailRequired);
 
         RuleFor(x => x.Name)
-            .NotEmpty().WithMessage("Name is required.")
-            .MaximumLength(100).WithMessage("Name must not exceed 100 characters.");
+            .NotEmpty().WithMessage(Messages.Validation.NameRequired)
+            .MaximumLength(100).WithMessage(Messages.Validation.NameMaxLength);
 
         RuleFor(x => x.PhoneNumber)
-            .NotEmpty().WithMessage("Phone number is required.");
+            .NotEmpty().WithMessage(Messages.Validation.PhoneRequired);
 
         RuleFor(x => x.Password)
-            .NotEmpty().WithMessage("Password is required.")
-            .MinimumLength(6).WithMessage("Password must be at least 6 characters.");
+            .NotEmpty().WithMessage(Messages.Validation.PasswordRequired)
+            .MinimumLength(6).WithMessage(Messages.Validation.PasswordMinLength);
 
         RuleFor(x => x.Role)
-            .IsInEnum().WithMessage("Invalid role specified.")
-            .NotEqual(UserRole.SuperAdmin).WithMessage("Cannot assign SuperAdmin role via registration endpoint.");
+            .IsInEnum().WithMessage(Messages.Validation.InvalidRole)
+            .NotEqual(UserRole.SuperAdmin).WithMessage(Messages.Validation.CannotAssignSuperAdminRegistration);
     }
 }

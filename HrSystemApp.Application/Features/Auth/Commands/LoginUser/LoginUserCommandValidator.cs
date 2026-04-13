@@ -1,4 +1,5 @@
 using FluentValidation;
+using HrSystemApp.Application.Resources;
 
 namespace HrSystemApp.Application.Features.Auth.Commands.LoginUser;
 
@@ -7,20 +8,20 @@ public class LoginUserCommandValidator : AbstractValidator<LoginUserCommand>
     public LoginUserCommandValidator()
     {
         RuleFor(x => x.Email)
-            .NotEmpty().WithMessage("Email is required.")
-            .EmailAddress().WithMessage("A valid email is required.");
+            .NotEmpty().WithMessage(Messages.Validation.EmailRequired)
+            .EmailAddress().WithMessage(Messages.Validation.ValidEmailRequired);
 
         RuleFor(x => x.Password)
-            .NotEmpty().WithMessage("Password is required.");
+            .NotEmpty().WithMessage(Messages.Validation.PasswordRequired);
 
         RuleFor(x => x.FcmToken)
-            .NotEmpty().When(x => x.FcmToken != null).WithMessage("FCM token cannot be empty if provided.");
+            .NotEmpty().When(x => x.FcmToken != null).WithMessage(Messages.Validation.FcmTokenNotEmpty);
 
         RuleFor(x => x.DeviceType)
-            .IsInEnum().When(x => x.DeviceType != null).WithMessage("Invalid device type specified.");
+            .IsInEnum().When(x => x.DeviceType != null).WithMessage(Messages.Validation.InvalidDeviceType);
 
         RuleFor(x => x.Language)
-            .NotEmpty().When(x => x.Language != null).WithMessage("Language cannot be empty if provided.")
-            .MaximumLength(10).When(x => x.Language != null).WithMessage("Language code must not exceed 10 characters.");
+            .NotEmpty().When(x => x.Language != null).WithMessage(Messages.Validation.LanguageNotEmpty)
+            .MaximumLength(10).When(x => x.Language != null).WithMessage(Messages.Validation.LanguageMaxLength);
     }
 }

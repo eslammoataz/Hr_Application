@@ -1,4 +1,5 @@
 using FluentValidation;
+using HrSystemApp.Application.Resources;
 using HrSystemApp.Domain.Enums;
 
 namespace HrSystemApp.Application.Features.Notifications.Commands.SendNotificationToEmployee;
@@ -8,17 +9,17 @@ public class SendNotificationToEmployeeCommandValidator : AbstractValidator<Send
     public SendNotificationToEmployeeCommandValidator()
     {
         RuleFor(x => x.EmployeeId)
-            .NotEmpty().WithMessage("EmployeeId is required.");
+            .NotEmpty().WithMessage(Messages.Validation.EmployeeIdRequired);
 
         RuleFor(x => x.Title)
-            .NotEmpty().WithMessage("Title is required.")
-            .MaximumLength(200).WithMessage("Title must not exceed 200 characters.");
+            .NotEmpty().WithMessage(Messages.Validation.TitleRequired)
+            .MaximumLength(200).WithMessage(Messages.Validation.TitleMaxLength);
 
         RuleFor(x => x.Message)
-            .NotEmpty().WithMessage("Message is required.")
-            .MaximumLength(2000).WithMessage("Message must not exceed 2000 characters.");
+            .NotEmpty().WithMessage(Messages.Validation.MessageRequired)
+            .MaximumLength(2000).WithMessage(Messages.Validation.MessageMaxLength);
 
         RuleFor(x => x.Type)
-            .IsInEnum().WithMessage("Invalid notification type.");
+            .IsInEnum().WithMessage(Messages.Validation.InvalidNotificationType);
     }
 }

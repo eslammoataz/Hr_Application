@@ -1,4 +1,5 @@
 using FluentValidation;
+using HrSystemApp.Application.Resources;
 
 namespace HrSystemApp.Application.Features.Auth.Commands.UpdateLanguage;
 
@@ -7,10 +8,10 @@ public class UpdateLanguageCommandValidator : AbstractValidator<UpdateLanguageCo
     public UpdateLanguageCommandValidator()
     {
         RuleFor(x => x.UserId)
-            .NotEmpty().WithMessage("User ID is required.");
+            .NotEmpty().WithMessage(Messages.Validation.FieldRequired);
 
         RuleFor(x => x.Language)
-            .NotEmpty().WithMessage("Language is required.")
-            .MaximumLength(10).WithMessage("Language code must not exceed 10 characters.");
+            .NotEmpty().WithMessage(Messages.Validation.LanguageNotEmpty)
+            .MaximumLength(10).WithMessage(Messages.Validation.LanguageMaxLength);
     }
 }
