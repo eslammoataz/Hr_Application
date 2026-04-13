@@ -120,9 +120,6 @@ namespace HrSystemApp.Infrastructure.Migrations
                         .IsUnique()
                         .HasDatabaseName("UserNameIndex");
 
-                    b.HasIndex("PhoneNumber")
-                        .IsUnique();
-
                     b.ToTable("Users", (string)null);
                 });
 
@@ -823,9 +820,8 @@ namespace HrSystemApp.Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("text");
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -1466,7 +1462,7 @@ namespace HrSystemApp.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("HrSystemApp.Domain.Models.Employee", "Manager")
-                        .WithMany("DirectReports")
+                        .WithMany()
                         .HasForeignKey("ManagerId")
                         .OnDelete(DeleteBehavior.SetNull);
 
@@ -1742,8 +1738,6 @@ namespace HrSystemApp.Infrastructure.Migrations
                     b.Navigation("AttendanceLogs");
 
                     b.Navigation("Attendances");
-
-                    b.Navigation("DirectReports");
 
                     b.Navigation("Notifications");
                 });
