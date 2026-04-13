@@ -17,6 +17,7 @@ public sealed class IntegrationTestFixture : IAsyncLifetime
 {
     private PostgreSqlContainer? _postgresContainer;
     private Respawner? _respawner;
+    private static int _employeeCodeCounter = 0;
 
     public bool DockerUnavailable { get; private set; }
     public string? DockerUnavailableReason { get; private set; }
@@ -138,7 +139,7 @@ public sealed class IntegrationTestFixture : IAsyncLifetime
         {
             CompanyId = companyId,
             UserId = userId,
-            EmployeeCode = $"EMP-{Guid.NewGuid():N}"[..10],
+            EmployeeCode = $"EMP-{Interlocked.Increment(ref _employeeCodeCounter):D8}",
             FullName = fullName,
             Email = email,
             PhoneNumber = "01000000000",
@@ -187,7 +188,7 @@ public sealed class IntegrationTestFixture : IAsyncLifetime
         {
             CompanyId = companyId,
             UserId = userId,
-            EmployeeCode = $"EMP-{Guid.NewGuid():N}"[..10],
+            EmployeeCode = $"EMP-{Interlocked.Increment(ref _employeeCodeCounter):D8}",
             FullName = fullName,
             Email = email,
             PhoneNumber = "01000000000",
