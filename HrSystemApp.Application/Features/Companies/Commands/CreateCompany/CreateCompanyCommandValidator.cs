@@ -1,4 +1,5 @@
 using FluentValidation;
+using HrSystemApp.Application.Resources;
 
 namespace HrSystemApp.Application.Features.Companies.Commands.CreateCompany;
 
@@ -7,17 +8,17 @@ public class CreateCompanyCommandValidator : AbstractValidator<CreateCompanyComm
     public CreateCompanyCommandValidator()
     {
         RuleFor(x => x.CompanyName)
-            .NotEmpty().WithMessage("Company name is required.")
-            .MaximumLength(200).WithMessage("Company name cannot exceed 200 characters.");
+            .NotEmpty().WithMessage(Messages.Validation.CompanyNameRequiredForCompany)
+            .MaximumLength(200).WithMessage(Messages.Validation.CompanyNameMaxLengthForCompany);
 
         RuleFor(x => x.YearlyVacationDays)
-            .NotNull().WithMessage("Yearly vacation days is required.");
+            .NotNull().WithMessage(Messages.Validation.YearlyVacationDaysRequired);
 
         RuleFor(x => x.GraceMinutes)
-            .GreaterThanOrEqualTo(0).WithMessage("Grace minutes must be zero or positive.");
+            .GreaterThanOrEqualTo(0).WithMessage(Messages.Validation.GraceMinutesMustBeNonNegative);
 
         RuleFor(x => x.TimeZoneId)
-            .NotEmpty().WithMessage("Time zone id is required.")
-            .MaximumLength(100).WithMessage("Time zone id cannot exceed 100 characters.");
+            .NotEmpty().WithMessage(Messages.Validation.TimeZoneIdRequired)
+            .MaximumLength(100).WithMessage(Messages.Validation.TimeZoneIdMaxLength);
     }
 }

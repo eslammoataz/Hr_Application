@@ -1,6 +1,7 @@
 using HrSystemApp.Application.Common;
 using HrSystemApp.Application.Errors;
 using HrSystemApp.Application.Interfaces;
+using HrSystemApp.Domain.Enums;
 using HrSystemApp.Domain.Models;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -34,7 +35,7 @@ public class HandleProfileUpdateRequestCommandHandler : IRequestHandler<HandlePr
             return Result.Failure(DomainErrors.ProfileUpdate.NotFound);
         }
 
-        if (request.Status != "Pending")
+        if (request.Status != ProfileUpdateRequestStatus.Pending)
         {
             _logger.LogWarning(
                 "Profile update request '{RequestId}' is not in Pending status. Current status: '{Status}'.",
@@ -107,7 +108,7 @@ public class HandleProfileUpdateRequestCommandHandler : IRequestHandler<HandlePr
         {
             _logger.LogInformation("Beginning transaction for handling request '{RequestId}'.", command.RequestId);
 
-            request.Status = command.Dto.IsAccepted ? "Approved" : "Rejected";
+            request.Status = command.Dto.IsAccepted ? ProfileUpdateRequestStatus.Approved : ProfileUpdateRequestStatus.Rejected;
             request.HrNote = command.Dto.HrNote;
             request.HandledAt = DateTime.UtcNow;
             request.HandledByHrId = hrEmployee.Id;

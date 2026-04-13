@@ -146,4 +146,4 @@ try {
     exit 1
 }
 
-Write-Host "[v] Changes committed $phase $commandName"
+Write-Host "✓ Changes committed $phase $commandName"

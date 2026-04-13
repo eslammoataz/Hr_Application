@@ -22,6 +22,7 @@ public class RefreshTokenRepository : Repository<RefreshToken>, IRefreshTokenRep
     public async Task<List<RefreshToken>> GetActiveTokensByUserIdAsync(string userId, CancellationToken cancellationToken = default)
     {
         return await _dbSet
+            .AsNoTracking()
             .Where(x => x.UserId == userId && x.RevokedAt == null && x.ExpiresAt > DateTime.UtcNow)
             .ToListAsync(cancellationToken);
     }

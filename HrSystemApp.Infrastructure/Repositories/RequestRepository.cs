@@ -23,6 +23,7 @@ public class RequestRepository : Repository<Request>, IRequestRepository
     public async Task<List<Request>> GetByEmployeeIdAsync(Guid employeeId, CancellationToken cancellationToken = default)
     {
         return await _dbSet
+            .AsNoTracking()
             .Where(x => x.EmployeeId == employeeId)
             .OrderByDescending(x => x.CreatedAt)
             .ToListAsync(cancellationToken);
@@ -31,6 +32,7 @@ public class RequestRepository : Repository<Request>, IRequestRepository
     public async Task<List<Request>> GetPendingApprovalsAsync(Guid approverId, CancellationToken cancellationToken = default)
     {
         return await _dbSet
+            .AsNoTracking()
             .Where(x => x.CurrentApproverId == approverId && x.Status == RequestStatus.InProgress)
             .Include(x => x.Employee)
             .OrderByDescending(x => x.CreatedAt)

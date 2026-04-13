@@ -13,6 +13,7 @@ public class RequestDefinitionRepository : Repository<RequestDefinition>, IReque
     public async Task<RequestDefinition?> GetByTypeAsync(Guid companyId, RequestType requestType, CancellationToken cancellationToken = default)
     {
         return await _dbSet
+            .AsNoTracking()
             .Include(x => x.WorkflowSteps.OrderBy(s => s.SortOrder))
             .FirstOrDefaultAsync(x => x.CompanyId == companyId && x.RequestType == requestType, cancellationToken);
     }
@@ -20,6 +21,7 @@ public class RequestDefinitionRepository : Repository<RequestDefinition>, IReque
     public async Task<List<RequestDefinition>> GetByCompanyAsync(Guid companyId, RequestType? type = null, CancellationToken cancellationToken = default)
     {
         var query = _dbSet
+            .AsNoTracking()
             .Include(x => x.WorkflowSteps.OrderBy(s => s.SortOrder))
             .Where(x => x.CompanyId == companyId);
 

@@ -1,8 +1,10 @@
 using FluentAssertions;
+using HrSystemApp.Application.Common;
 using HrSystemApp.Application.Errors;
 using HrSystemApp.Application.Features.Employees.Commands.CreateEmployee;
 using HrSystemApp.Application.Interfaces;
 using HrSystemApp.Application.Interfaces.Repositories;
+using HrSystemApp.Application.Interfaces.Services;
 using HrSystemApp.Domain.Enums;
 using HrSystemApp.Domain.Models;
 using Moq;
@@ -28,6 +30,7 @@ public class CreateEmployeeCommandHandlerTests
         var teamsRepo = new Mock<ITeamRepository>();
         var employeesRepo = new Mock<IEmployeeRepository>();
         var leaveBalancesRepo = new Mock<ILeaveBalanceRepository>();
+        var placementService = new Mock<IEmployeePlacementService>();
 
         unitOfWork.SetupGet(x => x.Users).Returns(usersRepo.Object);
         unitOfWork.SetupGet(x => x.Companies).Returns(companiesRepo.Object);
@@ -36,6 +39,13 @@ public class CreateEmployeeCommandHandlerTests
         unitOfWork.SetupGet(x => x.Teams).Returns(teamsRepo.Object);
         unitOfWork.SetupGet(x => x.Employees).Returns(employeesRepo.Object);
         unitOfWork.SetupGet(x => x.LeaveBalances).Returns(leaveBalancesRepo.Object);
+
+        placementService
+            .Setup(x => x.ResolvePlacementAsync(companyId, departmentId, unitId, teamId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result.Success<(Guid?, Guid?, Guid?)>((departmentId, unitId, teamId)));
+        placementService
+            .Setup(x => x.AssignLeadershipIfNeededAsync(It.IsAny<Employee>(), UserRole.Employee, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result.Success());
 
         usersRepo
             .Setup(x => x.FindAsync(It.IsAny<System.Linq.Expressions.Expression<Func<ApplicationUser, bool>>>(), It.IsAny<CancellationToken>()))
@@ -48,15 +58,6 @@ public class CreateEmployeeCommandHandlerTests
                 CompanyName = "Acme",
                 YearlyVacationDays = 21
             });
-        teamsRepo
-            .Setup(x => x.GetByIdAsync(teamId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Team { Id = teamId, UnitId = unitId, Name = "Team A" });
-        unitsRepo
-            .Setup(x => x.GetByIdAsync(unitId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new DomainUnit { Id = unitId, DepartmentId = departmentId, Name = "Unit A" });
-        departmentsRepo
-            .Setup(x => x.GetByIdAsync(departmentId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Department { Id = departmentId, CompanyId = companyId, Name = "Dept A" });
         usersRepo
             .Setup(x => x.CreateUserAsync(It.IsAny<ApplicationUser>(), It.IsAny<string>(), It.IsAny<UserRole>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
@@ -78,7 +79,7 @@ public class CreateEmployeeCommandHandlerTests
             .Callback<Employee, CancellationToken>((employee, _) => createdEmployee = employee)
             .ReturnsAsync((Employee employee, CancellationToken _) => employee);
 
-        var sut = new CreateEmployeeCommandHandler(unitOfWork.Object);
+        var sut = new CreateEmployeeCommandHandler(unitOfWork.Object, placementService.Object);
         var command = new CreateEmployeeCommand(
             "John Doe",
             "john@acme.com",
@@ -109,11 +110,16 @@ public class CreateEmployeeCommandHandlerTests
 
         var unitOfWork = BuildBaseCreateEmployeeUnitOfWork(companyId);
         var teamsRepo = Mock.Get(unitOfWork.Object.Teams);
+        var placementService = new Mock<IEmployeePlacementService>();
+
         teamsRepo
             .Setup(x => x.GetByIdAsync(teamId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Team?)null);
+        placementService
+            .Setup(x => x.ResolvePlacementAsync(companyId, It.IsAny<Guid?>(), It.IsAny<Guid?>(), teamId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result.Failure<(Guid?, Guid?, Guid?)>(DomainErrors.Team.NotFound));
 
-        var sut = new CreateEmployeeCommandHandler(unitOfWork.Object);
+        var sut = new CreateEmployeeCommandHandler(unitOfWork.Object, placementService.Object);
         var command = new CreateEmployeeCommand("John", "john@acme.com", "01234567890", companyId, UserRole.Employee, null, null, teamId);
 
         var result = await sut.Handle(command, CancellationToken.None);
@@ -130,11 +136,16 @@ public class CreateEmployeeCommandHandlerTests
 
         var unitOfWork = BuildBaseCreateEmployeeUnitOfWork(companyId);
         var unitsRepo = Mock.Get(unitOfWork.Object.Units);
+        var placementService = new Mock<IEmployeePlacementService>();
+
         unitsRepo
             .Setup(x => x.GetByIdAsync(unitId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((DomainUnit?)null);
+        placementService
+            .Setup(x => x.ResolvePlacementAsync(companyId, It.IsAny<Guid?>(), unitId, It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result.Failure<(Guid?, Guid?, Guid?)>(DomainErrors.Unit.NotFound));
 
-        var sut = new CreateEmployeeCommandHandler(unitOfWork.Object);
+        var sut = new CreateEmployeeCommandHandler(unitOfWork.Object, placementService.Object);
         var command = new CreateEmployeeCommand("John", "john@acme.com", "01234567890", companyId, UserRole.Employee, null, unitId, null);
 
         var result = await sut.Handle(command, CancellationToken.None);
@@ -151,11 +162,16 @@ public class CreateEmployeeCommandHandlerTests
 
         var unitOfWork = BuildBaseCreateEmployeeUnitOfWork(companyId);
         var departmentsRepo = Mock.Get(unitOfWork.Object.Departments);
+        var placementService = new Mock<IEmployeePlacementService>();
+
         departmentsRepo
             .Setup(x => x.GetByIdAsync(departmentId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Department?)null);
+        placementService
+            .Setup(x => x.ResolvePlacementAsync(companyId, departmentId, It.IsAny<Guid?>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result.Failure<(Guid?, Guid?, Guid?)>(DomainErrors.Department.NotFound));
 
-        var sut = new CreateEmployeeCommandHandler(unitOfWork.Object);
+        var sut = new CreateEmployeeCommandHandler(unitOfWork.Object, placementService.Object);
         var command = new CreateEmployeeCommand("John", "john@acme.com", "01234567890", companyId, UserRole.Employee, departmentId, null, null);
 
         var result = await sut.Handle(command, CancellationToken.None);
@@ -174,11 +190,16 @@ public class CreateEmployeeCommandHandlerTests
 
         var unitOfWork = BuildBaseCreateEmployeeUnitOfWork(companyId);
         var teamsRepo = Mock.Get(unitOfWork.Object.Teams);
+        var placementService = new Mock<IEmployeePlacementService>();
+
         teamsRepo
             .Setup(x => x.GetByIdAsync(teamId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new Team { Id = teamId, UnitId = actualUnitId, Name = "Team A" });
+        placementService
+            .Setup(x => x.ResolvePlacementAsync(companyId, It.IsAny<Guid?>(), requestedUnitId, teamId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result.Failure<(Guid?, Guid?, Guid?)>(DomainErrors.General.InvalidOperation));
 
-        var sut = new CreateEmployeeCommandHandler(unitOfWork.Object);
+        var sut = new CreateEmployeeCommandHandler(unitOfWork.Object, placementService.Object);
         var command = new CreateEmployeeCommand("John", "john@acme.com", "01234567890", companyId, UserRole.Employee, null, requestedUnitId, teamId);
 
         var result = await sut.Handle(command, CancellationToken.None);
@@ -196,11 +217,16 @@ public class CreateEmployeeCommandHandlerTests
 
         var unitOfWork = BuildBaseCreateEmployeeUnitOfWork(companyId);
         var departmentsRepo = Mock.Get(unitOfWork.Object.Departments);
+        var placementService = new Mock<IEmployeePlacementService>();
+
         departmentsRepo
             .Setup(x => x.GetByIdAsync(departmentId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new Department { Id = departmentId, CompanyId = otherCompanyId, Name = "Dept A" });
+        placementService
+            .Setup(x => x.ResolvePlacementAsync(companyId, departmentId, It.IsAny<Guid?>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result.Failure<(Guid?, Guid?, Guid?)>(DomainErrors.General.InvalidOperation));
 
-        var sut = new CreateEmployeeCommandHandler(unitOfWork.Object);
+        var sut = new CreateEmployeeCommandHandler(unitOfWork.Object, placementService.Object);
         var command = new CreateEmployeeCommand("John", "john@acme.com", "01234567890", companyId, UserRole.Employee, departmentId, null, null);
 
         var result = await sut.Handle(command, CancellationToken.None);
@@ -219,11 +245,12 @@ public class CreateEmployeeCommandHandlerTests
         var oldLeaderEmployeeId = Guid.NewGuid();
 
         var unitOfWork = BuildBaseCreateEmployeeUnitOfWork(companyId);
-
         var teamsRepo = Mock.Get(unitOfWork.Object.Teams);
         var unitsRepo = Mock.Get(unitOfWork.Object.Units);
         var departmentsRepo = Mock.Get(unitOfWork.Object.Departments);
         var usersRepo = Mock.Get(unitOfWork.Object.Users);
+        var employeesRepo = Mock.Get(unitOfWork.Object.Employees);
+        var placementService = new Mock<IEmployeePlacementService>();
 
         var team = new Team
         {
@@ -257,7 +284,15 @@ public class CreateEmployeeCommandHandlerTests
             .Setup(x => x.AddToRoleAsync(oldLeaderUser, UserRole.Employee.ToString(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        var sut = new CreateEmployeeCommandHandler(unitOfWork.Object);
+        placementService
+            .Setup(x => x.ResolvePlacementAsync(companyId, departmentId, unitId, teamId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result.Success<(Guid?, Guid?, Guid?)>((departmentId, unitId, teamId)));
+
+        placementService
+            .Setup(x => x.AssignLeadershipIfNeededAsync(It.IsAny<Employee>(), UserRole.TeamLeader, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result.Success());
+
+        var sut = new CreateEmployeeCommandHandler(unitOfWork.Object, placementService.Object);
         var command = new CreateEmployeeCommand(
             "Jane Doe",
             "jane@acme.com",
@@ -271,12 +306,8 @@ public class CreateEmployeeCommandHandlerTests
         var result = await sut.Handle(command, CancellationToken.None);
 
         result.IsSuccess.Should().BeTrue();
-        team.TeamLeaderId.Should().Be(result.Value.EmployeeId);
-        usersRepo.Verify(
-            x => x.RemoveFromRoleAsync(oldLeaderUser, UserRole.TeamLeader.ToString(), It.IsAny<CancellationToken>()),
-            Times.Once);
-        usersRepo.Verify(
-            x => x.AddToRoleAsync(oldLeaderUser, UserRole.Employee.ToString(), It.IsAny<CancellationToken>()),
+        placementService.Verify(
+            x => x.AssignLeadershipIfNeededAsync(It.IsAny<Employee>(), UserRole.TeamLeader, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 

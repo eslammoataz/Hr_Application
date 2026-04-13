@@ -46,7 +46,7 @@ public class UpdateCompanyCommandHandler : IRequestHandler<UpdateCompanyCommand,
         company.StartTime = request.StartTime;
         company.EndTime = request.EndTime;
         company.GraceMinutes = request.GraceMinutes;
-        company.TimeZoneId = request.TimeZoneId;
+        if (!string.IsNullOrEmpty(request.TimeZoneId)) company.TimeZoneId = request.TimeZoneId;
 
         await _unitOfWork.Companies.UpdateAsync(company, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);

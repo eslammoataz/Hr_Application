@@ -11,6 +11,7 @@ public class DepartmentRepository : Repository<Department>, IDepartmentRepositor
 
     public async Task<Department?> GetWithUnitsAsync(Guid id, CancellationToken cancellationToken = default)
         => await _context.Departments
+            .AsNoTracking()
             .Include(d => d.VicePresident)
             .Include(d => d.Manager)
             .Include(d => d.Units)
@@ -19,6 +20,7 @@ public class DepartmentRepository : Repository<Department>, IDepartmentRepositor
 
     public async Task<IReadOnlyList<Department>> GetByCompanyAsync(Guid companyId, CancellationToken cancellationToken = default)
         => await _context.Departments
+            .AsNoTracking()
             .Include(d => d.VicePresident)
             .Include(d => d.Manager)
             .Where(d => d.CompanyId == companyId)

@@ -1,9 +1,10 @@
-using HrSystemApp.Domain.Common;
+using HrSystemApp.Application.Common;
 using HrSystemApp.Domain.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using System.Reflection;
+using HrSystemApp.Domain.Common; // For IHardDelete
 
 namespace HrSystemApp.Infrastructure.Data;
 

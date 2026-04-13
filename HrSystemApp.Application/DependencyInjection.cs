@@ -5,6 +5,8 @@ using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
 using HrSystemApp.Application.Features.Requests.Strategies;
+using HrSystemApp.Application.Interfaces.Services;
+using HrSystemApp.Application.Services;
 
 namespace HrSystemApp.Application;
 
@@ -35,7 +37,10 @@ public static class DependencyInjection
         // Request Strategies
         services.AddScoped<IRequestStrategyFactory, RequestStrategyFactory>();
         services.AddScoped<IRequestBusinessStrategy, LeaveRequestStrategy>();
-        
+
+        // Employee placement service
+        services.AddScoped<IEmployeePlacementService, EmployeePlacementService>();
+
         return services;
     }
 }

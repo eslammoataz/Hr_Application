@@ -60,45 +60,6 @@ public class EmployeeRepository : Repository<Employee>, IEmployeeRepository
             .Where(e => e.CompanyId == companyId)
             .ToListAsync(cancellationToken);
 
-    // for me "needs some query optimization"
-    public async Task<PagedResult<Employee>> GetPagedAsync(
-        Guid? companyId, Guid? teamId, string? searchTerm,
-        int pageNumber, int pageSize, CancellationToken cancellationToken = default)
-    {
-        var query = _dbSet
-            .AsNoTracking()
-            .Include(e => e.Department)
-            .Include(e => e.Unit)
-            .Include(e => e.Team)
-            .Include(e => e.Manager)
-            .Include(e => e.User)
-            .AsQueryable();
-
-        if (companyId.HasValue)
-            query = query.Where(e => e.CompanyId == companyId.Value);
-
-        if (teamId.HasValue)
-            query = query.Where(e => e.TeamId == teamId.Value);
-
-        if (!string.IsNullOrWhiteSpace(searchTerm))
-        {
-            var term = searchTerm.ToLower();
-            query = query.Where(e =>
-                e.FullName.ToLower().Contains(term) ||
-                e.Email.ToLower().Contains(term) ||
-                e.EmployeeCode.ToLower().Contains(term));
-        }
-
-        var totalCount = await query.CountAsync(cancellationToken);
-        var items = await query
-            .OrderBy(e => e.FullName)
-            .Skip((pageNumber - 1) * pageSize)
-            .Take(pageSize)
-            .ToListAsync(cancellationToken);
-
-        return PagedResult<Employee>.Create(items, pageNumber, pageSize, totalCount);
-    }
-
     public async Task<EmployeesPagedResult> GetPagedForListAsync(
         Guid? companyId,
         Guid? teamId,

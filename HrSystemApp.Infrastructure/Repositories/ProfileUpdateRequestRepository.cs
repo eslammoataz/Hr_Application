@@ -22,8 +22,7 @@ public class ProfileUpdateRequestRepository : Repository<ProfileUpdateRequest>, 
 
         if (status.HasValue)
         {
-            var statusString = status.Value.ToString();
-            query = query.Where(r => r.Status == statusString);
+            query = query.Where(r => r.Status == status.Value);
         }
 
         var totalCount = await query.CountAsync(cancellationToken);

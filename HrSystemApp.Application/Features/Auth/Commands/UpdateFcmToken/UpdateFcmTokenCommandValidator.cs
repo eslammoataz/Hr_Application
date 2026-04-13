@@ -1,4 +1,5 @@
 using FluentValidation;
+using HrSystemApp.Application.Resources;
 
 namespace HrSystemApp.Application.Features.Auth.Commands.UpdateFcmToken;
 
@@ -7,12 +8,12 @@ public class UpdateFcmTokenCommandValidator : AbstractValidator<UpdateFcmTokenCo
     public UpdateFcmTokenCommandValidator()
     {
         RuleFor(x => x.UserId)
-            .NotEmpty().WithMessage("User ID is required.");
+            .NotEmpty().WithMessage(Messages.Validation.FieldRequired);
 
         RuleFor(x => x.FcmToken)
-            .NotEmpty().WithMessage("FCM token is required.");
+            .NotEmpty().WithMessage(Messages.Validation.FieldRequired);
 
         RuleFor(x => x.DeviceType)
-            .IsInEnum().WithMessage("Invalid device type specified.");
+            .IsInEnum().WithMessage(Messages.Validation.InvalidDeviceType);
     }
 }
