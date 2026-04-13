@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace HrSystemApp.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260328132154_AddRequestsFeature")]
-    partial class AddRequestsFeature
+    [Migration("20260413123739_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -123,10 +123,239 @@ namespace HrSystemApp.Infrastructure.Migrations
                         .IsUnique()
                         .HasDatabaseName("UserNameIndex");
 
-                    b.HasIndex("PhoneNumber")
+                    b.ToTable("Users", (string)null);
+                });
+
+            modelBuilder.Entity("HrSystemApp.Domain.Models.Attendance", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("date");
+
+                    b.Property<Guid>("EmployeeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("FirstClockInLogId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("FirstClockInUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsEarlyLeave")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsLate")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid?>("LastClockOutLogId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("LastClockOutUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("TotalHours")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<uint>("Xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FirstClockInLogId");
+
+                    b.HasIndex("LastClockOutLogId");
+
+                    b.HasIndex("Date", "LastClockOutUtc");
+
+                    b.HasIndex("EmployeeId", "Date")
                         .IsUnique();
 
-                    b.ToTable("Users", (string)null);
+                    b.ToTable("Attendances");
+                });
+
+            modelBuilder.Entity("HrSystemApp.Domain.Models.AttendanceAdjustment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("AfterSnapshotJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("AttendanceId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("BeforeSnapshotJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("EmployeeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UpdatedByUserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("character varying(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AttendanceId");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.ToTable("AttendanceAdjustments");
+                });
+
+            modelBuilder.Entity("HrSystemApp.Domain.Models.AttendanceLog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("AttendanceId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("EmployeeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("IdempotencyKey")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<int>("Source")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("TimestampUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AttendanceId");
+
+                    b.HasIndex("IdempotencyKey")
+                        .IsUnique();
+
+                    b.HasIndex("EmployeeId", "TimestampUtc");
+
+                    b.ToTable("AttendanceLogs");
+                });
+
+            modelBuilder.Entity("HrSystemApp.Domain.Models.AttendanceReminderLog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("AttendanceId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Channel")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("EmployeeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ErrorMessage")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("JobRunId")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<int>("ReminderType")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("SentAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("WindowKey")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.HasIndex("AttendanceId", "ReminderType", "WindowKey")
+                        .IsUnique();
+
+                    b.ToTable("AttendanceReminderLogs");
                 });
 
             modelBuilder.Entity("HrSystemApp.Domain.Models.Company", b =>
@@ -151,11 +380,25 @@ namespace HrSystemApp.Infrastructure.Migrations
                         .HasMaxLength(450)
                         .HasColumnType("character varying(450)");
 
+                    b.Property<TimeSpan>("EndTime")
+                        .HasColumnType("interval");
+
+                    b.Property<int>("GraceMinutes")
+                        .HasColumnType("integer");
+
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
+                    b.Property<TimeSpan>("StartTime")
+                        .HasColumnType("interval");
+
                     b.Property<int>("Status")
                         .HasColumnType("integer");
+
+                    b.Property<string>("TimeZoneId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -499,6 +742,53 @@ namespace HrSystemApp.Infrastructure.Migrations
                     b.ToTable("LeaveBalances");
                 });
 
+            modelBuilder.Entity("HrSystemApp.Domain.Models.Notification", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("EmployeeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsRead")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmployeeId", "CreatedAt");
+
+                    b.HasIndex("EmployeeId", "IsRead");
+
+                    b.ToTable("Notifications", (string)null);
+                });
+
             modelBuilder.Entity("HrSystemApp.Domain.Models.ProfileUpdateRequest", b =>
                 {
                     b.Property<Guid>("Id")
@@ -533,9 +823,8 @@ namespace HrSystemApp.Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("text");
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -550,45 +839,6 @@ namespace HrSystemApp.Infrastructure.Migrations
                     b.HasIndex("HandledByHrId");
 
                     b.ToTable("ProfileUpdateRequests");
-                });
-
-            modelBuilder.Entity("HrSystemApp.Domain.Models.PurchaseOrderItem", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("ItemName")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Justification")
-                        .HasColumnType("text");
-
-                    b.Property<Guid>("PurchaseOrderId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Quantity")
-                        .HasColumnType("integer");
-
-                    b.Property<decimal>("UnitPrice")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("PurchaseOrderId");
-
-                    b.ToTable("PurchaseOrderItems", (string)null);
                 });
 
             modelBuilder.Entity("HrSystemApp.Domain.Models.RefreshToken", b =>
@@ -658,14 +908,15 @@ namespace HrSystemApp.Infrastructure.Migrations
                     b.Property<Guid?>("CurrentApproverId")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("Data")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("{}");
+
                     b.Property<string>("Details")
                         .HasMaxLength(2000)
                         .HasColumnType("character varying(2000)");
-
-                    b.Property<string>("Discriminator")
-                        .IsRequired()
-                        .HasMaxLength(13)
-                        .HasColumnType("character varying(13)");
 
                     b.Property<Guid>("EmployeeId")
                         .HasColumnType("uuid");
@@ -696,10 +947,6 @@ namespace HrSystemApp.Infrastructure.Migrations
                     b.HasIndex("EmployeeId");
 
                     b.ToTable("Requests", (string)null);
-
-                    b.HasDiscriminator().HasValue("Request");
-
-                    b.UseTphMappingStrategy();
                 });
 
             modelBuilder.Entity("HrSystemApp.Domain.Models.RequestApprovalHistory", b =>
@@ -784,6 +1031,9 @@ namespace HrSystemApp.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("CreatedById")
+                        .HasColumnType("text");
+
+                    b.Property<string>("FormSchemaJson")
                         .HasColumnType("text");
 
                     b.Property<bool>("IsActive")
@@ -1067,119 +1317,86 @@ namespace HrSystemApp.Infrastructure.Migrations
                     b.ToTable("UserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("HrSystemApp.Domain.Models.AssetRequest", b =>
+            modelBuilder.Entity("HrSystemApp.Domain.Models.Attendance", b =>
                 {
-                    b.HasBaseType("HrSystemApp.Domain.Models.Request");
+                    b.HasOne("HrSystemApp.Domain.Models.Employee", "Employee")
+                        .WithMany("Attendances")
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
-                    b.Property<int>("Action")
-                        .HasColumnType("integer");
+                    b.HasOne("HrSystemApp.Domain.Models.AttendanceLog", "FirstClockInLog")
+                        .WithMany()
+                        .HasForeignKey("FirstClockInLogId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
-                    b.Property<string>("AssetCode")
-                        .IsRequired()
-                        .HasColumnType("text");
+                    b.HasOne("HrSystemApp.Domain.Models.AttendanceLog", "LastClockOutLog")
+                        .WithMany()
+                        .HasForeignKey("LastClockOutLogId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
-                    b.Property<int>("AssetStatus")
-                        .HasColumnType("integer");
+                    b.Navigation("Employee");
 
-                    b.Property<string>("AssetType")
-                        .IsRequired()
-                        .HasColumnType("text");
+                    b.Navigation("FirstClockInLog");
 
-                    b.HasDiscriminator().HasValue("Asset");
+                    b.Navigation("LastClockOutLog");
                 });
 
-            modelBuilder.Entity("HrSystemApp.Domain.Models.AssignmentRequest", b =>
+            modelBuilder.Entity("HrSystemApp.Domain.Models.AttendanceAdjustment", b =>
                 {
-                    b.HasBaseType("HrSystemApp.Domain.Models.Request");
+                    b.HasOne("HrSystemApp.Domain.Models.Attendance", "Attendance")
+                        .WithMany("Adjustments")
+                        .HasForeignKey("AttendanceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
-                    b.Property<string>("Destination")
-                        .IsRequired()
-                        .HasColumnType("text");
+                    b.HasOne("HrSystemApp.Domain.Models.Employee", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
-                    b.Property<DateTime?>("EndDate")
-                        .HasColumnType("timestamp with time zone");
+                    b.Navigation("Attendance");
 
-                    b.Property<decimal?>("PerDiem")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
-
-                    b.Property<string>("Purpose")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("StartDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasDiscriminator().HasValue("Assignment");
+                    b.Navigation("Employee");
                 });
 
-            modelBuilder.Entity("HrSystemApp.Domain.Models.EndOfServiceRequest", b =>
+            modelBuilder.Entity("HrSystemApp.Domain.Models.AttendanceLog", b =>
                 {
-                    b.HasBaseType("HrSystemApp.Domain.Models.Request");
+                    b.HasOne("HrSystemApp.Domain.Models.Attendance", "Attendance")
+                        .WithMany("Logs")
+                        .HasForeignKey("AttendanceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
-                    b.HasDiscriminator().HasValue("EndOfService");
+                    b.HasOne("HrSystemApp.Domain.Models.Employee", "Employee")
+                        .WithMany("AttendanceLogs")
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Attendance");
+
+                    b.Navigation("Employee");
                 });
 
-            modelBuilder.Entity("HrSystemApp.Domain.Models.HrLetterRequest", b =>
+            modelBuilder.Entity("HrSystemApp.Domain.Models.AttendanceReminderLog", b =>
                 {
-                    b.HasBaseType("HrSystemApp.Domain.Models.Request");
+                    b.HasOne("HrSystemApp.Domain.Models.Attendance", "Attendance")
+                        .WithMany("ReminderLogs")
+                        .HasForeignKey("AttendanceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
-                    b.HasDiscriminator().HasValue("HrLetter");
-                });
+                    b.HasOne("HrSystemApp.Domain.Models.Employee", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
-            modelBuilder.Entity("HrSystemApp.Domain.Models.LeaveRequest", b =>
-                {
-                    b.HasBaseType("HrSystemApp.Domain.Models.Request");
+                    b.Navigation("Attendance");
 
-                    b.Property<decimal>("Duration")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
-
-                    b.Property<DateTime>("EndDateTime")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<bool>("IsHourly")
-                        .HasColumnType("boolean");
-
-                    b.Property<int>("LeaveSubType")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("StartDateTime")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasDiscriminator().HasValue("Leave");
-                });
-
-            modelBuilder.Entity("HrSystemApp.Domain.Models.OtherRequest", b =>
-                {
-                    b.HasBaseType("HrSystemApp.Domain.Models.Request");
-
-                    b.HasDiscriminator().HasValue("Other");
-                });
-
-            modelBuilder.Entity("HrSystemApp.Domain.Models.PurchaseOrderRequest", b =>
-                {
-                    b.HasBaseType("HrSystemApp.Domain.Models.Request");
-
-                    b.Property<decimal>("TotalEstimate")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
-
-                    b.HasDiscriminator().HasValue("PurchaseOrder");
-                });
-
-            modelBuilder.Entity("HrSystemApp.Domain.Models.ResignationRequest", b =>
-                {
-                    b.HasBaseType("HrSystemApp.Domain.Models.Request");
-
-                    b.HasDiscriminator().HasValue("Resignation");
-                });
-
-            modelBuilder.Entity("HrSystemApp.Domain.Models.SalarySlipRequest", b =>
-                {
-                    b.HasBaseType("HrSystemApp.Domain.Models.Request");
-
-                    b.HasDiscriminator().HasValue("SalarySlip");
+                    b.Navigation("Employee");
                 });
 
             modelBuilder.Entity("HrSystemApp.Domain.Models.CompanyHierarchyPosition", b =>
@@ -1248,7 +1465,7 @@ namespace HrSystemApp.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("HrSystemApp.Domain.Models.Employee", "Manager")
-                        .WithMany("DirectReports")
+                        .WithMany()
                         .HasForeignKey("ManagerId")
                         .OnDelete(DeleteBehavior.SetNull);
 
@@ -1293,6 +1510,17 @@ namespace HrSystemApp.Infrastructure.Migrations
                     b.Navigation("Employee");
                 });
 
+            modelBuilder.Entity("HrSystemApp.Domain.Models.Notification", b =>
+                {
+                    b.HasOne("HrSystemApp.Domain.Models.Employee", "Employee")
+                        .WithMany("Notifications")
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Employee");
+                });
+
             modelBuilder.Entity("HrSystemApp.Domain.Models.ProfileUpdateRequest", b =>
                 {
                     b.HasOne("HrSystemApp.Domain.Models.Employee", "Employee")
@@ -1308,17 +1536,6 @@ namespace HrSystemApp.Infrastructure.Migrations
                     b.Navigation("Employee");
 
                     b.Navigation("HandledByHr");
-                });
-
-            modelBuilder.Entity("HrSystemApp.Domain.Models.PurchaseOrderItem", b =>
-                {
-                    b.HasOne("HrSystemApp.Domain.Models.PurchaseOrderRequest", "PurchaseOrder")
-                        .WithMany("Items")
-                        .HasForeignKey("PurchaseOrderId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("PurchaseOrder");
                 });
 
             modelBuilder.Entity("HrSystemApp.Domain.Models.RefreshToken", b =>
@@ -1494,6 +1711,15 @@ namespace HrSystemApp.Infrastructure.Migrations
                     b.Navigation("Employee");
                 });
 
+            modelBuilder.Entity("HrSystemApp.Domain.Models.Attendance", b =>
+                {
+                    b.Navigation("Adjustments");
+
+                    b.Navigation("Logs");
+
+                    b.Navigation("ReminderLogs");
+                });
+
             modelBuilder.Entity("HrSystemApp.Domain.Models.Company", b =>
                 {
                     b.Navigation("Departments");
@@ -1512,7 +1738,11 @@ namespace HrSystemApp.Infrastructure.Migrations
 
             modelBuilder.Entity("HrSystemApp.Domain.Models.Employee", b =>
                 {
-                    b.Navigation("DirectReports");
+                    b.Navigation("AttendanceLogs");
+
+                    b.Navigation("Attendances");
+
+                    b.Navigation("Notifications");
                 });
 
             modelBuilder.Entity("HrSystemApp.Domain.Models.Request", b =>
@@ -1535,11 +1765,6 @@ namespace HrSystemApp.Infrastructure.Migrations
             modelBuilder.Entity("HrSystemApp.Domain.Models.Unit", b =>
                 {
                     b.Navigation("Teams");
-                });
-
-            modelBuilder.Entity("HrSystemApp.Domain.Models.PurchaseOrderRequest", b =>
-                {
-                    b.Navigation("Items");
                 });
 #pragma warning restore 612, 618
         }

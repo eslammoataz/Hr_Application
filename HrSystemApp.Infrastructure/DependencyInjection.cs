@@ -13,6 +13,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using HrSystemApp.Application.Settings;
 using Minio;
+using Microsoft.Extensions.Logging;
 
 namespace HrSystemApp.Infrastructure;
 
@@ -132,12 +133,18 @@ public static class DependencyInjection
     {
         using var scope = serviceProvider.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-
+        var logger = serviceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("DbInit");
         try
         {
-            if (applyMigrations && context.Database.IsNpgsql())
+            if (applyMigrations)
             {
+                var pendingMigrations = await context.Database.GetPendingMigrationsAsync();
+                logger.LogInformation("Pending migrations: {Count} → {Names}",
+                    pendingMigrations.Count(), string.Join(", ", pendingMigrations));
+
                 await context.Database.MigrateAsync();
+
+                logger.LogInformation("Migrations applied successfully.");
             }
 
             await SeedData.InitializeAsync(scope.ServiceProvider);
