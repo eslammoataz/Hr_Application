@@ -44,7 +44,12 @@ public class UpdateRequestDefinitionCommandHandler : IRequestHandler<UpdateReque
             return Result.Failure<Guid>(DomainErrors.Employee.NotFound);
 
         // 1. Find the definition
-        var definition = await _unitOfWork.RequestDefinitions.GetByIdAsync(request.Id, cancellationToken);
+        var definition = await _unitOfWork.RequestDefinitions.GetFirstOrDefaultAsync(
+            d => d.Id == request.Id,
+            cancellationToken,
+            d => d.WorkflowSteps
+        );
+
         if (definition == null)
         {
             _logger.LogWarning("UpdateRequestDefinition failed: Definition ID {DefinitionId} not found.", request.Id);
@@ -72,6 +77,7 @@ public class UpdateRequestDefinitionCommandHandler : IRequestHandler<UpdateReque
 
         // 4. Update
         definition.IsActive = request.IsActive;
+        definition.WorkflowSteps.Clear();
         definition.WorkflowSteps = request.Steps.Select(s => new RequestWorkflowStep
         {
             RequiredRole = s.Role,
