@@ -13,7 +13,7 @@ public class TeamRepository : Repository<Team>, ITeamRepository
         => await _context.Teams
             .AsNoTracking()
             .Include(t => t.TeamLeader)
-            .Where(t => t.UnitId == unitId && !t.IsDeleted)
+            .Where(t => t.UnitId == unitId)
             .ToListAsync(cancellationToken);
 
     public async Task<IReadOnlyList<Team>> GetByUnitIdsAsync(
@@ -28,7 +28,7 @@ public class TeamRepository : Repository<Team>, ITeamRepository
         return await _context.Teams
             .AsNoTracking()
             .Include(t => t.TeamLeader)
-            .Where(t => unitIds.Contains(t.UnitId) && !t.IsDeleted)
+            .Where(t => unitIds.Contains(t.UnitId))
             .ToListAsync(cancellationToken);
     }
 
@@ -37,5 +37,5 @@ public class TeamRepository : Repository<Team>, ITeamRepository
             .AsNoTracking()
             .Include(t => t.TeamLeader)
             .Include(t => t.Members)
-            .FirstOrDefaultAsync(t => t.Id == id && !t.IsDeleted, cancellationToken);
+            .FirstOrDefaultAsync(t => t.Id == id, cancellationToken);
 }

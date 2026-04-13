@@ -16,13 +16,13 @@ public class DepartmentRepository : Repository<Department>, IDepartmentRepositor
             .Include(d => d.Manager)
             .Include(d => d.Units)
                 .ThenInclude(u => u.UnitLeader)
-            .FirstOrDefaultAsync(d => d.Id == id && !d.IsDeleted, cancellationToken);
+            .FirstOrDefaultAsync(d => d.Id == id, cancellationToken);
 
     public async Task<IReadOnlyList<Department>> GetByCompanyAsync(Guid companyId, CancellationToken cancellationToken = default)
         => await _context.Departments
             .AsNoTracking()
             .Include(d => d.VicePresident)
             .Include(d => d.Manager)
-            .Where(d => d.CompanyId == companyId && !d.IsDeleted)
+            .Where(d => d.CompanyId == companyId)
             .ToListAsync(cancellationToken);
 }

@@ -206,3 +206,23 @@ Planned improvements:
 # 📜 License
 
 This project is under development and not yet licensed for production distribution.
+
+---
+
+# 🛡️ Security & Configuration
+
+### Hardened Identity Policy
+The system enforces strict password requirements for all accounts:
+- **Min Length**: 12 characters
+- **Complexity**: Must include Digit, Lowercase, Uppercase, and Non-Alphanumeric character.
+
+### Seeding Credentials
+To eliminate hardcoded secrets, administrative and default account passwords are managed via configuration:
+- `SeedPasswordSettings`: Used for all default seeded accounts (CEO, VP, managers, etc).
+- `SuperAdminSettings:Password`: Specific password for the Super Admin account.
+
+**Local Development**: Configure these in `appsettings.json` or user-secrets.
+**Production**: Always use Environment Variables or a Secrets Manager.
+
+### JWT Claims
+Application claim types are centralized in `HrSystemApp.Domain.Constants.AppClaimTypes` to avoid string literal drift across the API and Mobile clients.

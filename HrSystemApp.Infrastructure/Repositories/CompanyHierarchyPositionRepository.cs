@@ -18,7 +18,7 @@ public class CompanyHierarchyPositionRepository : Repository<CompanyHierarchyPos
     {
         return await _context.CompanyHierarchyPositions
             .AsNoTracking()
-            .Where(p => p.CompanyId == companyId && !p.IsDeleted)
+            .Where(p => p.CompanyId == companyId)
             .OrderBy(p => p.SortOrder)
             .ToListAsync(cancellationToken);
     }
@@ -40,6 +40,6 @@ public class CompanyHierarchyPositionRepository : Repository<CompanyHierarchyPos
         CancellationToken cancellationToken = default)
     {
         return await _context.CompanyHierarchyPositions
-            .AnyAsync(p => p.CompanyId == companyId && p.Role == role && !p.IsDeleted, cancellationToken);
+            .AnyAsync(p => p.CompanyId == companyId && p.Role == role, cancellationToken);
     }
 }

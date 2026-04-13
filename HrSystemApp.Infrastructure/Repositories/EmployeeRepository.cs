@@ -25,13 +25,13 @@ public class EmployeeRepository : Repository<Employee>, IEmployeeRepository
             .Include(e => e.Team)
             .Include(e => e.Manager)
             .Include(e => e.User)
-            .FirstOrDefaultAsync(e => e.Id == id && !e.IsDeleted, cancellationToken);
+            .FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
 
     public async Task<EmployeeProfileDto?> GetProfileByUserIdAsync(string userId,
         CancellationToken cancellationToken = default)
     {
         return await _dbSet.AsQueryable()
-            .Where(e => e.UserId == userId && !e.IsDeleted)
+            .Where(e => e.UserId == userId)
             .Select(e => new EmployeeProfileDto
             {
                 Id = e.Id,
@@ -57,7 +57,7 @@ public class EmployeeRepository : Repository<Employee>, IEmployeeRepository
         CancellationToken cancellationToken = default)
         => await _dbSet
             .AsNoTracking()
-            .Where(e => e.CompanyId == companyId && !e.IsDeleted)
+            .Where(e => e.CompanyId == companyId)
             .ToListAsync(cancellationToken);
 
     public async Task<EmployeesPagedResult> GetPagedForListAsync(
@@ -78,7 +78,6 @@ public class EmployeeRepository : Repository<Employee>, IEmployeeRepository
 
         var query =
             from employee in _dbSet.AsNoTracking()
-            where !employee.IsDeleted
             select new EmployeeListRow
             {
                 Id = employee.Id,

@@ -3,6 +3,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using HrSystemApp.Application.Common;
 using HrSystemApp.Application.Errors;
+using HrSystemApp.Domain.Constants;
 using System.Text.Json;
 
 namespace HrSystemApp.Api;
@@ -48,7 +49,7 @@ public static class DependencyInjection
                 ClockSkew = TimeSpan.Zero,
 
                 NameClaimType = "name",
-                RoleClaimType = "role"
+                RoleClaimType = AppClaimTypes.Role
             };
 
             options.Events = new JwtBearerEvents

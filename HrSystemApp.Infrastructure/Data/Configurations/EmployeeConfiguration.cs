@@ -77,7 +77,7 @@ public class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
             .OnDelete(DeleteBehavior.SetNull);
 
         builder.HasOne(e => e.Manager)
-            .WithMany(m => m.DirectReports)
+            .WithMany()
             .HasForeignKey(e => e.ManagerId)
             .OnDelete(DeleteBehavior.SetNull);
 

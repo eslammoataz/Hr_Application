@@ -24,7 +24,7 @@ public class NotificationService : INotificationService
         _fcmSender = fcmSender;
     }
 
-    public async Task SendNotificationAsync(Guid employeeId, string title, string message, NotificationType type)
+    public async Task SendNotificationAsync(Guid employeeId, string title, string message, NotificationType type, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation(
             "Processing notification request for employee {EmployeeId}, type {Type}, title '{Title}'",
@@ -35,7 +35,7 @@ public class NotificationService : INotificationService
         var employee = await _context.Employees
             .AsNoTracking()
             .Include(e => e.User)
-            .FirstOrDefaultAsync(e => e.Id == employeeId);
+            .FirstOrDefaultAsync(e => e.Id == employeeId, cancellationToken);
 
         if (employee is null)
         {
@@ -52,8 +52,8 @@ public class NotificationService : INotificationService
             IsRead = false
         };
 
-        await _context.Notifications.AddAsync(notification);
-        await _context.SaveChangesAsync();
+        await _context.Notifications.AddAsync(notification, cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation(
             "Notification {NotificationId} saved to database for employee {EmployeeId}.",
@@ -66,7 +66,7 @@ public class NotificationService : INotificationService
                 "Scheduling Firebase push delivery for notification {NotificationId} to employee {EmployeeId}.",
                 notification.Id,
                 employeeId);
-            _ = _fcmSender.SendAsync(employee.User.FcmToken, notification, type);
+            _ = _fcmSender.SendAsync(employee.User.FcmToken, notification, type, cancellationToken);
             return;
         }
 
@@ -76,7 +76,7 @@ public class NotificationService : INotificationService
             employeeId);
     }
 
-    public async Task SendBroadcastAsync(string title, string message, NotificationType type)
+    public async Task SendBroadcastAsync(string title, string message, NotificationType type, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation(
             "Initiating broadcast notification '{Title}' with type {Type}.",
@@ -87,7 +87,7 @@ public class NotificationService : INotificationService
             .AsNoTracking()
             .Include(e => e.User)
             .Where(e => e.EmploymentStatus == EmploymentStatus.Active && e.User != null && e.User.FcmToken != null)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         if (!activeEmployees.Any())
         {
@@ -106,8 +106,8 @@ public class NotificationService : INotificationService
             IsRead = false
         }).ToList();
 
-        await _context.Notifications.AddRangeAsync(notifications);
-        await _context.SaveChangesAsync();
+        await _context.Notifications.AddRangeAsync(notifications, cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation(
             "Broadcast notification '{Title}' saved to database for {Count} employees.",
@@ -130,26 +130,26 @@ public class NotificationService : INotificationService
             "Scheduling Firebase broadcast delivery for {Count} notifications.",
             batch.Count);
 
-        await _fcmSender.SendBatchAsync(batch);
+        await _fcmSender.SendBatchAsync(batch, cancellationToken);
 
         _logger.LogInformation("Broadcast notification {Title} added for {Count} employees", title,
             activeEmployees.Count);
     }
 
-    public async Task<IEnumerable<DomainNotification>> GetUserNotifications(Guid employeeId)
+    public async Task<IEnumerable<DomainNotification>> GetUserNotifications(Guid employeeId, CancellationToken cancellationToken = default)
     {
         return await _context.Notifications
             .AsNoTracking()
             .Where(n => n.EmployeeId == employeeId)
             .OrderByDescending(n => n.CreatedAt)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
     }
 
-    public async Task<int> MarkAsReadAsync(Guid notificationId, Guid employeeId)
+    public async Task<int> MarkAsReadAsync(Guid notificationId, Guid employeeId, CancellationToken cancellationToken = default)
     {
         var rowsAffected = await _context.Notifications
             .Where(n => n.Id == notificationId && n.EmployeeId == employeeId && !n.IsRead)
-            .ExecuteUpdateAsync(s => s.SetProperty(n => n.IsRead, true));
+            .ExecuteUpdateAsync(s => s.SetProperty(n => n.IsRead, true), cancellationToken);
 
         if (rowsAffected > 0)
         {

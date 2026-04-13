@@ -17,6 +17,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using HrSystemApp.Domain.Constants;
 using HrSystemApp.Domain.Enums;
 
 namespace HrSystemApp.Api.Controllers;
@@ -54,7 +55,7 @@ public class EmployeesController : BaseApiController
     [HttpGet("me/profile")]
     public async Task<IActionResult> GetMyProfile(CancellationToken cancellationToken)
     {
-        var userId = User.FindFirstValue("sub");
+        var userId = User.FindFirstValue(AppClaimTypes.Subject);
         if (string.IsNullOrEmpty(userId)) return Unauthorized();
 
         var result = await _sender.Send(new GetMyProfileQuery(userId), cancellationToken);
@@ -63,9 +64,9 @@ public class EmployeesController : BaseApiController
 
     /// <summary>Get my own leave balance (Total, Used, Remaining).</summary>
     [HttpGet("me/balances")]
-    public async Task<IActionResult> GetMyBalances()
+    public async Task<IActionResult> GetMyBalances(CancellationToken cancellationToken)
     {
-        return HandleResult(await _sender.Send(new GetMyLeaveBalancesQuery()));
+        return HandleResult(await _sender.Send(new GetMyLeaveBalancesQuery(), cancellationToken));
     }
 
     /// <summary>Get employee by ID.</summary>
@@ -134,7 +135,7 @@ public class EmployeesController : BaseApiController
     public async Task<IActionResult> CreateProfileUpdateRequest([FromBody] CreateProfileUpdateRequestDto request,
         CancellationToken cancellationToken)
     {
-        var userId = User.FindFirstValue("sub");
+        var userId = User.FindFirstValue(AppClaimTypes.Subject);
         if (string.IsNullOrEmpty(userId)) return Unauthorized();
 
         var result = await _sender.Send(new CreateProfileUpdateRequestCommand(userId, request), cancellationToken);
@@ -148,7 +149,7 @@ public class EmployeesController : BaseApiController
         [FromQuery] int pageSize = 20,
         CancellationToken cancellationToken = default)
     {
-        var userId = User.FindFirstValue("sub");
+        var userId = User.FindFirstValue(AppClaimTypes.Subject);
         if (string.IsNullOrEmpty(userId)) return Unauthorized();
 
         var result = await _sender.Send(new GetMyProfileUpdateRequestsQuery(userId, page, pageSize), cancellationToken);
@@ -166,7 +167,7 @@ public class EmployeesController : BaseApiController
         [FromQuery] int pageSize = 20,
         CancellationToken cancellationToken = default)
     {
-        var hrUserId = User.FindFirstValue("sub");
+        var hrUserId = User.FindFirstValue(AppClaimTypes.Subject);
         if (string.IsNullOrEmpty(hrUserId)) return Unauthorized();
 
         var result = await _sender.Send(new GetAllProfileUpdateRequestsQuery(hrUserId, status, page, pageSize),
@@ -180,7 +181,7 @@ public class EmployeesController : BaseApiController
     public async Task<IActionResult> HandleProfileUpdateRequest(Guid id,
         [FromBody] HandleProfileUpdateRequestDto request, CancellationToken cancellationToken)
     {
-        var hrUserId = User.FindFirstValue("sub");
+        var hrUserId = User.FindFirstValue(AppClaimTypes.Subject);
         if (string.IsNullOrEmpty(hrUserId)) return Unauthorized();
 
         var result = await _sender.Send(new HandleProfileUpdateRequestCommand(id, hrUserId, request),

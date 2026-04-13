@@ -20,7 +20,7 @@ public class FcmSender
         _logger = logger;
     }
 
-    public Task SendAsync(string token, DomainNotification notification, NotificationType type)
+    public Task SendAsync(string token, DomainNotification notification, NotificationType type, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation(
             "Queueing Firebase delivery task for notification {NotificationId}, employee {EmployeeId}, type {Type}.",
@@ -42,7 +42,7 @@ public class FcmSender
 
             try
             {
-                await fcmClient.SendAsync(token, notification, type, CancellationToken.None);
+                await fcmClient.SendAsync(token, notification, type, cancellationToken);
                 logger.LogInformation(
                     "Firebase delivery completed successfully for notification {NotificationId}.",
                     notification.Id);
@@ -64,7 +64,8 @@ public class FcmSender
     }
 
     public Task SendBatchAsync(
-        IEnumerable<(string Token, DomainNotification Notification, NotificationType Type)> batch)
+        IEnumerable<(string Token, DomainNotification Notification, NotificationType Type)> batch,
+        CancellationToken cancellationToken = default)
     {
         var notifications = batch.ToList();
 
@@ -74,7 +75,7 @@ public class FcmSender
 
         foreach (var item in notifications)
         {
-            _ = SendAsync(item.Token, item.Notification, item.Type);
+            _ = SendAsync(item.Token, item.Notification, item.Type, cancellationToken);
         }
 
         return Task.CompletedTask;

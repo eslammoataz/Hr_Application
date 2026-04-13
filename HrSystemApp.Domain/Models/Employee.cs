@@ -40,7 +40,7 @@ public class Employee : AuditableEntity
     public CompanyLocation? CompanyLocation { get; set; }
 
     // Reverse navigation
-    public ICollection<Employee> DirectReports { get; set; } = new List<Employee>();
+
     public ICollection<Notification> Notifications { get; set; } = new List<Notification>();
     public ICollection<Attendance> Attendances { get; set; } = new List<Attendance>();
     public ICollection<AttendanceLog> AttendanceLogs { get; set; } = new List<AttendanceLog>();

@@ -17,6 +17,7 @@ using HrSystemApp.Application.Features.Auth.Commands.RefreshToken;
 using HrSystemApp.Application.Features.Auth.Commands.RevokeToken;
 using HrSystemApp.Application.Features.Auth.Commands.RevokeAllTokens;
 using HrSystemApp.Application.Features.Auth.Queries.GetUserTokens;
+using HrSystemApp.Domain.Constants;
 
 
 namespace HrSystemApp.Api.Controllers;
@@ -76,7 +77,7 @@ public class AuthController : BaseApiController
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Logout([FromBody] LogoutRequest request, CancellationToken cancellationToken)
     {
-        var userId = HttpContext.User.FindFirstValue("sub");
+        var userId = HttpContext.User.FindFirstValue(AppClaimTypes.Subject);
         if (string.IsNullOrEmpty(userId))
             return Unauthorized();
 
@@ -123,7 +124,7 @@ public class AuthController : BaseApiController
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> RevokeAll(CancellationToken cancellationToken)
     {
-        var userId = HttpContext.User.FindFirstValue("sub");
+        var userId = HttpContext.User.FindFirstValue(AppClaimTypes.Subject);
         if (string.IsNullOrEmpty(userId))
             return Unauthorized();
 
@@ -140,7 +141,7 @@ public class AuthController : BaseApiController
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> GetTokens(CancellationToken cancellationToken)
     {
-        var userId = HttpContext.User.FindFirstValue("sub");
+        var userId = HttpContext.User.FindFirstValue(AppClaimTypes.Subject);
         if (string.IsNullOrEmpty(userId))
             return Unauthorized();
 
@@ -159,7 +160,7 @@ public class AuthController : BaseApiController
     public async Task<IActionResult> ChangePassword(
         [FromBody] ChangePasswordRequest request, CancellationToken cancellationToken)
     {
-        var userId = HttpContext.User.FindFirstValue("sub");
+        var userId = HttpContext.User.FindFirstValue(AppClaimTypes.Subject);
 
         if (string.IsNullOrEmpty(userId))
         {
@@ -201,7 +202,7 @@ public class AuthController : BaseApiController
     public async Task<IActionResult> UpdateFcmToken(
         [FromBody] UpdateFcmTokenRequest request, CancellationToken cancellationToken)
     {
-        var userId = HttpContext.User.FindFirstValue("sub");
+        var userId = HttpContext.User.FindFirstValue(AppClaimTypes.Subject);
         if (string.IsNullOrEmpty(userId))
             return Unauthorized();
 
@@ -222,7 +223,7 @@ public class AuthController : BaseApiController
     public async Task<IActionResult> UpdateLanguage(
         [FromBody] UpdateLanguageRequest request, CancellationToken cancellationToken)
     {
-        var userId = HttpContext.User.FindFirstValue("sub");
+        var userId = HttpContext.User.FindFirstValue(AppClaimTypes.Subject);
         if (string.IsNullOrEmpty(userId))
             return Unauthorized();
 
@@ -306,12 +307,12 @@ public class AuthController : BaseApiController
     {
         return Ok(new
         {
-            UserId = HttpContext.User.FindFirstValue("sub"),
-            Email = HttpContext.User.FindFirstValue("email"),
-            Name = HttpContext.User.FindFirstValue("name"),
-            Role = HttpContext.User.FindFirstValue("role"),
-            EmployeeId = HttpContext.User.FindFirstValue("employeeId"),
-            PhoneNumber = HttpContext.User.FindFirstValue("phone")
+            UserId = HttpContext.User.FindFirstValue(AppClaimTypes.Subject),
+            Email = HttpContext.User.FindFirstValue(AppClaimTypes.Email),
+            Name = HttpContext.User.FindFirstValue(AppClaimTypes.Name),
+            Role = HttpContext.User.FindFirstValue(AppClaimTypes.Role),
+            EmployeeId = HttpContext.User.FindFirstValue(AppClaimTypes.EmployeeId),
+            PhoneNumber = HttpContext.User.FindFirstValue(AppClaimTypes.PhoneNumber)
         });
     }
 }
