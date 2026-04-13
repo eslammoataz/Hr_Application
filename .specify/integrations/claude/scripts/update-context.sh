@@ -1,10 +1,14 @@
 #!/usr/bin/env bash
-# update-context.sh — Antigravity (agy) integration: create/update AGENTS.md
+# update-context.sh — Claude Code integration: create/update CLAUDE.md
 #
 # Thin wrapper that delegates to the shared update-agent-context script.
+# Activated in Stage 7 when the shared script uses integration.json dispatch.
+#
+# Until then, this delegates to the shared script as a subprocess.
 
 set -euo pipefail
 
+# Derive repo root from script location (walks up to find .specify/)
 _script_dir="$(cd "$(dirname "$0")" && pwd)"
 _root="$_script_dir"
 while [ "$_root" != "/" ] && [ ! -d "$_root/.specify" ]; do _root="$(dirname "$_root")"; done
@@ -21,4 +25,4 @@ if [ -z "${REPO_ROOT:-}" ]; then
   fi
 fi
 
-exec "$REPO_ROOT/.specify/scripts/bash/update-agent-context.sh" agy
+exec "$REPO_ROOT/.specify/scripts/bash/update-agent-context.sh" claude

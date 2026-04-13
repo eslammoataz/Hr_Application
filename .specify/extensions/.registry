@@ -14,10 +14,17 @@
           "speckit.git.remote",
           "speckit.git.initialize",
           "speckit.git.commit"
+        ],
+        "claude": [
+          "speckit.git.feature",
+          "speckit.git.validate",
+          "speckit.git.remote",
+          "speckit.git.initialize",
+          "speckit.git.commit"
         ]
       },
       "registered_skills": [],
-      "installed_at": "2026-04-11T16:53:36.187804+00:00"
+      "installed_at": "2026-04-13T00:03:37.138374+00:00"
     }
   }
 }
