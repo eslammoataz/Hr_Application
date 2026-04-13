@@ -73,4 +73,19 @@ public class Repository<T> : IRepository<T> where T : class
             ? await _dbSet.CountAsync(cancellationToken)
             : await _dbSet.CountAsync(predicate, cancellationToken);
     }
+
+    public async Task<T?> GetFirstOrDefaultAsync(
+     Expression<Func<T, bool>> predicate,
+     CancellationToken cancellationToken = default,
+     params Expression<Func<T, object>>[] includes)
+    {
+        IQueryable<T> query = _dbSet.Where(predicate);
+
+        if (includes != null && includes.Length > 0)
+        {
+            query = includes.Aggregate(query, (current, include) => current.Include(include));
+        }
+
+        return await query.FirstOrDefaultAsync(cancellationToken);
+    }
 }

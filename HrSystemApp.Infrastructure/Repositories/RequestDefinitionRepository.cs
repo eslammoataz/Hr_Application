@@ -36,4 +36,6 @@ public class RequestDefinitionRepository : Repository<RequestDefinition>, IReque
         return await _dbSet
             .AnyAsync(x => x.CompanyId == companyId && x.WorkflowSteps.Any(s => s.RequiredRole == role), ct);
     }
+
+
 }
