@@ -14,6 +14,7 @@ public class RequestConfiguration : IEntityTypeConfiguration<Request>
         // Specific data is stored in the Data (JSON) column.
 
         builder.HasKey(x => x.Id);
+        builder.HasQueryFilter(x => !x.IsDeleted);
 
         builder.Property(x => x.Details).HasMaxLength(2000);
         builder.Property(x => x.PlannedChainJson).HasMaxLength(4000);

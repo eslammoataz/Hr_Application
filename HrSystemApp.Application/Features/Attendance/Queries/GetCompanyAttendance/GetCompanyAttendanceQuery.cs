@@ -4,6 +4,7 @@ using HrSystemApp.Application.Errors;
 using HrSystemApp.Application.Interfaces;
 using HrSystemApp.Application.Interfaces.Services;
 using HrSystemApp.Domain.Enums;
+using Mapster;
 using MediatR;
 
 namespace HrSystemApp.Application.Features.Attendance.Queries.GetCompanyAttendance;
@@ -65,17 +66,7 @@ public class GetCompanyAttendanceQueryHandler
             request.PageSize,
             cancellationToken);
 
-        var items = paged.Items.Select(a => new AttendanceSummaryResponse(
-            a.EmployeeId,
-            a.Employee.FullName,
-            a.Date,
-            a.FirstClockInUtc,
-            a.LastClockOutUtc,
-            a.TotalHours,
-            a.Status.ToString(),
-            a.IsLate,
-            a.IsEarlyLeave,
-            a.Reason)).ToList();
+        var items = paged.Items.Adapt<List<AttendanceSummaryResponse>>();
 
         return Result.Success(PagedResult<AttendanceSummaryResponse>.Create(
             items, paged.PageNumber, paged.PageSize, paged.TotalCount));

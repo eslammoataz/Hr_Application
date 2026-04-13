@@ -34,6 +34,7 @@ public class TeamRepository : Repository<Team>, ITeamRepository
 
     public async Task<Team?> GetWithMembersAsync(Guid id, CancellationToken cancellationToken = default)
         => await _context.Teams
+            .AsNoTracking()
             .Include(t => t.TeamLeader)
             .Include(t => t.Members)
             .FirstOrDefaultAsync(t => t.Id == id && !t.IsDeleted, cancellationToken);

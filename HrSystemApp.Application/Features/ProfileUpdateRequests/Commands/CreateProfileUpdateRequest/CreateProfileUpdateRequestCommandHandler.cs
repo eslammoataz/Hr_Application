@@ -1,6 +1,7 @@
 using HrSystemApp.Application.Common;
 using HrSystemApp.Application.Errors;
 using HrSystemApp.Application.Interfaces;
+using HrSystemApp.Domain.Enums;
 using HrSystemApp.Domain.Models;
 using MediatR;
 using System.Text.Json;
@@ -32,7 +33,7 @@ public class CreateProfileUpdateRequestCommandHandler : IRequestHandler<CreatePr
         // Check for pending requests
         var hasPending =
             await _unitOfWork.ProfileUpdateRequests.ExistsAsync(
-                r => r.EmployeeId == employee.Id && r.Status == "Pending", cancellationToken);
+                r => r.EmployeeId == employee.Id && r.Status == ProfileUpdateRequestStatus.Pending, cancellationToken);
         if (hasPending)
             return Result.Failure(DomainErrors.ProfileUpdate.HasPending);
 
@@ -65,7 +66,7 @@ public class CreateProfileUpdateRequestCommandHandler : IRequestHandler<CreatePr
         {
             EmployeeId = employee.Id,
             ChangesJson = JsonSerializer.Serialize(changes),
-            Status = "Pending",
+            Status = ProfileUpdateRequestStatus.Pending,
             EmployeeComment = request.Dto.Comment,
             CreatedById = request.UserId
         };

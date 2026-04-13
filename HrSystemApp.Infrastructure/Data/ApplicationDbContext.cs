@@ -1,4 +1,4 @@
-using HrSystemApp.Domain.Common;
+using HrSystemApp.Domain.Common; // For IHardDelete
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using HrSystemApp.Domain.Models;

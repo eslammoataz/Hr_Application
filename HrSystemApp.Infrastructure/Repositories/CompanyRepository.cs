@@ -16,12 +16,12 @@ public class CompanyRepository : Repository<Company>, ICompanyRepository
     }
 
     public async Task<Company?> GetWithDetailsAsync(
-        Guid id, 
-        bool includeLocations = false, 
-        bool includeDepartments = false, 
+        Guid id,
+        bool includeLocations = false,
+        bool includeDepartments = false,
         CancellationToken cancellationToken = default)
     {
-        var query = _dbSet.AsQueryable();
+        var query = _dbSet.AsNoTracking();
 
         if (includeLocations) query = query.Include(c => c.Locations);
         if (includeDepartments) query = query.Include(c => c.Departments);
@@ -38,7 +38,7 @@ public class CompanyRepository : Repository<Company>, ICompanyRepository
         bool includeDepartments = false,
         CancellationToken cancellationToken = default)
     {
-        var query = _dbSet.AsQueryable();
+        var query = _dbSet.AsNoTracking();
 
         if (includeLocations) query = query.Include(c => c.Locations);
         if (includeDepartments) query = query.Include(c => c.Departments);

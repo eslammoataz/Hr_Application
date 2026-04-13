@@ -86,7 +86,6 @@ public class ClockInCommandHandler : IRequestHandler<ClockInCommand, Result<Atte
             AttendanceSummaryCalculator.ApplyClockIn(attendance, clockInUtc, rules.LateThresholdUtc);
             await _unitOfWork.Attendances.UpdateAsync(attendance, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
-
             await _unitOfWork.CommitTransactionAsync(cancellationToken);
 
             return Result.Success(new AttendanceResponse(
