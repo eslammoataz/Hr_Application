@@ -23,12 +23,15 @@ public static class SeedData
         var environment = serviceProvider.GetRequiredService<IHostEnvironment>();
         var logger = serviceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("SeedData"); // ← fix
 
+        var superAdminEmail = configuration.GetSection("SuperAdminSettings:Email").Value ?? "superadmin@hrms.com";
+        var superAdminPassword = configuration.GetSection("SuperAdminSettings:Password").Value ?? "SuperAdmin@123";
+
         await SeedRolesAsync(roleManager, logger);
-        await SeedSuperAdminAsync(userManager, configuration, logger);
+        await SeedSuperAdminAsync(userManager, superAdminEmail, superAdminPassword, logger);
 
         var company = await SeedCompanyAsync(context, logger);
         var location = await SeedLocationAsync(context, company, logger);
-        
+
         await SeedHierarchyPositionsAsync(context, company, logger);
         await SeedCompanyAdminAsync(userManager, configuration, context, company, location, logger);
         await SeedOrganizationalHierarchyAsync(userManager, configuration, context, company, location, logger);
@@ -37,11 +40,11 @@ public static class SeedData
         await HardenExistingAccountsAsync(context, logger);
 
         if (environment.IsDevelopment())
-            LogTestCredentials(logger, configuration);
+            LogSeededAccounts(logger, configuration, superAdminPassword);
     }
 
     // -------------------------------------------------------------------------
- 
+
     private static async Task SeedHierarchyPositionsAsync(
         ApplicationDbContext context,
         Company company,
@@ -49,7 +52,7 @@ public static class SeedData
     {
         if (await context.CompanyHierarchyPositions.AnyAsync(p => p.CompanyId == company.Id))
             return;
- 
+
         var positions = new[]
         {
             (Role: UserRole.CEO, Title: "Chief Executive Officer", Order: 1),
@@ -59,7 +62,7 @@ public static class SeedData
             (Role: UserRole.TeamLeader, Title: "Team Leader", Order: 5),
             (Role: UserRole.Employee, Title: "Employee", Order: 6)
         };
- 
+
         foreach (var p in positions)
         {
             context.CompanyHierarchyPositions.Add(new CompanyHierarchyPosition
@@ -71,11 +74,11 @@ public static class SeedData
                 SortOrder = p.Order
             });
         }
- 
+
         await context.SaveChangesAsync();
         logger.LogInformation("Hierarchy positions seeded for {Company}.", company.CompanyName);
     }
- 
+
     // -------------------------------------------------------------------------
 
     private static async Task SeedRolesAsync(
@@ -98,16 +101,10 @@ public static class SeedData
 
     private static async Task SeedSuperAdminAsync(
         UserManager<ApplicationUser> userManager,
-        IConfiguration configuration,
+        string email,
+        string password,
         ILogger logger)
     {
-        var settings = configuration
-            .GetSection("SuperAdminSettings")
-            .Get<SuperAdminSettings>() ?? new SuperAdminSettings();
-
-        var email = settings.Email.NullIfWhiteSpace() ?? "superadmin@hrms.com";
-        var password = settings.Password.NullIfWhiteSpace() ?? "SuperAdmin@123";
-
         var existing = await userManager.FindByEmailAsync(email);
         if (existing is null)
         {
@@ -143,13 +140,36 @@ public static class SeedData
 
     private static async Task HardenExistingAccountsAsync(ApplicationDbContext context, ILogger logger)
     {
+        var seededEmails = new[]
+        {
+            "superadmin@hrms.com",
+            "companyadmin@hrms.com",
+            "ceo@hrms.com",
+            "vp.eng@hrms.com",
+            "manager.eng@hrms.com",
+            "ul.softdev@hrms.com",
+            "tl.backend@hrms.com",
+            "dev.charlie@hrms.com",
+            "vp.mark@hrms.com",
+            "manager.mark@hrms.com",
+            "ul.content@hrms.com",
+            "tl.social@hrms.com",
+            "emp.fiona@hrms.com",
+            "ul.digital@hrms.com",
+            "tl.search@hrms.com",
+            "emp.harvey@hrms.com",
+            "ul.brand@hrms.com",
+            "tl.visual@hrms.com",
+            "emp.jack@hrms.com"
+        };
+
         var count = await context.Users
-            .Where(u => !u.MustChangePassword && u.UserName != "superadmin@hrms.com")
+            .Where(u => !u.MustChangePassword && !seededEmails.Contains(u.UserName!))
             .ExecuteUpdateAsync(s => s.SetProperty(u => u.MustChangePassword, true));
 
         if (count > 0)
         {
-            logger.LogInformation("Security Hardening: {Count} accounts flagged for mandatory password reset.", count);
+            logger.LogInformation("Security Hardening: {Count} legacy accounts flagged for mandatory password reset.", count);
         }
     }
 
@@ -300,7 +320,7 @@ public static class SeedData
         // 4. Engineering Manager (Reports to VP)
         var engManager = await CreateHierarchyUserAsync(userManager, configuration, context, company, location, engineering.Id, null, null, vp?.Id,
             "Robert Brown", UserRole.DepartmentManager.ToString(), "manager.eng@hrms.com", "3333333333", logger);
-        
+
         engineering.ManagerId = engManager?.Id;
         await context.SaveChangesAsync();
 
@@ -342,7 +362,7 @@ public static class SeedData
         // =========================================================================
         // DEPARTMENT 2: CREATIVE & MARKETING (3 UNITS)
         // =========================================================================
-        
+
         // 1. Marketing VP (Reports to CEO)
         var vpMark = await CreateHierarchyUserAsync(userManager, configuration, context, company, location, null, null, null, ceo.Id,
             "Mark Stevens", UserRole.VicePresident.ToString(), "vp.mark@hrms.com", "7711111111", logger);
@@ -360,7 +380,7 @@ public static class SeedData
         // 3. Marketing Manager (Reports to VP)
         var markManager = await CreateHierarchyUserAsync(userManager, configuration, context, company, location, marketing.Id, null, null, vpMark?.Id,
             "Sarah Parker", UserRole.DepartmentManager.ToString(), "manager.mark@hrms.com", "7722222222", logger);
-        
+
         marketing.ManagerId = markManager?.Id;
         await context.SaveChangesAsync();
 
@@ -509,10 +529,11 @@ public static class SeedData
             PhoneNumber = phone,
             EmailConfirmed = true,
             IsActive = true,
+            MustChangePassword = false,
             EmployeeId = employee.Id
         };
 
-        var seedPassword = configuration["SeedPasswordSettings"] ?? "Pass@123";
+        var seedPassword = configuration["SeedPasswordSettings"] ?? "Pass@123456";
         var result = await userManager.CreateAsync(user, seedPassword);
         if (!result.Succeeded)
         {
@@ -529,12 +550,42 @@ public static class SeedData
 
 
     // -------------------------------------------------------------------------
-    private static void LogTestCredentials(ILogger logger, IConfiguration configuration)
+    private static void LogSeededAccounts(ILogger logger, IConfiguration configuration, string superAdminPassword)
     {
-        logger.LogInformation("================== TEST CREDENTIALS (HIERARCHY) ==================");
-        logger.LogInformation("Credentials are now managed via configuration (SeedPasswordSettings).");
-        logger.LogInformation("Please check your appsettings.json or environment variables for access.");
-        logger.LogInformation("==================================================================");
+        var seedPassword = configuration["SeedPasswordSettings"] ?? "Pass@123456";
+
+        logger.LogInformation("============================================================");
+        logger.LogInformation("              SEEDED ACCOUNTS SUMMARY");
+        logger.LogInformation("============================================================");
+        logger.LogInformation("{Role,-20} {Email,-35} {Password}", "Role", "Email", "Password");
+
+        var accounts = new[]
+        {
+            ("SuperAdmin",        "superadmin@hrms.com",      superAdminPassword),
+            ("CompanyAdmin",      "companyadmin@hrms.com",    seedPassword),
+            ("CEO",               "ceo@hrms.com",             seedPassword),
+            ("VicePresident",     "vp.eng@hrms.com",          seedPassword),
+            ("DepartmentManager", "manager.eng@hrms.com",     seedPassword),
+            ("UnitLeader",        "ul.softdev@hrms.com",      seedPassword),
+            ("TeamLeader",        "tl.backend@hrms.com",       seedPassword),
+            ("Employee",          "dev.charlie@hrms.com",      seedPassword),
+            ("VicePresident",     "vp.mark@hrms.com",          seedPassword),
+            ("DepartmentManager", "manager.mark@hrms.com",     seedPassword),
+            ("UnitLeader",        "ul.content@hrms.com",       seedPassword),
+            ("TeamLeader",        "tl.social@hrms.com",        seedPassword),
+            ("Employee",          "emp.fiona@hrms.com",        seedPassword),
+            ("UnitLeader",        "ul.digital@hrms.com",       seedPassword),
+            ("TeamLeader",        "tl.search@hrms.com",        seedPassword),
+            ("Employee",          "emp.harvey@hrms.com",       seedPassword),
+            ("UnitLeader",        "ul.brand@hrms.com",        seedPassword),
+            ("TeamLeader",        "tl.visual@hrms.com",        seedPassword),
+            ("Employee",          "emp.jack@hrms.com",         seedPassword),
+        };
+
+        foreach (var (role, email, pwd) in accounts)
+            logger.LogInformation("{Role,-20} {Email,-35} {Password}", role, email, pwd);
+
+        logger.LogInformation("============================================================");
     }
 
 
