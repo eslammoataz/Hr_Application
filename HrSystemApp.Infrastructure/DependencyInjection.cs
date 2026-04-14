@@ -80,6 +80,9 @@ public static class DependencyInjection
         services.AddScoped<IAttendanceLogRepository, AttendanceLogRepository>();
         services.AddScoped<IAttendanceReminderLogRepository, AttendanceReminderLogRepository>();
         services.AddScoped<IAttendanceAdjustmentRepository, AttendanceAdjustmentRepository>();
+        services.AddScoped<IOrgNodeRepository, OrgNodeRepository>();
+        services.AddScoped<IHierarchyLevelRepository, HierarchyLevelRepository>();
+        services.AddScoped<IOrgNodeAssignmentRepository, OrgNodeAssignmentRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         services.Configure<EmailSettings>(configuration.GetSection("EmailSettings"));

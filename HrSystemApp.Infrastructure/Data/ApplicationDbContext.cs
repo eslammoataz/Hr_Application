@@ -36,6 +36,9 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<ProfileUpdateRequest> ProfileUpdateRequests { get; set; } = null!;
     public DbSet<RequestDefinition> RequestDefinitions { get; set; } = null!;
     public DbSet<Request> Requests { get; set; } = null!;
+    public DbSet<OrgNode> OrgNodes { get; set; } = null!;
+    public DbSet<HierarchyLevel> HierarchyLevels { get; set; } = null!;
+    public DbSet<OrgNodeAssignment> OrgNodeAssignments { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
