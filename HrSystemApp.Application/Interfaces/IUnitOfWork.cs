@@ -26,7 +26,6 @@ public interface IUnitOfWork : IAsyncDisposable
     IAttendanceReminderLogRepository AttendanceReminderLogs { get; }
     IAttendanceAdjustmentRepository AttendanceAdjustments { get; }
     IOrgNodeRepository OrgNodes { get; }
-    IHierarchyLevelRepository HierarchyLevels { get; }
     IOrgNodeAssignmentRepository OrgNodeAssignments { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);

@@ -8,4 +8,5 @@ public record GetOrgNodeTreeQuery : IRequest<Result<List<OrgNodeTreeResponse>>>
 {
     public Guid? ParentId { get; set; }
     public int? Depth { get; set; }
+    public string? Type { get; set; }
 }

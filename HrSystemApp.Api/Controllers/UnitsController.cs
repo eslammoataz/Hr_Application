@@ -39,7 +39,7 @@ public class UnitsController : BaseApiController
 
     /// <summary>Create a new unit.</summary>
     [HttpPost]
-    [Authorize(Roles = Roles.UnitManagers)]
+    [Authorize(Roles = Roles.HrOrAbove)]
     public async Task<IActionResult> Create([FromBody] CreateUnitRequest request, CancellationToken cancellationToken)
     {
         var command = new CreateUnitCommand(
@@ -50,7 +50,7 @@ public class UnitsController : BaseApiController
 
     /// <summary>Update an existing unit.</summary>
     [HttpPut("{id:guid}")]
-    [Authorize(Roles = Roles.UnitManagers)]
+    [Authorize(Roles = Roles.HrOrAbove)]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateUnitRequest request, CancellationToken cancellationToken)
     {
         var command = new UpdateUnitCommand(id, request.Name, request.Description, request.UnitLeaderId);
@@ -60,7 +60,7 @@ public class UnitsController : BaseApiController
 
     /// <summary>Soft-delete a unit.</summary>
     [HttpDelete("{id:guid}")]
-    [Authorize(Roles = Roles.CeoOrAbove)]
+    [Authorize(Roles = Roles.ExecutiveOrAbove)]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
         var result = await _sender.Send(new DeleteUnitCommand(id), cancellationToken);

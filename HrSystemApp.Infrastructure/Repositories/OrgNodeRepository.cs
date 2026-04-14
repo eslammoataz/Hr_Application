@@ -1,5 +1,4 @@
 using HrSystemApp.Application.Interfaces.Repositories;
-using HrSystemApp.Domain.Enums;
 using HrSystemApp.Domain.Models;
 using HrSystemApp.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -14,14 +13,7 @@ public class OrgNodeRepository : Repository<OrgNode>, IOrgNodeRepository
         => await _context.OrgNodes
             .AsNoTracking()
             .Where(n => n.ParentId == parentId)
-            .Include(n => n.Level)
             .Include(n => n.Assignments).ThenInclude(a => a.Employee)
-            .ToListAsync(ct);
-
-    public async Task<IReadOnlyList<OrgNode>> GetByEntityAsync(Guid entityId, OrgEntityType type, CancellationToken ct)
-        => await _context.OrgNodes
-            .AsNoTracking()
-            .Where(n => n.EntityId == entityId && n.EntityType == type)
             .ToListAsync(ct);
 
     public async Task<IReadOnlyList<OrgNode>> GetDescendantsAsync(Guid nodeId, CancellationToken ct)
@@ -44,7 +36,6 @@ public class OrgNodeRepository : Repository<OrgNode>, IOrgNodeRepository
                 descendants.AddRange(await _context.OrgNodes
                     .AsNoTracking()
                     .Where(n => n.Id == childId)
-                    .Include(n => n.Assignments)
                     .ToListAsync(ct));
                 toProcess.Enqueue(childId);
             }
@@ -76,11 +67,6 @@ public class OrgNodeRepository : Repository<OrgNode>, IOrgNodeRepository
         return false;
     }
 
-    public async Task<bool> IsLinkedToEntityAsync(Guid entityId, OrgEntityType type, CancellationToken ct)
-        => await _context.OrgNodes
-            .AsNoTracking()
-            .AnyAsync(n => n.EntityId == entityId && n.EntityType == type, ct);
-
     public async Task<int> GetChildCountAsync(Guid? parentId, CancellationToken ct)
         => await _context.OrgNodes.CountAsync(n => n.ParentId == parentId, ct);
 
@@ -89,14 +75,12 @@ public class OrgNodeRepository : Repository<OrgNode>, IOrgNodeRepository
             .AsNoTracking()
             .Include(n => n.Children)
             .Include(n => n.Assignments).ThenInclude(a => a.Employee)
-            .Include(n => n.Level)
             .FirstOrDefaultAsync(n => n.Id == id, ct);
 
     public async Task<IReadOnlyList<OrgNode>> GetRootNodesAsync(CancellationToken ct)
         => await _context.OrgNodes
             .AsNoTracking()
             .Where(n => n.ParentId == null)
-            .Include(n => n.Level)
             .Include(n => n.Assignments).ThenInclude(a => a.Employee)
             .ToListAsync(ct);
 }

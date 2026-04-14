@@ -39,6 +39,13 @@ public class GetOrgNodeTreeQueryHandler : IRequestHandler<GetOrgNodeTreeQuery, R
             ? await _unitOfWork.OrgNodes.GetChildrenAsync(request.ParentId, cancellationToken)
             : await _unitOfWork.OrgNodes.GetRootNodesAsync(cancellationToken);
 
+        // Filter by Type if provided
+        if (!string.IsNullOrWhiteSpace(request.Type))
+        {
+            var normalizedType = request.Type.Trim().ToLower();
+            startNodes = startNodes.Where(n => n.Type == normalizedType).ToList();
+        }
+
         var result = new List<OrgNodeTreeResponse>();
         await BuildTreeAsync(startNodes, depth - 1, result, cancellationToken);
 
@@ -69,12 +76,9 @@ public class GetOrgNodeTreeQueryHandler : IRequestHandler<GetOrgNodeTreeQuery, R
             var response = new OrgNodeTreeResponse(
                 node.Id,
                 node.Name,
-                node.LevelId,
-                node.Level?.Name,
                 childCount > 0,
                 new List<OrgNodeTreeResponse>(),
-                node.EntityId,
-                node.EntityType,
+                node.Type,
                 assignmentResponses);
 
             // If remainingDepth > 0, recursively load children

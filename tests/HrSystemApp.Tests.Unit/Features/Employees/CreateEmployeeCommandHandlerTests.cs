@@ -236,60 +236,23 @@ public class CreateEmployeeCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_WhenCreatingTeamLeader_UpdatesTeamAndDemotesOldLeader()
+    public async Task Handle_WhenCreatingEmployee_CallsAssignLeadershipIfNeeded()
     {
         var companyId = Guid.NewGuid();
         var departmentId = Guid.NewGuid();
-        var unitId = Guid.NewGuid();
-        var teamId = Guid.NewGuid();
-        var oldLeaderEmployeeId = Guid.NewGuid();
 
         var unitOfWork = BuildBaseCreateEmployeeUnitOfWork(companyId);
-        var teamsRepo = Mock.Get(unitOfWork.Object.Teams);
-        var unitsRepo = Mock.Get(unitOfWork.Object.Units);
         var departmentsRepo = Mock.Get(unitOfWork.Object.Departments);
-        var usersRepo = Mock.Get(unitOfWork.Object.Users);
-        var employeesRepo = Mock.Get(unitOfWork.Object.Employees);
         var placementService = new Mock<IEmployeePlacementService>();
 
-        var team = new Team
-        {
-            Id = teamId,
-            UnitId = unitId,
-            Name = "Team A",
-            TeamLeaderId = oldLeaderEmployeeId
-        };
-
-        teamsRepo
-            .Setup(x => x.GetByIdAsync(teamId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(team);
-        unitsRepo
-            .Setup(x => x.GetByIdAsync(unitId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new DomainUnit { Id = unitId, DepartmentId = departmentId, Name = "Unit A" });
         departmentsRepo
             .Setup(x => x.GetByIdAsync(departmentId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new Department { Id = departmentId, CompanyId = companyId, Name = "Dept A" });
-
-        var oldLeaderUser = new ApplicationUser { Id = "old-user-id", EmployeeId = oldLeaderEmployeeId };
-        var usersInStore = new List<ApplicationUser> { oldLeaderUser };
-        usersRepo
-            .Setup(x => x.FindAsync(It.IsAny<System.Linq.Expressions.Expression<Func<ApplicationUser, bool>>>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((System.Linq.Expressions.Expression<Func<ApplicationUser, bool>> expr, CancellationToken _) =>
-                usersInStore.Where(expr.Compile()).ToList());
-
-        usersRepo
-            .Setup(x => x.RemoveFromRoleAsync(oldLeaderUser, UserRole.TeamLeader.ToString(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(true);
-        usersRepo
-            .Setup(x => x.AddToRoleAsync(oldLeaderUser, UserRole.Employee.ToString(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(true);
-
         placementService
-            .Setup(x => x.ResolvePlacementAsync(companyId, departmentId, unitId, teamId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Result.Success<(Guid?, Guid?, Guid?)>((departmentId, unitId, teamId)));
-
+            .Setup(x => x.ResolvePlacementAsync(companyId, departmentId, It.IsAny<Guid?>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result.Success<(Guid?, Guid?, Guid?)>((departmentId, null, null)));
         placementService
-            .Setup(x => x.AssignLeadershipIfNeededAsync(It.IsAny<Employee>(), UserRole.TeamLeader, It.IsAny<CancellationToken>()))
+            .Setup(x => x.AssignLeadershipIfNeededAsync(It.IsAny<Employee>(), UserRole.Employee, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
 
         var sut = new CreateEmployeeCommandHandler(unitOfWork.Object, placementService.Object);
@@ -298,16 +261,16 @@ public class CreateEmployeeCommandHandlerTests
             "jane@acme.com",
             "01234567890",
             companyId,
-            UserRole.TeamLeader,
+            UserRole.Employee,
             departmentId,
-            unitId,
-            teamId);
+            null,
+            null);
 
         var result = await sut.Handle(command, CancellationToken.None);
 
         result.IsSuccess.Should().BeTrue();
         placementService.Verify(
-            x => x.AssignLeadershipIfNeededAsync(It.IsAny<Employee>(), UserRole.TeamLeader, It.IsAny<CancellationToken>()),
+            x => x.AssignLeadershipIfNeededAsync(It.IsAny<Employee>(), UserRole.Employee, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 

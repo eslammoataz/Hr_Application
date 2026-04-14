@@ -204,7 +204,7 @@ public class EmployeesEndpointTests : IAsyncLifetime
         await _fixture.SeedEmployeeAsync(companyA, "scope-user-a", "Scoped User A", "a@scope.corp");
         await _fixture.SeedEmployeeAsync(companyB, "scope-user-b", "Scoped User B", "b@scope.corp");
 
-        using var client = _fixture.CreateAuthenticatedClient("company-admin-user", Roles.CompanyAdmin, companyA);
+        using var client = _fixture.CreateAuthenticatedClient("company-admin-user", Roles.Executive, companyA);
         var response = await client.GetAsync($"/api/employees?companyId={companyB}&page=1&pageSize=20");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);

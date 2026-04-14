@@ -26,20 +26,5 @@ public class CreateEmployeeCommandValidator : AbstractValidator<CreateEmployeeCo
         RuleFor(x => x.Role)
             .IsInEnum().WithMessage(Messages.Validation.InvalidRole)
             .NotEqual(UserRole.SuperAdmin).WithMessage(Messages.Validation.CannotAssignSuperAdmin);
-
-        RuleFor(x => x.TeamId)
-            .NotEmpty()
-            .When(x => x.Role == UserRole.TeamLeader)
-            .WithMessage(Messages.Validation.TeamIdRequiredForTeamLeader);
-
-        RuleFor(x => x.UnitId)
-            .NotEmpty()
-            .When(x => x.Role == UserRole.UnitLeader)
-            .WithMessage(Messages.Validation.UnitIdRequiredForUnitLeader);
-
-        RuleFor(x => x.DepartmentId)
-            .NotEmpty()
-            .When(x => x.Role == UserRole.DepartmentManager || x.Role == UserRole.VicePresident)
-            .WithMessage(Messages.Validation.DepartmentIdRequired);
     }
 }

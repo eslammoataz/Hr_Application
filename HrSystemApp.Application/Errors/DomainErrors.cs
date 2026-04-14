@@ -375,9 +375,6 @@ public static class DomainErrors
         public static readonly Error NotFound = new(
             "OrgNode.NotFound", "The requested organization node was not found.");
 
-        public static readonly Error DuplicateEntityLink = new(
-            "OrgNode.DuplicateEntityLink", "This entity is already linked to another node.");
-
         public static readonly Error CircularReference = new(
             "OrgNode.CircularReference", "Cannot create a circular hierarchy reference.");
 
@@ -386,20 +383,5 @@ public static class DomainErrors
 
         public static readonly Error AssignmentNotFound = new(
             "OrgNode.AssignmentNotFound", "Assignment not found.");
-
-        public static readonly Error CannotReparentWithDescendants = new(
-            "OrgNode.CannotReparentWithDescendants", "Cannot delete node with children in the current mode.");
-    }
-
-    public static class HierarchyLevel
-    {
-        public static readonly Error NotFound = new(
-            "HierarchyLevel.NotFound", "The hierarchy level was not found.");
-
-        public static readonly Error DuplicateName = new(
-            "HierarchyLevel.DuplicateName", "A level with this name already exists.");
-
-        public static readonly Error HasAssignedNodes = new(
-            "HierarchyLevel.HasAssignedNodes", "Cannot delete a level that has assigned nodes.");
     }
 }

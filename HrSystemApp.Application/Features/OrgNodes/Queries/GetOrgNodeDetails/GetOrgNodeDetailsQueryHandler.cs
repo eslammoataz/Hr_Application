@@ -3,7 +3,6 @@ using HrSystemApp.Application.DTOs.OrgNodes;
 using HrSystemApp.Application.Errors;
 using HrSystemApp.Application.Interfaces;
 using HrSystemApp.Application.Interfaces.Services;
-using HrSystemApp.Domain.Enums;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -44,19 +43,6 @@ public class GetOrgNodeDetailsQueryHandler : IRequestHandler<GetOrgNodeDetailsQu
             parentName = parent?.Name;
         }
 
-        // Get linked entity name
-        string? linkedEntityName = null;
-        if (node.EntityId.HasValue && node.EntityType.HasValue)
-        {
-            linkedEntityName = node.EntityType switch
-            {
-                OrgEntityType.Department => (await _unitOfWork.Departments.GetByIdAsync(node.EntityId.Value, cancellationToken))?.Name,
-                OrgEntityType.Unit => (await _unitOfWork.Units.GetByIdAsync(node.EntityId.Value, cancellationToken))?.Name,
-                OrgEntityType.Team => (await _unitOfWork.Teams.GetByIdAsync(node.EntityId.Value, cancellationToken))?.Name,
-                _ => null
-            };
-        }
-
         // Get assignments
         var assignments = await _unitOfWork.OrgNodeAssignments.GetByNodeAsync(node.Id, cancellationToken);
         var assignmentResponses = assignments.Select(a => new OrgNodeAssignmentResponse(
@@ -73,8 +59,7 @@ public class GetOrgNodeDetailsQueryHandler : IRequestHandler<GetOrgNodeDetailsQu
         var childResponses = children.Select(c => new OrgNodeChildResponse(
             c.Id,
             c.Name,
-            c.LevelId,
-            c.Level?.Name
+            c.Type
         )).ToList();
 
         var response = new OrgNodeDetailsResponse(
@@ -82,11 +67,7 @@ public class GetOrgNodeDetailsQueryHandler : IRequestHandler<GetOrgNodeDetailsQu
             node.Name,
             node.ParentId,
             parentName,
-            node.LevelId,
-            node.Level?.Name,
-            node.EntityId,
-            node.EntityType,
-            linkedEntityName,
+            node.Type,
             assignmentResponses,
             childResponses
         );

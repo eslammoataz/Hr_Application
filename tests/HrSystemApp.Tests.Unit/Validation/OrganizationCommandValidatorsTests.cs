@@ -64,42 +64,6 @@ public class OrganizationCommandValidatorsTests
     }
 
     [Fact]
-    public void CreateEmployee_TeamLeaderWithoutTeamId_ShouldFail()
-    {
-        var validator = new CreateEmployeeCommandValidator();
-        var command = new CreateEmployeeCommand("Emp Name", "emp@corp.com", "01234567890", Guid.NewGuid(), UserRole.TeamLeader);
-
-        var result = validator.Validate(command);
-
-        result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(x => x.PropertyName == "TeamId");
-    }
-
-    [Fact]
-    public void CreateEmployee_UnitLeaderWithoutUnitId_ShouldFail()
-    {
-        var validator = new CreateEmployeeCommandValidator();
-        var command = new CreateEmployeeCommand("Emp Name", "emp@corp.com", "01234567890", Guid.NewGuid(), UserRole.UnitLeader);
-
-        var result = validator.Validate(command);
-
-        result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(x => x.PropertyName == "UnitId");
-    }
-
-    [Fact]
-    public void CreateEmployee_VicePresidentWithoutDepartmentId_ShouldFail()
-    {
-        var validator = new CreateEmployeeCommandValidator();
-        var command = new CreateEmployeeCommand("Emp Name", "emp@corp.com", "01234567890", Guid.NewGuid(), UserRole.VicePresident);
-
-        var result = validator.Validate(command);
-
-        result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(x => x.PropertyName == "DepartmentId");
-    }
-
-    [Fact]
     public void CreateTeam_EmptyUnitId_ShouldFail()
     {
         var validator = new CreateTeamCommandValidator();

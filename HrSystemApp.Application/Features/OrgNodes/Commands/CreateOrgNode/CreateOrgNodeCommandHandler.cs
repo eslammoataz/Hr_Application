@@ -3,7 +3,6 @@ using HrSystemApp.Application.DTOs.OrgNodes;
 using HrSystemApp.Application.Errors;
 using HrSystemApp.Application.Interfaces;
 using HrSystemApp.Application.Interfaces.Services;
-using HrSystemApp.Domain.Enums;
 using HrSystemApp.Domain.Models;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -30,7 +29,7 @@ public class CreateOrgNodeCommandHandler : IRequestHandler<CreateOrgNodeCommand,
     {
         _logger.LogInformation("Attempting to create OrgNode: {Name}", request.Name);
 
-        // 1. Validate parent exists if provided
+        // Validate parent exists if provided
         if (request.ParentId.HasValue)
         {
             var parent = await _unitOfWork.OrgNodes.GetByIdAsync(request.ParentId.Value, cancellationToken);
@@ -41,38 +40,12 @@ public class CreateOrgNodeCommandHandler : IRequestHandler<CreateOrgNodeCommand,
             }
         }
 
-        // 2. Validate level exists if provided
-        if (request.LevelId.HasValue)
-        {
-            var level = await _unitOfWork.HierarchyLevels.GetByIdAsync(request.LevelId.Value, cancellationToken);
-            if (level == null)
-            {
-                _logger.LogWarning("CreateOrgNode failed: HierarchyLevel {LevelId} not found.", request.LevelId);
-                return Result.Failure<Guid>(DomainErrors.HierarchyLevel.NotFound);
-            }
-        }
-
-        // 3. Validate entity is not already linked to another node
-        if (request.EntityId.HasValue && request.EntityType.HasValue)
-        {
-            var isLinked = await _unitOfWork.OrgNodes.IsLinkedToEntityAsync(
-                request.EntityId.Value, request.EntityType.Value, cancellationToken);
-            if (isLinked)
-            {
-                _logger.LogWarning("CreateOrgNode failed: Entity {EntityId} ({EntityType}) is already linked.",
-                    request.EntityId, request.EntityType);
-                return Result.Failure<Guid>(DomainErrors.OrgNode.DuplicateEntityLink);
-            }
-        }
-
-        // 4. Create the node
+        // Create the node
         var node = new OrgNode
         {
             Name = request.Name,
             ParentId = request.ParentId,
-            LevelId = request.LevelId,
-            EntityId = request.EntityId,
-            EntityType = request.EntityType
+            Type = request.Type?.Trim().ToLower()
         };
 
         await _unitOfWork.OrgNodes.AddAsync(node, cancellationToken);

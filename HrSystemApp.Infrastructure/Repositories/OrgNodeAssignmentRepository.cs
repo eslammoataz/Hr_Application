@@ -11,19 +11,22 @@ public class OrgNodeAssignmentRepository : Repository<OrgNodeAssignment>, IOrgNo
 
     public async Task<bool> ExistsAsync(Guid orgNodeId, Guid employeeId, CancellationToken ct)
         => await _context.OrgNodeAssignments
-            .AsNoTracking()
-            .AnyAsync(a => a.OrgNodeId == orgNodeId && a.EmployeeId == employeeId, ct);
+            .AnyAsync(a => a.OrgNodeId == orgNodeId && a.EmployeeId == employeeId && !a.IsDeleted, ct);
 
     public async Task<IReadOnlyList<OrgNodeAssignment>> GetByNodeAsync(Guid orgNodeId, CancellationToken ct)
         => await _context.OrgNodeAssignments
-            .AsNoTracking()
-            .Where(a => a.OrgNodeId == orgNodeId)
+            .Where(a => a.OrgNodeId == orgNodeId && !a.IsDeleted)
             .Include(a => a.Employee)
             .ToListAsync(ct);
 
     public async Task<OrgNodeAssignment?> GetByNodeAndEmployeeAsync(Guid orgNodeId, Guid employeeId, CancellationToken ct)
         => await _context.OrgNodeAssignments
-            .AsNoTracking()
-            .Where(a => a.OrgNodeId == orgNodeId && a.EmployeeId == employeeId)
+            .Where(a => a.OrgNodeId == orgNodeId && a.EmployeeId == employeeId && !a.IsDeleted)
             .FirstOrDefaultAsync(ct);
+
+    public async Task<IReadOnlyList<OrgNodeAssignment>> GetByEmployeeAsync(Guid employeeId, CancellationToken ct)
+        => await _context.OrgNodeAssignments
+            .Where(a => a.EmployeeId == employeeId && !a.IsDeleted)
+            .Include(a => a.OrgNode).ThenInclude(n => n.Parent)
+            .ToListAsync(ct);
 }

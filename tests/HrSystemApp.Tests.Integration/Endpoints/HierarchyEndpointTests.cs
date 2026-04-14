@@ -46,18 +46,18 @@ public class HierarchyEndpointTests : IAsyncLifetime
 
         await _fixture.SeedHierarchyPositionsAsync(
             companyId,
-            (UserRole.CEO, "CEO", 1),
-            (UserRole.VicePresident, "VP", 2),
-            (UserRole.DepartmentManager, "Department Manager", 3),
-            (UserRole.UnitLeader, "Unit Leader", 4),
-            (UserRole.TeamLeader, "Team Leader", 5),
+            (UserRole.Executive, "CEO", 1),
+            (UserRole.Executive, "VP", 2),
+            (UserRole.HR, "Department Manager", 3),
+            (UserRole.Employee, "Unit Leader", 4),
+            (UserRole.Employee, "Team Leader", 5),
             (UserRole.Employee, "Employee", 6));
 
         await _fixture.SeedEmployeeWithOrgAsync(companyId, "viewer-user", "Viewer User", "viewer@corp.com");
         await _fixture.AssignRoleToUserAsync("viewer-user", Roles.HR);
 
         var ceoId = await _fixture.SeedEmployeeWithOrgAsync(companyId, "ceo-user", "CEO User", "ceo@corp.com");
-        await _fixture.AssignRoleToUserAsync("ceo-user", Roles.CEO);
+        await _fixture.AssignRoleToUserAsync("ceo-user", Roles.Executive);
 
         var vp1Id = await _fixture.SeedEmployeeWithOrgAsync(companyId, "vp1-user", "VP One", "vp1@corp.com");
         var vp2Id = await _fixture.SeedEmployeeWithOrgAsync(companyId, "vp2-user", "VP Two", "vp2@corp.com");
@@ -85,14 +85,14 @@ public class HierarchyEndpointTests : IAsyncLifetime
         await _fixture.SeedEmployeeWithOrgAsync(companyId, "team-emp-b", "Team Member B", "b@corp.com", dep2Id, unit2Id, team2Id);
 
         // Assign Roles to actors (CRITICAL for new role-based DTO mapping)
-        await _fixture.AssignRoleToUserAsync("vp1-user", Roles.VicePresident);
-        await _fixture.AssignRoleToUserAsync("vp2-user", Roles.VicePresident);
-        await _fixture.AssignRoleToUserAsync("mgr1-user", Roles.DepartmentManager);
-        await _fixture.AssignRoleToUserAsync("mgr2-user", Roles.DepartmentManager);
-        await _fixture.AssignRoleToUserAsync("ul1-user", Roles.UnitLeader);
-        await _fixture.AssignRoleToUserAsync("ul2-user", Roles.UnitLeader);
-        await _fixture.AssignRoleToUserAsync("tl1-user", Roles.TeamLeader);
-        await _fixture.AssignRoleToUserAsync("tl2-user", Roles.TeamLeader);
+        await _fixture.AssignRoleToUserAsync("vp1-user", Roles.Executive);
+        await _fixture.AssignRoleToUserAsync("vp2-user", Roles.Executive);
+        await _fixture.AssignRoleToUserAsync("mgr1-user", Roles.HR);
+        await _fixture.AssignRoleToUserAsync("mgr2-user", Roles.HR);
+        await _fixture.AssignRoleToUserAsync("ul1-user", Roles.Employee);
+        await _fixture.AssignRoleToUserAsync("ul2-user", Roles.Employee);
+        await _fixture.AssignRoleToUserAsync("tl1-user", Roles.Employee);
+        await _fixture.AssignRoleToUserAsync("tl2-user", Roles.Employee);
         await _fixture.AssignRoleToUserAsync("unit-emp-user", Roles.Employee);
         await _fixture.AssignRoleToUserAsync("team-emp-a", Roles.Employee);
         await _fixture.AssignRoleToUserAsync("team-emp-b", Roles.Employee);
@@ -282,19 +282,19 @@ public class HierarchyEndpointTests : IAsyncLifetime
 
         await _fixture.SeedHierarchyPositionsAsync(
             companyId,
-            (UserRole.CEO, "CEO", 1),
-            (UserRole.VicePresident, "VP", 2),
-            (UserRole.DepartmentManager, "Department Manager", 3),
-            (UserRole.UnitLeader, "Unit Leader", 4));
+            (UserRole.Executive, "CEO", 1),
+            (UserRole.Executive, "VP", 2),
+            (UserRole.HR, "Department Manager", 3),
+            (UserRole.Employee, "Unit Leader", 4));
 
         await _fixture.SeedEmployeeWithOrgAsync(companyId, "viewer-empty", "Viewer Empty", "viewer.empty@corp.com");
         await _fixture.AssignRoleToUserAsync("viewer-empty", Roles.HR);
 
         await _fixture.SeedEmployeeWithOrgAsync(companyId, "ceo-empty", "CEO Empty", "ceo.empty@corp.com");
-        await _fixture.AssignRoleToUserAsync("ceo-empty", Roles.CEO);
+        await _fixture.AssignRoleToUserAsync("ceo-empty", Roles.Executive);
 
         var vpId = await _fixture.SeedEmployeeWithOrgAsync(companyId, "vp-empty", "VP Empty", "vp.empty@corp.com");
-        await _fixture.AssignRoleToUserAsync("vp-empty", Roles.VicePresident);
+        await _fixture.AssignRoleToUserAsync("vp-empty", Roles.Executive);
         await _fixture.SeedDepartmentAsync(companyId, "No Manager Department", vpId, null);
 
         // Link CEO to VP

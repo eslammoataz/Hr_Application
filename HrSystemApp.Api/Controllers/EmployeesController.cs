@@ -108,7 +108,7 @@ public class EmployeesController : BaseApiController
 
     /// <summary>Assign employee to a team.</summary>
     [HttpPut("{id:guid}/assign-team")]
-    [Authorize(Roles = Roles.UnitManagers)]
+    [Authorize(Roles = Roles.HrOrAbove)]
     public async Task<IActionResult> AssignToTeam(Guid id, [FromBody] AssignEmployeeToTeamRequest request,
         CancellationToken cancellationToken)
     {

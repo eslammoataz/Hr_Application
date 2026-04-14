@@ -39,7 +39,7 @@ public class TeamsController : BaseApiController
 
     /// <summary>Create a new team.</summary>
     [HttpPost]
-    [Authorize(Roles = Roles.TeamManagers)]
+    [Authorize(Roles = Roles.HrOrAbove)]
     public async Task<IActionResult> Create([FromBody] CreateTeamRequest request, CancellationToken cancellationToken)
     {
         var command = new CreateTeamCommand(
@@ -50,7 +50,7 @@ public class TeamsController : BaseApiController
 
     /// <summary>Update an existing team.</summary>
     [HttpPut("{id:guid}")]
-    [Authorize(Roles = Roles.TeamManagers)]
+    [Authorize(Roles = Roles.HrOrAbove)]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateTeamRequest request, CancellationToken cancellationToken)
     {
         var command = new UpdateTeamCommand(id, request.Name, request.Description, request.TeamLeaderId);
@@ -60,7 +60,7 @@ public class TeamsController : BaseApiController
 
     /// <summary>Soft-delete a team.</summary>
     [HttpDelete("{id:guid}")]
-    [Authorize(Roles = Roles.CeoOrAbove)]
+    [Authorize(Roles = Roles.ExecutiveOrAbove)]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
         var result = await _sender.Send(new DeleteTeamCommand(id), cancellationToken);

@@ -76,86 +76,8 @@ public class EmployeePlacementService : IEmployeePlacementService
         UserRole role,
         CancellationToken cancellationToken)
     {
-        Guid? oldLeaderId = null;
-
-        switch (role)
-        {
-            case UserRole.TeamLeader:
-                if (!employee.TeamId.HasValue)
-                    return Result.Failure(DomainErrors.Team.NotFound);
-
-                var team = await _unitOfWork.Teams.GetByIdAsync(employee.TeamId.Value, cancellationToken);
-                if (team == null)
-                    return Result.Failure(DomainErrors.Team.NotFound);
-
-                oldLeaderId = team.TeamLeaderId;
-                team.TeamLeaderId = employee.Id;
-                break;
-
-            case UserRole.UnitLeader:
-                if (!employee.UnitId.HasValue)
-                    return Result.Failure(DomainErrors.Unit.NotFound);
-
-                var unit = await _unitOfWork.Units.GetByIdAsync(employee.UnitId.Value, cancellationToken);
-                if (unit == null)
-                    return Result.Failure(DomainErrors.Unit.NotFound);
-
-                oldLeaderId = unit.UnitLeaderId;
-                unit.UnitLeaderId = employee.Id;
-                break;
-
-            case UserRole.DepartmentManager:
-                if (!employee.DepartmentId.HasValue)
-                    return Result.Failure(DomainErrors.Department.NotFound);
-
-                var departmentForManager =
-                    await _unitOfWork.Departments.GetByIdAsync(employee.DepartmentId.Value, cancellationToken);
-                if (departmentForManager == null)
-                    return Result.Failure(DomainErrors.Department.NotFound);
-
-                oldLeaderId = departmentForManager.ManagerId;
-                departmentForManager.ManagerId = employee.Id;
-                break;
-
-            case UserRole.VicePresident:
-                if (!employee.DepartmentId.HasValue)
-                    return Result.Failure(DomainErrors.Department.NotFound);
-
-                var departmentForVp =
-                    await _unitOfWork.Departments.GetByIdAsync(employee.DepartmentId.Value, cancellationToken);
-                if (departmentForVp == null)
-                    return Result.Failure(DomainErrors.Department.NotFound);
-
-                oldLeaderId = departmentForVp.VicePresidentId;
-                departmentForVp.VicePresidentId = employee.Id;
-                break;
-        }
-
-        return await DemoteOldLeaderIfNeededAsync(oldLeaderId, role, cancellationToken);
-    }
-
-    private async Task<Result> DemoteOldLeaderIfNeededAsync(
-        Guid? oldLeaderId,
-        UserRole oldRole,
-        CancellationToken cancellationToken)
-    {
-        if (!oldLeaderId.HasValue || oldLeaderId.Value == Guid.Empty)
-            return Result.Success();
-
-        var oldLeaderUser = (await _unitOfWork.Users.FindAsync(u => u.EmployeeId == oldLeaderId.Value, cancellationToken))
-            .FirstOrDefault();
-
-        if (oldLeaderUser == null)
-            return Result.Success();
-
-        var removed = await _unitOfWork.Users.RemoveFromRoleAsync(oldLeaderUser, oldRole.ToString(), cancellationToken);
-        if (!removed)
-            return Result.Failure(DomainErrors.General.InvalidOperation);
-
-        var added = await _unitOfWork.Users.AddToRoleAsync(oldLeaderUser, UserRole.Employee.ToString(), cancellationToken);
-        if (!added)
-            return Result.Failure(DomainErrors.General.InvalidOperation);
-
+        // Leadership assignment is now handled via OrgNode assignments.
+        // This method is a no-op for the new simplified role model.
         return Result.Success();
     }
 }

@@ -1,7 +1,5 @@
 using HrSystemApp.Application.Common;
 using HrSystemApp.Application.Errors;
-using HrSystemApp.Application.Common;
-using HrSystemApp.Application.Errors;
 using HrSystemApp.Application.Interfaces;
 using HrSystemApp.Application.Interfaces.Services;
 using HrSystemApp.Domain.Models;
@@ -64,21 +62,10 @@ public class UpdateOrgNodeCommandHandler : IRequestHandler<UpdateOrgNodeCommand,
             }
         }
 
-        // Validate level exists if provided
-        if (request.LevelId.HasValue)
-        {
-            var level = await _unitOfWork.HierarchyLevels.GetByIdAsync(request.LevelId.Value, cancellationToken);
-            if (level == null)
-            {
-                _logger.LogWarning("UpdateOrgNode failed: Level {LevelId} not found.", request.LevelId);
-                return Result.Failure<Guid>(DomainErrors.HierarchyLevel.NotFound);
-            }
-        }
-
         // Update the node
         node.Name = request.Name;
         node.ParentId = request.ParentId;
-        node.LevelId = request.LevelId;
+        node.Type = request.Type?.Trim().ToLower();
 
         await _unitOfWork.OrgNodes.UpdateAsync(node, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);

@@ -81,55 +81,9 @@ public class WorkflowService : IWorkflowService
 
     private async Task<Employee?> ResolveApproverAsync(Employee requester, UserRole role, CancellationToken cancellationToken)
     {
-        switch (role)
-        {
-            case UserRole.TeamLeader:
-                if (requester.TeamId.HasValue)
-                {
-                    var team = await _unitOfWork.Teams.GetByIdAsync(requester.TeamId.Value, cancellationToken);
-                    if (team?.TeamLeaderId.HasValue == true)
-                        return await _unitOfWork.Employees.GetByIdAsync(team.TeamLeaderId.Value, cancellationToken);
-                }
-                break;
-
-            case UserRole.UnitLeader:
-                if (requester.UnitId.HasValue)
-                {
-                    var unit = await _unitOfWork.Units.GetByIdAsync(requester.UnitId.Value, cancellationToken);
-                    if (unit?.UnitLeaderId.HasValue == true)
-                        return await _unitOfWork.Employees.GetByIdAsync(unit.UnitLeaderId.Value, cancellationToken);
-                }
-                break;
-
-            case UserRole.DepartmentManager:
-                if (requester.DepartmentId.HasValue)
-                {
-                    var dept = await _unitOfWork.Departments.GetByIdAsync(requester.DepartmentId.Value, cancellationToken);
-                    if (dept?.ManagerId.HasValue == true)
-                        return await _unitOfWork.Employees.GetByIdAsync(dept.ManagerId.Value, cancellationToken);
-                }
-                break;
-
-            case UserRole.VicePresident:
-                if (requester.DepartmentId.HasValue)
-                {
-                    var dept = await _unitOfWork.Departments.GetByIdAsync(requester.DepartmentId.Value, cancellationToken);
-                    if (dept?.VicePresidentId.HasValue == true)
-                        return await _unitOfWork.Employees.GetByIdAsync(dept.VicePresidentId.Value, cancellationToken);
-                }
-                break;
-
-            case UserRole.CEO:
-            case UserRole.HR:
-            case UserRole.AssetAdmin:
-            case UserRole.CompanyAdmin:
-                return await FindFirstEmployeeInRoleAsync(requester.CompanyId, role.ToString(), cancellationToken);
-
-            default:
-                break;
-        }
-
-        return null;
+        // Approver resolution is now based on OrgNode hierarchy.
+        // Fall back to finding the first employee with the given role in the company.
+        return await FindFirstEmployeeInRoleAsync(requester.CompanyId, role.ToString(), cancellationToken);
     }
 
     private async Task<Employee?> FindFirstEmployeeInRoleAsync(Guid companyId, string roleName, CancellationToken cancellationToken)
@@ -146,7 +100,7 @@ public class WorkflowService : IWorkflowService
 
     private async Task<Employee?> GetFailSafeApproverAsync(Guid companyId, CancellationToken cancellationToken)
     {
-        var approver = await FindFirstEmployeeInRoleAsync(companyId, UserRole.CompanyAdmin.ToString(), cancellationToken);
+        var approver = await FindFirstEmployeeInRoleAsync(companyId, UserRole.Executive.ToString(), cancellationToken);
         return approver ?? await FindFirstEmployeeInRoleAsync(companyId, UserRole.HR.ToString(), cancellationToken);
     }
 }

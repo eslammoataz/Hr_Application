@@ -7,7 +7,6 @@ using HrSystemApp.Application.Features.OrgNodes.Commands.AssignEmployeeToNode;
 using HrSystemApp.Application.Features.OrgNodes.Commands.UnassignEmployeeFromNode;
 using HrSystemApp.Application.Features.OrgNodes.Queries.GetOrgNodeTree;
 using HrSystemApp.Application.Features.OrgNodes.Queries.GetOrgNodeDetails;
-using HrSystemApp.Application.Features.OrgNodes.Queries.GetUnlinkedEntities;
 using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -38,15 +37,6 @@ public class OrgNodesController : BaseApiController
     public async Task<IActionResult> GetDetails(Guid id, CancellationToken cancellationToken)
     {
         var result = await _sender.Send(new GetOrgNodeDetailsQuery(id), cancellationToken);
-        return HandleResult(result);
-    }
-
-    /// <summary>Get entities (D/U/T) that are not linked to any OrgNode.</summary>
-    [HttpGet("unlinked")]
-    [Authorize(Roles = Roles.HierarchyManagers)]
-    public async Task<IActionResult> GetUnlinked(CancellationToken cancellationToken)
-    {
-        var result = await _sender.Send(new GetUnlinkedEntitiesQuery(), cancellationToken);
         return HandleResult(result);
     }
 

@@ -1,5 +1,3 @@
-using HrSystemApp.Domain.Enums;
-
 namespace HrSystemApp.Application.DTOs.OrgNodes;
 
 public record OrgNodeDetailsResponse(
@@ -7,11 +5,7 @@ public record OrgNodeDetailsResponse(
     string Name,
     Guid? ParentId,
     string? ParentName,
-    Guid? LevelId,
-    string? LevelName,
-    Guid? EntityId,
-    OrgEntityType? EntityType,
-    string? LinkedEntityName,
+    string? Type,
     List<OrgNodeAssignmentResponse> Assignments,
     List<OrgNodeChildResponse> Children
 );

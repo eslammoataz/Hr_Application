@@ -68,7 +68,7 @@ public class CompaniesEndpointTests : IAsyncLifetime
         var companyId = await _fixture.SeedCompanyAsync("Locations Corp");
         await _fixture.SeedEmployeeAsync(companyId, "company-admin-user", "Company Admin", "admin@loc.com");
 
-        using var client = _fixture.CreateAuthenticatedClient("company-admin-user", Roles.CompanyAdmin);
+        using var client = _fixture.CreateAuthenticatedClient("company-admin-user", Roles.Executive);
 
         var payload = """
                       {
@@ -109,7 +109,7 @@ public class CompaniesEndpointTests : IAsyncLifetime
         var targetCompanyId = await _fixture.SeedCompanyAsync("Target Company");
         await _fixture.SeedEmployeeAsync(adminCompanyId, "foreign-admin-user", "Foreign Admin", "foreign-admin@loc.com");
 
-        using var client = _fixture.CreateAuthenticatedClient("foreign-admin-user", Roles.CompanyAdmin);
+        using var client = _fixture.CreateAuthenticatedClient("foreign-admin-user", Roles.Executive);
 
         var payload = """
                       {
@@ -138,7 +138,7 @@ public class CompaniesEndpointTests : IAsyncLifetime
         var companyId = await _fixture.SeedCompanyAsync("Delete Edge Corp");
         await _fixture.SeedEmployeeAsync(companyId, "delete-admin-user", "Delete Admin", "delete-admin@loc.com");
 
-        using var client = _fixture.CreateAuthenticatedClient("delete-admin-user", Roles.CompanyAdmin);
+        using var client = _fixture.CreateAuthenticatedClient("delete-admin-user", Roles.Executive);
 
         var response = await client.DeleteAsync($"/api/companies/locations/{Guid.NewGuid()}");
 
@@ -156,7 +156,7 @@ public class CompaniesEndpointTests : IAsyncLifetime
         var companyId = await _fixture.SeedCompanyAsync("Validation Corp");
         await _fixture.SeedEmployeeAsync(companyId, "validation-admin-user", "Validation Admin", "validation-admin@loc.com");
 
-        using var client = _fixture.CreateAuthenticatedClient("validation-admin-user", Roles.CompanyAdmin);
+        using var client = _fixture.CreateAuthenticatedClient("validation-admin-user", Roles.Executive);
 
         var invalidPayload = """
                              {

@@ -27,19 +27,6 @@ public class ConfigureHierarchyPositionsCommandHandler
     private readonly ICurrentUserService _currentUserService;
     private readonly ILogger<ConfigureHierarchyPositionsCommandHandler> _logger;
 
-    // Roles that are part of the hierarchy chain (excludes support roles)
-    private static readonly HashSet<UserRole> AllowedHierarchyRoles = new()
-    {
-        UserRole.CEO,
-        UserRole.VicePresident,
-        UserRole.DepartmentManager,
-        UserRole.UnitLeader,
-        UserRole.TeamLeader,
-        UserRole.HR,
-        UserRole.AssetAdmin,
-        UserRole.CompanyAdmin,
-    };
-
     public ConfigureHierarchyPositionsCommandHandler(
         IUnitOfWork unitOfWork,
         ICurrentUserService currentUserService,
@@ -64,7 +51,7 @@ public class ConfigureHierarchyPositionsCommandHandler
 
         // Validate: no SuperAdmin allowed
         var invalidRoles = request.Positions
-            .Where(p => p.Role == UserRole.SuperAdmin || !AllowedHierarchyRoles.Contains(p.Role))
+            .Where(p => p.Role == UserRole.SuperAdmin)
             .Select(p => p.Role)
             .ToList();
 
@@ -87,14 +74,14 @@ public class ConfigureHierarchyPositionsCommandHandler
             return Result.Failure<int>(DomainErrors.Hierarchy.DuplicateRole);
         }
 
-        // Validate: only one CEO
-        if (request.Positions.Count(p => p.Role == UserRole.CEO) > 1)
+        // Validate: only one Executive
+        if (request.Positions.Count(p => p.Role == UserRole.Executive) > 1)
             return Result.Failure<int>(DomainErrors.Hierarchy.MultipleCeos);
 
         // Check: Don't allow removing roles that are in use by Request Definitions
         var currentPositions = await _unitOfWork.HierarchyPositions.GetByCompanyAsync(companyId, cancellationToken);
         var newRoles = request.Positions.Select(p => p.Role).ToHashSet();
-        
+
         var removedRoles = currentPositions
             .Select(p => p.Role)
             .Where(role => !newRoles.Contains(role))
@@ -106,7 +93,7 @@ public class ConfigureHierarchyPositionsCommandHandler
             if (isInUse)
             {
                 _logger.LogWarning("ConfigureHierarchy failed: Role {Role} is in use by a Request Definition for Company {CompanyId}.", role, companyId);
-                return Result.Failure<int>(new Error(DomainErrors.Hierarchy.RoleInUse.Code, 
+                return Result.Failure<int>(new Error(DomainErrors.Hierarchy.RoleInUse.Code,
                     $"Cannot remove role '{role}' because it is currently being used in one or more active Request Definitions. Please update your Request Definitions before removing this role."));
             }
         }

@@ -63,7 +63,7 @@ public class DepartmentsController : BaseApiController
 
     /// <summary>Soft-delete a department.</summary>
     [HttpDelete("{id:guid}")]
-    [Authorize(Roles = Roles.CeoOrAbove)]
+    [Authorize(Roles = Roles.ExecutiveOrAbove)]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
         var result = await _sender.Send(new DeleteDepartmentCommand(id), cancellationToken);

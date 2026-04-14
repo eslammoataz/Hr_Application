@@ -4,7 +4,8 @@
       "Bash(dotnet build:*)",
       "Bash(dotnet run:*)",
       "Bash(curl -s http://localhost:5119/swagger/index.html -o /dev/null -w \"%{http_code}\")",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(grep -l \"GetCompanyHierarchy\\\\|/api/companies/hierarchy\" HrSystemApp.Api/Controllers/*.cs)"
     ]
   }
 }

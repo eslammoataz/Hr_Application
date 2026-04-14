@@ -35,7 +35,6 @@ public class UnitOfWork : IUnitOfWork
     private IAttendanceReminderLogRepository? _attendanceReminderLogRepository;
     private IAttendanceAdjustmentRepository? _attendanceAdjustmentRepository;
     private IOrgNodeRepository? _orgNodeRepository;
-    private IHierarchyLevelRepository? _hierarchyLevelRepository;
     private IOrgNodeAssignmentRepository? _orgNodeAssignmentRepository;
 
 
@@ -101,9 +100,6 @@ public class UnitOfWork : IUnitOfWork
 
     public IOrgNodeRepository OrgNodes =>
         _orgNodeRepository ??= new OrgNodeRepository(_context);
-
-    public IHierarchyLevelRepository HierarchyLevels =>
-        _hierarchyLevelRepository ??= new HierarchyLevelRepository(_context);
 
     public IOrgNodeAssignmentRepository OrgNodeAssignments =>
         _orgNodeAssignmentRepository ??= new OrgNodeAssignmentRepository(_context);
