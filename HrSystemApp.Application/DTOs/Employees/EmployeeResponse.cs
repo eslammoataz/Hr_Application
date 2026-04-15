@@ -9,12 +9,6 @@ public record EmployeeResponse
     public string? Address { get; init; }
     public string EmployeeCode { get; init; } = string.Empty;
     public Guid CompanyId { get; init; }
-    public Guid? DepartmentId { get; init; }
-    public string? DepartmentName { get; init; }
-    public Guid? UnitId { get; init; }
-    public string? UnitName { get; init; }
-    public Guid? TeamId { get; init; }
-    public string? TeamName { get; init; }
     public Guid? ManagerId { get; init; }
     public string? ManagerName { get; init; }
     public string EmploymentStatus { get; init; } = string.Empty;

@@ -1,4 +1,16 @@
-# HRMS Constitution
+# HRMS Project Constitution
+This document defines the mandatory architectural and coding standards for this project. 
+All code generated or refactored by Claude must strictly adhere to these rules.
+
+## Core Principles
+### I. Code Quality & Architecture
+Follow Clean Architecture boundaries: Domain ← Application ← Infrastructure ← API... [Rest of your text]
+
+## Tech Stack Reference
+- **Framework:** .NET 8+
+- **Database:** PostgreSQL / EF Core
+- **Patterns:** MediatR, CQRS, Clean Architecture
+- **Library Preferences:** FluentValidation, Mapster
 
 ## Core Principles
 

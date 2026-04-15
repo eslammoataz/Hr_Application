@@ -185,7 +185,7 @@ public static class SeedData
         var name = "Company Admin";
         var phone = "01000000000";
 
-        var admin = await CreateHierarchyUserAsync(userManager, configuration, context, company, location, null, null, null, null,
+        var admin = await CreateHierarchyUserAsync(userManager, configuration, context, company, location, null,
             name, UserRole.Executive.ToString(), email, phone, logger);
 
         if (admin != null)
@@ -298,24 +298,24 @@ public static class SeedData
         var employees = new Dictionary<string, Employee>();
 
         // 1. CEO (Executive)
-        var ceo = await CreateHierarchyUserAsync(userManager, configuration, context, company, location, null, null, null, null,
+        var ceo = await CreateHierarchyUserAsync(userManager, configuration, context, company, location, null,
             "John Doe", UserRole.Executive.ToString(), "ceo@hrms.com", "1111111111", logger);
         if (ceo != null) employees["ceo"] = ceo;
 
         if (ceo == null) return employees;
 
         // 2. HR (Reports to CEO)
-        var hr = await CreateHierarchyUserAsync(userManager, configuration, context, company, location, null, null, null, ceo.Id,
+        var hr = await CreateHierarchyUserAsync(userManager, configuration, context, company, location, ceo.Id,
             "Jane Smith", UserRole.HR.ToString(), "hr@hrms.com", "2222222222", logger);
         if (hr != null) employees["hr"] = hr;
 
         // 3. Staff Employee (Reports to HR)
-        var charlie = await CreateHierarchyUserAsync(userManager, configuration, context, company, location, null, null, null, hr?.Id,
+        var charlie = await CreateHierarchyUserAsync(userManager, configuration, context, company, location, hr?.Id,
             "Charlie Davis", UserRole.Employee.ToString(), "dev.charlie@hrms.com", "6666666666", logger);
         if (charlie != null) employees["charlie"] = charlie;
 
         // 4. Another Employee (Reports to HR)
-        var fiona = await CreateHierarchyUserAsync(userManager, configuration, context, company, location, null, null, null, hr?.Id,
+        var fiona = await CreateHierarchyUserAsync(userManager, configuration, context, company, location, hr?.Id,
             "Fiona Gallagher", UserRole.Employee.ToString(), "emp.fiona@hrms.com", "7755555555", logger);
         if (fiona != null) employees["fiona"] = fiona;
 
@@ -407,9 +407,6 @@ public static class SeedData
         ApplicationDbContext context,
         Company company,
         CompanyLocation location,
-        Guid? departmentId,
-        Guid? unitId,
-        Guid? teamId,
         Guid? managerId,
         string name,
         string role,
@@ -427,9 +424,6 @@ public static class SeedData
         {
             Id = Guid.NewGuid(),
             CompanyId = company.Id,
-            DepartmentId = departmentId,
-            UnitId = unitId,
-            TeamId = teamId,
             ManagerId = managerId,
             CompanyLocationId = location.Id,
             Email = email,

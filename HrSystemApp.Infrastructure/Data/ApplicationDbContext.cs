@@ -19,9 +19,6 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     }
 
     public DbSet<Employee> Employees { get; set; } = null!;
-    public DbSet<Department> Departments { get; set; } = null!;
-    public DbSet<Unit> Units { get; set; } = null!;
-    public DbSet<Team> Teams { get; set; } = null!;
     public DbSet<Attendance> Attendances { get; set; } = null!;
     public DbSet<AttendanceLog> AttendanceLogs { get; set; } = null!;
     public DbSet<AttendanceAdjustment> AttendanceAdjustments { get; set; } = null!;

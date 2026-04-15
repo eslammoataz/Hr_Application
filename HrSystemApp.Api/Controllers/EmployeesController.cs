@@ -1,5 +1,4 @@
 using HrSystemApp.Api.Authorization;
-using HrSystemApp.Application.Features.Employees.Commands.AssignEmployeeToTeam;
 using HrSystemApp.Application.Features.Employees.Commands.ChangeEmployeeStatus;
 using HrSystemApp.Application.Features.Employees.Commands.CreateEmployee;
 using HrSystemApp.Application.Features.Employees.Commands.UpdateEmployee;
@@ -37,7 +36,6 @@ public class EmployeesController : BaseApiController
     [Authorize(Roles = Roles.Viewers)]
     public async Task<IActionResult> GetAll(
         [FromQuery] Guid? companyId,
-        [FromQuery] Guid? teamId,
         [FromQuery] UserRole? role,
         [FromQuery] EmploymentStatus? status,
         [FromQuery] string? search,
@@ -46,7 +44,7 @@ public class EmployeesController : BaseApiController
         CancellationToken cancellationToken = default)
     {
         var result = await _sender.Send(
-            new GetEmployeesQuery(companyId, teamId, search, role, status, page, pageSize),
+            new GetEmployeesQuery(companyId, search, role, status, page, pageSize),
             cancellationToken);
         return HandleResult(result);
     }
@@ -86,8 +84,7 @@ public class EmployeesController : BaseApiController
     {
         var command = new CreateEmployeeCommand(
             request.FullName, request.Email, request.PhoneNumber,
-            request.CompanyId, request.Role, request.DepartmentId,
-            request.UnitId, request.TeamId);
+            request.CompanyId, request.Role);
         var result = await _sender.Send(command, cancellationToken);
         return HandleResult(result);
     }
@@ -100,19 +97,8 @@ public class EmployeesController : BaseApiController
     {
         var command = new UpdateEmployeeCommand(
             id, request.FullName, request.PhoneNumber, request.Address,
-            request.DepartmentId, request.UnitId, request.TeamId,
             request.ManagerId, request.MedicalClass, request.ContractEndDate);
         var result = await _sender.Send(command, cancellationToken);
-        return HandleResult(result);
-    }
-
-    /// <summary>Assign employee to a team.</summary>
-    [HttpPut("{id:guid}/assign-team")]
-    [Authorize(Roles = Roles.HrOrAbove)]
-    public async Task<IActionResult> AssignToTeam(Guid id, [FromBody] AssignEmployeeToTeamRequest request,
-        CancellationToken cancellationToken)
-    {
-        var result = await _sender.Send(new AssignEmployeeToTeamCommand(id, request.TeamId), cancellationToken);
         return HandleResult(result);
     }
 

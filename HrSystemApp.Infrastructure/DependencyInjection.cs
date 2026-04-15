@@ -66,9 +66,6 @@ public static class DependencyInjection
         services.AddScoped<IEmployeeRepository, EmployeeRepository>();
         services.AddScoped<ICompanyRepository, CompanyRepository>();
         services.AddScoped<ICompanyLocationRepository, CompanyLocationRepository>();
-        services.AddScoped<IDepartmentRepository, DepartmentRepository>();
-        services.AddScoped<IUnitRepository, UnitRepository>();
-        services.AddScoped<ITeamRepository, TeamRepository>();
         services.AddScoped<ILeaveBalanceRepository, LeaveBalanceRepository>();
         services.AddScoped<IContactAdminRequestRepository, ContactAdminRequestRepository>();
         services.AddScoped<IProfileUpdateRequestRepository, ProfileUpdateRequestRepository>();
@@ -113,7 +110,6 @@ public static class DependencyInjection
 
         services.AddScoped<IWorkflowService, WorkflowService>();
         services.AddScoped<IWorkflowResolutionService, WorkflowResolutionService>();
-        services.AddScoped<IHierarchyService, HierarchyService>();
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<IDataScopeService, DataScopeService>();

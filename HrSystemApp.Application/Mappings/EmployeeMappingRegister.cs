@@ -17,9 +17,6 @@ public class EmployeeMappingRegister : IRegister
             .Ignore(dest => dest.TemporaryPassword);
 
         config.NewConfig<Employee, EmployeeResponse>()
-            .Map(dest => dest.DepartmentName, src => src.Department != null ? src.Department.Name : null)
-            .Map(dest => dest.UnitName, src => src.Unit != null ? src.Unit.Name : null)
-            .Map(dest => dest.TeamName, src => src.Team != null ? src.Team.Name : null)
             .Map(dest => dest.ManagerName, src => src.Manager != null ? src.Manager.FullName : null)
             .Map(dest => dest.EmploymentStatus, src => src.EmploymentStatus.ToString())
             .Ignore(dest => dest.Role)

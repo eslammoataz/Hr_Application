@@ -11,9 +11,6 @@ public interface IUnitOfWork : IAsyncDisposable
     IEmployeeRepository Employees { get; }
     ICompanyRepository Companies { get; }
     ICompanyLocationRepository CompanyLocations { get; }
-    IDepartmentRepository Departments { get; }
-    IUnitRepository Units { get; }
-    ITeamRepository Teams { get; }
     ILeaveBalanceRepository LeaveBalances { get; }
     IContactAdminRequestRepository ContactAdminRequests { get; }
     IProfileUpdateRequestRepository ProfileUpdateRequests { get; }

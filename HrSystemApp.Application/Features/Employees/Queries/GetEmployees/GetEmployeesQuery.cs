@@ -7,7 +7,6 @@ namespace HrSystemApp.Application.Features.Employees.Queries.GetEmployees;
 
 public record GetEmployeesQuery(
     Guid? CompanyId,
-    Guid? TeamId,
     string? SearchTerm,
     UserRole? Role,
     EmploymentStatus? EmploymentStatus,

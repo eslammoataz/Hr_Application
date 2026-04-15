@@ -1,4 +1,4 @@
-using HrSystemApp.Application.DTOs.Departments;
+using HrSystemApp.Application.DTOs.Companies;
 
 namespace HrSystemApp.Application.DTOs.Companies;
 
@@ -12,5 +12,4 @@ public record CompanyResponse(
     int GraceMinutes,
     string TimeZoneId,
     string Status,
-    IReadOnlyList<CompanyLocationResponse> Locations,
-    IReadOnlyList<DepartmentResponse> Departments);
+    IReadOnlyList<CompanyLocationResponse> Locations);

@@ -9,9 +9,6 @@ public class EmployeeProfileDto
     public string Email { get; set; } = string.Empty;
     public string PhoneNumber { get; set; } = string.Empty;
     public string? Address { get; set; }
-    public string DepartmentName { get; set; } = string.Empty;
-    public string UnitName { get; set; } = string.Empty;
-    public string TeamName { get; set; } = string.Empty;
     public string ManagerName { get; set; } = string.Empty;
     public string EmploymentStatus { get; set; } = string.Empty;
     public string? MedicalClass { get; set; }

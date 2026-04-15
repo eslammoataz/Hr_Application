@@ -61,21 +61,6 @@ public class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
             .HasForeignKey(e => e.CompanyId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasOne(e => e.Department)
-            .WithMany()
-            .HasForeignKey(e => e.DepartmentId)
-            .OnDelete(DeleteBehavior.SetNull);
-
-        builder.HasOne(e => e.Unit)
-            .WithMany()
-            .HasForeignKey(e => e.UnitId)
-            .OnDelete(DeleteBehavior.SetNull);
-
-        builder.HasOne(e => e.Team)
-            .WithMany(t => t.Members)
-            .HasForeignKey(e => e.TeamId)
-            .OnDelete(DeleteBehavior.SetNull);
-
         builder.HasOne(e => e.Manager)
             .WithMany()
             .HasForeignKey(e => e.ManagerId)

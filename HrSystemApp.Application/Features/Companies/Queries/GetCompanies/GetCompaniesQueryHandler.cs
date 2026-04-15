@@ -18,12 +18,11 @@ public class GetCompaniesQueryHandler : IRequestHandler<GetCompaniesQuery, Resul
     public async Task<Result<CompaniesPagedResult>> Handle(GetCompaniesQuery request, CancellationToken cancellationToken)
     {
         var result = await _unitOfWork.Companies.GetPagedAsync(
-            request.SearchTerm, 
+            request.SearchTerm,
             request.Status,
-            request.PageNumber, 
-            request.PageSize, 
-            request.IncludeLocations, 
-            request.IncludeDepartments, 
+            request.PageNumber,
+            request.PageSize,
+            request.IncludeLocations,
             cancellationToken);
         
         return Result.Success(result);

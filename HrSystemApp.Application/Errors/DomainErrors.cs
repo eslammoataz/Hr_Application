@@ -387,4 +387,19 @@ public static class DomainErrors
         public static readonly Error InvalidHierarchyConfiguration = new(
             "OrgNode.InvalidHierarchyConfiguration", "Invalid hierarchy configuration detected.");
     }
+
+    public static class Request
+    {
+        public static readonly Error NoActiveManagersAtStep = new(
+            "Request.NoActiveManagersAtStep", "A workflow step has no active managers assigned.");
+
+        public static readonly Error InvalidWorkflowChain = new(
+            "Request.InvalidWorkflowChain", "Workflow step references a node not in the approval chain.");
+
+        public static readonly Error NotPendingApproval = new(
+            "Request.NotPendingApproval", "This request is not currently awaiting approval.");
+
+        public static readonly Error StepOrderExceeded = new(
+            "Request.StepOrderExceeded", "Step order exceeds the number of workflow steps.");
+    }
 }

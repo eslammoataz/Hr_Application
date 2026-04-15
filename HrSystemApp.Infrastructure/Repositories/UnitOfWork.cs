@@ -20,9 +20,6 @@ public class UnitOfWork : IUnitOfWork
     private IEmployeeRepository? _employeeRepository;
     private ICompanyRepository? _companyRepository;
     private ICompanyLocationRepository? _companyLocationRepository;
-    private IDepartmentRepository? _departmentRepository;
-    private IUnitRepository? _unitRepository;
-    private ITeamRepository? _teamRepository;
     private ILeaveBalanceRepository? _leaveBalanceRepository;
     private IContactAdminRequestRepository? _contactAdminRequestRepository;
     private IProfileUpdateRequestRepository? _profileUpdateRequestRepository;
@@ -55,15 +52,6 @@ public class UnitOfWork : IUnitOfWork
 
     public ICompanyLocationRepository CompanyLocations =>
         _companyLocationRepository ??= new CompanyLocationRepository(_context);
-
-    public IDepartmentRepository Departments =>
-        _departmentRepository ??= new DepartmentRepository(_context);
-
-    public IUnitRepository Units =>
-        _unitRepository ??= new UnitRepository(_context);
-
-    public ITeamRepository Teams =>
-        _teamRepository ??= new TeamRepository(_context);
 
     public ILeaveBalanceRepository LeaveBalances =>
         _leaveBalanceRepository ??= new LeaveBalanceRepository(_context);
