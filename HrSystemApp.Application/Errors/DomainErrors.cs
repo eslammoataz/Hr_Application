@@ -383,5 +383,8 @@ public static class DomainErrors
 
         public static readonly Error AssignmentNotFound = new(
             "OrgNode.AssignmentNotFound", "Assignment not found.");
+
+        public static readonly Error InvalidHierarchyConfiguration = new(
+            "OrgNode.InvalidHierarchyConfiguration", "Invalid hierarchy configuration detected.");
     }
 }

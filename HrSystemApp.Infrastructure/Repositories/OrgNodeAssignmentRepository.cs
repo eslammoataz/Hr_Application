@@ -29,4 +29,10 @@ public class OrgNodeAssignmentRepository : Repository<OrgNodeAssignment>, IOrgNo
             .Where(a => a.EmployeeId == employeeId && !a.IsDeleted)
             .Include(a => a.OrgNode).ThenInclude(n => n.Parent)
             .ToListAsync(ct);
+
+    public async Task<OrgNodeAssignment?> GetByEmployeeWithNodeAsync(Guid employeeId, CancellationToken ct)
+        => await _context.OrgNodeAssignments
+            .Where(a => a.EmployeeId == employeeId && !a.IsDeleted)
+            .Include(a => a.OrgNode)
+            .FirstOrDefaultAsync(ct);
 }

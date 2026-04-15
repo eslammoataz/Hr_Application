@@ -7,6 +7,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using OrgRole = HrSystemApp.Domain.Enums.OrgRole;
 
 namespace HrSystemApp.Infrastructure.Data;
 
@@ -34,9 +35,8 @@ public static class SeedData
 
         await SeedHierarchyPositionsAsync(context, company, logger);
         await SeedCompanyAdminAsync(userManager, configuration, context, company, location, logger);
-        await SeedOrganizationalHierarchyAsync(userManager, configuration, context, company, location, logger);
-
-        // Phase 1: Security Hardening - Force reset for all non-admin legacy accounts
+        var employees = await SeedOrganizationalHierarchyAsync(userManager, configuration, context, company, location, logger);
+        await SeedOrgNodeHierarchyAsync(context, employees, logger);
         await HardenExistingAccountsAsync(context, logger);
 
         if (environment.IsDevelopment())
@@ -287,7 +287,7 @@ public static class SeedData
     }
 
     // -------------------------------------------------------------------------
-    private static async Task SeedOrganizationalHierarchyAsync(
+    private static async Task<Dictionary<string, Employee>> SeedOrganizationalHierarchyAsync(
         UserManager<ApplicationUser> userManager,
         IConfiguration configuration,
         ApplicationDbContext context,
@@ -295,25 +295,110 @@ public static class SeedData
         CompanyLocation location,
         ILogger logger)
     {
-        // 1. Executive (Root)
-        var executive = await CreateHierarchyUserAsync(userManager, configuration, context, company, location, null, null, null, null,
+        var employees = new Dictionary<string, Employee>();
+
+        // 1. CEO (Executive)
+        var ceo = await CreateHierarchyUserAsync(userManager, configuration, context, company, location, null, null, null, null,
             "John Doe", UserRole.Executive.ToString(), "ceo@hrms.com", "1111111111", logger);
+        if (ceo != null) employees["ceo"] = ceo;
 
-        if (executive == null) return;
+        if (ceo == null) return employees;
 
-        // 2. HR (Reports to Executive)
-        var hr = await CreateHierarchyUserAsync(userManager, configuration, context, company, location, null, null, null, executive.Id,
+        // 2. HR (Reports to CEO)
+        var hr = await CreateHierarchyUserAsync(userManager, configuration, context, company, location, null, null, null, ceo.Id,
             "Jane Smith", UserRole.HR.ToString(), "hr@hrms.com", "2222222222", logger);
+        if (hr != null) employees["hr"] = hr;
 
         // 3. Staff Employee (Reports to HR)
-        await CreateHierarchyUserAsync(userManager, configuration, context, company, location, null, null, null, hr?.Id,
+        var charlie = await CreateHierarchyUserAsync(userManager, configuration, context, company, location, null, null, null, hr?.Id,
             "Charlie Davis", UserRole.Employee.ToString(), "dev.charlie@hrms.com", "6666666666", logger);
+        if (charlie != null) employees["charlie"] = charlie;
 
-        // 4. Another Employee
-        await CreateHierarchyUserAsync(userManager, configuration, context, company, location, null, null, null, hr?.Id,
+        // 4. Another Employee (Reports to HR)
+        var fiona = await CreateHierarchyUserAsync(userManager, configuration, context, company, location, null, null, null, hr?.Id,
             "Fiona Gallagher", UserRole.Employee.ToString(), "emp.fiona@hrms.com", "7755555555", logger);
+        if (fiona != null) employees["fiona"] = fiona;
 
         logger.LogInformation("Full organizational hierarchy (Multi-Dept) seeded for {Company}.", company.CompanyName);
+
+        return employees;
+    }
+
+    private static async Task SeedOrgNodeHierarchyAsync(
+        ApplicationDbContext context,
+        Dictionary<string, Employee> employees,
+        ILogger logger)
+    {
+        if (employees.Count == 0) return;
+
+        // Check if already seeded
+        if (await context.OrgNodes.AnyAsync())
+        {
+            logger.LogInformation("OrgNode hierarchy already exists, skipping.");
+            return;
+        }
+
+        var ceo = employees["ceo"];
+        var hr = employees["hr"];
+
+        // Create org node hierarchy
+        var rootNode = new OrgNode
+        {
+            Id = Guid.NewGuid(),
+            Name = "HRMS Company",
+            Type = "company",
+            ParentId = null
+        };
+
+        var hrNode = new OrgNode
+        {
+            Id = Guid.NewGuid(),
+            Name = "Human Resources",
+            Type = "department",
+            ParentId = rootNode.Id
+        };
+
+        var engNode = new OrgNode
+        {
+            Id = Guid.NewGuid(),
+            Name = "Engineering",
+            Type = "division",
+            ParentId = rootNode.Id
+        };
+
+        var backendTeam = new OrgNode
+        {
+            Id = Guid.NewGuid(),
+            Name = "Backend Team",
+            Type = "team",
+            ParentId = engNode.Id
+        };
+
+        context.OrgNodes.AddRange(rootNode, hrNode, engNode, backendTeam);
+        await context.SaveChangesAsync();
+
+        // Assign employees to nodes
+        var assignments = new List<OrgNodeAssignment>
+        {
+            new() { Id = Guid.NewGuid(), OrgNodeId = rootNode.Id, EmployeeId = ceo.Id, Role = OrgRole.Manager },
+            new() { Id = Guid.NewGuid(), OrgNodeId = hrNode.Id, EmployeeId = hr.Id, Role = OrgRole.Manager },
+        };
+
+        if (employees.TryGetValue("charlie", out var charlie))
+        {
+            assignments.Add(new OrgNodeAssignment { Id = Guid.NewGuid(), OrgNodeId = backendTeam.Id, EmployeeId = charlie.Id, Role = OrgRole.Member });
+        }
+
+        if (employees.TryGetValue("fiona", out var fiona))
+        {
+            assignments.Add(new OrgNodeAssignment { Id = Guid.NewGuid(), OrgNodeId = backendTeam.Id, EmployeeId = fiona.Id, Role = OrgRole.Member });
+        }
+
+        context.OrgNodeAssignments.AddRange(assignments);
+        await context.SaveChangesAsync();
+
+        logger.LogInformation("OrgNode hierarchy seeded with {NodeCount} nodes and {AssignmentCount} assignments.",
+            4, assignments.Count);
     }
 
     private static async Task<Employee?> CreateHierarchyUserAsync(

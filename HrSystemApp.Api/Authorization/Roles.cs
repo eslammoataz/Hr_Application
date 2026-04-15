@@ -16,25 +16,27 @@ public static class Roles
     public const string HR = nameof(UserRole.HR);
     public const string Employee = nameof(UserRole.Employee);
 
+    public const string CompanyAdmin = nameof(UserRole.CompanyAdmin);
+
     // ── Composite role sets (comma-separated — ASP.NET Core OR logic) ──
     public const string SuperAdminOnly = SuperAdmin;
 
     public const string ExecutiveOrAbove =
-        $"{SuperAdmin},{Executive}";
+        $"{SuperAdmin},{Executive},{CompanyAdmin}";
 
     public const string HrOrAbove =
-        $"{SuperAdmin},{Executive},{HR}";
+        $"{SuperAdmin},{Executive},{HR},{CompanyAdmin}";
 
     public const string AllRoles =
-        $"{SuperAdmin},{Executive},{HR},{Employee}";
+        $"{SuperAdmin},{Executive},{HR},{Employee},{CompanyAdmin}";
 
     // ── Application-specific composites ──────────────────────────────────
     public const string HierarchyManagers =
-        $"{SuperAdmin},{Executive},{HR}";
+        $"{SuperAdmin},{Executive},{HR} {CompanyAdmin}";
 
     public const string Viewers =
-        $"{SuperAdmin},{Executive},{HR},{Employee}";
+        $"{SuperAdmin},{CompanyAdmin},{Executive},{HR},{Employee}";
 
     public const string CompanyAdmins =
-        $"{SuperAdmin}";
+        $"{SuperAdmin},{CompanyAdmin}";
 }

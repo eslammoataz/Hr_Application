@@ -1,5 +1,6 @@
 using HrSystemApp.Api.Authorization;
 using HrSystemApp.Application.DTOs.OrgNodes;
+using HrSystemApp.Application.Features.OrgNodes.Commands.BulkSetupOrgNodes;
 using HrSystemApp.Application.Features.OrgNodes.Commands.CreateOrgNode;
 using HrSystemApp.Application.Features.OrgNodes.Commands.DeleteOrgNode;
 using HrSystemApp.Application.Features.OrgNodes.Commands.UpdateOrgNode;
@@ -7,6 +8,7 @@ using HrSystemApp.Application.Features.OrgNodes.Commands.AssignEmployeeToNode;
 using HrSystemApp.Application.Features.OrgNodes.Commands.UnassignEmployeeFromNode;
 using HrSystemApp.Application.Features.OrgNodes.Queries.GetOrgNodeTree;
 using HrSystemApp.Application.Features.OrgNodes.Queries.GetOrgNodeDetails;
+using HrSystemApp.Application.Features.OrgNodes.Queries.GetMyCompanyHierarchy;
 using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -85,6 +87,24 @@ public class OrgNodesController : BaseApiController
     {
         var result = await _sender.Send(
             new UnassignEmployeeFromNodeCommand(id, employeeId), cancellationToken);
+        return HandleResult(result);
+    }
+
+    /// <summary>Bulk setup org nodes and assignments in a single transaction.</summary>
+    [HttpPost("bulk-setup")]
+    [Authorize(Roles = Roles.HierarchyManagers)]
+    public async Task<IActionResult> BulkSetup([FromBody] BulkSetupOrgNodesCommand command, CancellationToken cancellationToken)
+    {
+        var result = await _sender.Send(command, cancellationToken);
+        return HandleResult(result);
+    }
+
+    /// <summary>Get the full hierarchy tree for the logged-in user's company.</summary>
+    [HttpGet("my-company")]
+    [Authorize(Roles = Roles.Viewers)]
+    public async Task<IActionResult> GetMyCompanyHierarchy([FromQuery] GetMyCompanyHierarchyQuery query, CancellationToken cancellationToken)
+    {
+        var result = await _sender.Send(query, cancellationToken);
         return HandleResult(result);
     }
 }
