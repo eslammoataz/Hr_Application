@@ -51,7 +51,8 @@ public class BulkSetupOrgNodesCommandHandler : IRequestHandler<BulkSetupOrgNodes
                 {
                     Name = root.Name,
                     Type = root.Type?.Trim().ToLower(),
-                    ParentId = null
+                    ParentId = null,
+                    CompanyId = request.Request.CompanyId
                 };
 
                 await _unitOfWork.OrgNodes.AddAsync(node, cancellationToken);
@@ -89,7 +90,8 @@ public class BulkSetupOrgNodesCommandHandler : IRequestHandler<BulkSetupOrgNodes
                     {
                         Name = nodeDto.Name,
                         Type = nodeDto.Type?.Trim().ToLower(),
-                        ParentId = parentId
+                        ParentId = parentId,
+                        CompanyId = request.Request.CompanyId
                     };
 
                     await _unitOfWork.OrgNodes.AddAsync(node, cancellationToken);

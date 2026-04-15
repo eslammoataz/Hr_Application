@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 
 namespace HrSystemApp.Infrastructure.Services;
 
+[Obsolete("Role-based workflow is deprecated. Use IWorkflowResolutionService for OrgNode-based workflow.")]
 public class WorkflowService : IWorkflowService
 {
     private readonly IUnitOfWork _unitOfWork;
@@ -22,85 +23,9 @@ public class WorkflowService : IWorkflowService
 
     public async Task<List<Employee>> GetApprovalPathAsync(Guid employeeId, RequestType requestType, CancellationToken cancellationToken = default)
     {
-        var employee = await _unitOfWork.Employees.GetByIdAsync(employeeId, cancellationToken);
-        if (employee == null)
-        {
-            _logger.LogWarning("GetApprovalPathAsync failed: Employee with ID {EmployeeId} not found.", employeeId);
-            return new List<Employee>();
-        }
-
-        _logger.LogInformation("Resolving approval path for Employee {EmployeeId} ({FullName}) and RequestType {RequestType}", 
-            employeeId, employee.FullName, requestType);
-
-        var definition = await _unitOfWork.RequestDefinitions.GetByTypeAsync(employee.CompanyId, requestType, cancellationToken);
-        if (definition == null || !definition.IsActive)
-        {
-            _logger.LogWarning("No active definition found for request type {RequestType} in company {CompanyId}", requestType, employee.CompanyId);
-            return new List<Employee>();
-        }
-
-        var approvalPath = new List<Employee>();
-
-        foreach (var step in definition.WorkflowSteps.OrderBy(s => s.SortOrder))
-        {
-            var approver = await ResolveApproverAsync(employee, step.RequiredRole, cancellationToken);
-            
-            if (approver != null)
-            {
-                _logger.LogInformation("Step {SortOrder}: Role {Role} resolved to Employee {ApproverId} ({ApproverName})", 
-                    step.SortOrder, step.RequiredRole, approver.Id, approver.FullName);
-
-                if (approver.Id == employeeId)
-                {
-                    _logger.LogInformation("Skipping step {SortOrder} (Role: {Role}) for employee {EmployeeId} because they are the same person.", step.SortOrder, step.RequiredRole, employeeId);
-                    continue;
-                }
-
-                if (!approvalPath.Any(a => a.Id == approver.Id))
-                {
-                    approvalPath.Add(approver);
-                }
-            }
-        }
-
-        if (approvalPath.Count == 0)
-        {
-            _logger.LogWarning("No approvers resolved from workflow stages. Attempting fail-safe resolution.");
-            var failSafe = await GetFailSafeApproverAsync(employee.CompanyId, cancellationToken);
-            if (failSafe != null && failSafe.Id != employeeId)
-            {
-                _logger.LogInformation("Fail-safe approver resolved: {ApproverId} ({ApproverName})", failSafe.Id, failSafe.FullName);
-                approvalPath.Add(failSafe);
-            }
-        }
-        
-        _logger.LogInformation("Resolved final approval path with {Count} stages.", approvalPath.Count);
-
-        return approvalPath;
-    }
-
-    private async Task<Employee?> ResolveApproverAsync(Employee requester, UserRole role, CancellationToken cancellationToken)
-    {
-        // Approver resolution is now based on OrgNode hierarchy.
-        // Fall back to finding the first employee with the given role in the company.
-        return await FindFirstEmployeeInRoleAsync(requester.CompanyId, role.ToString(), cancellationToken);
-    }
-
-    private async Task<Employee?> FindFirstEmployeeInRoleAsync(Guid companyId, string roleName, CancellationToken cancellationToken)
-    {
-        var usersInRole = await _userManager.GetUsersInRoleAsync(roleName);
-        var userIds = usersInRole.Select(u => u.Id).ToList();
-
-        // Find the first employee in this company that belongs to one of these users
-        var employees = await _unitOfWork.Employees.FindAsync(e => 
-            e.CompanyId == companyId && !e.IsDeleted && userIds.Contains(e.UserId), cancellationToken);
-
-        return employees.FirstOrDefault();
-    }
-
-    private async Task<Employee?> GetFailSafeApproverAsync(Guid companyId, CancellationToken cancellationToken)
-    {
-        var approver = await FindFirstEmployeeInRoleAsync(companyId, UserRole.Executive.ToString(), cancellationToken);
-        return approver ?? await FindFirstEmployeeInRoleAsync(companyId, UserRole.HR.ToString(), cancellationToken);
+        // Deprecated: This method uses role-based workflow which is no longer supported.
+        // Use IWorkflowResolutionService.BuildApprovalChainAsync instead.
+        _logger.LogWarning("GetApprovalPathAsync is deprecated. Use IWorkflowResolutionService instead.");
+        return new List<Employee>();
     }
 }

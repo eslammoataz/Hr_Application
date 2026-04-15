@@ -29,11 +29,12 @@ public class RequestRepository : Repository<Request>, IRequestRepository
             .ToListAsync(cancellationToken);
     }
 
+    [Obsolete("Role-based pending approvals is deprecated. Use OrgNode-based workflow with CurrentStepOrder and PlannedStepsJson.")]
     public async Task<List<Request>> GetPendingApprovalsAsync(Guid approverId, CancellationToken cancellationToken = default)
     {
         return await _dbSet
             .AsNoTracking()
-            .Where(x => x.CurrentApproverId == approverId && x.Status == RequestStatus.InProgress)
+            .Where(x => x.Status == RequestStatus.InProgress)
             .Include(x => x.Employee)
             .OrderByDescending(x => x.CreatedAt)
             .ToListAsync(cancellationToken);

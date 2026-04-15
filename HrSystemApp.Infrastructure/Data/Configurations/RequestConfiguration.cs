@@ -17,17 +17,13 @@ public class RequestConfiguration : IEntityTypeConfiguration<Request>
         builder.HasQueryFilter(x => !x.IsDeleted);
 
         builder.Property(x => x.Details).HasMaxLength(2000);
-        builder.Property(x => x.PlannedChainJson).HasMaxLength(4000);
+        builder.Property(x => x.PlannedStepsJson).HasMaxLength(8000);
 
         builder.HasOne(x => x.Employee)
             .WithMany()
             .HasForeignKey(x => x.EmployeeId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasOne(x => x.CurrentApprover)
-            .WithMany()
-            .HasForeignKey(x => x.CurrentApproverId)
-            .OnDelete(DeleteBehavior.Restrict);
         builder.Property(x => x.Data).IsRequired().HasDefaultValue("{}");
     }
 }

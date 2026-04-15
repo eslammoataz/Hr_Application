@@ -1,9 +1,11 @@
-using HrSystemApp.Application.Interfaces;
 using HrSystemApp.Application.Common;
+using HrSystemApp.Application.DTOs.Requests;
 using HrSystemApp.Application.Errors;
 using HrSystemApp.Domain.Enums;
 using HrSystemApp.Application.Interfaces.Services;
+using HrSystemApp.Application.Interfaces;
 using MediatR;
+using System.Text.Json;
 
 namespace HrSystemApp.Application.Features.Requests.Queries.GetRequestDefinitions;
 
@@ -18,13 +20,10 @@ public record RequestDefinitionDto
     public object? Schema { get; set; }
 }
 
-public record WorkflowStepDto(UserRole Role, int SortOrder);
-
 public class GetRequestDefinitionsQueryHandler : IRequestHandler<GetRequestDefinitionsQuery, Result<List<RequestDefinitionDto>>>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
-
     private readonly IRequestSchemaValidator _validator;
 
     public GetRequestDefinitionsQueryHandler(IUnitOfWork unitOfWork, ICurrentUserService currentUserService, IRequestSchemaValidator validator)
@@ -68,10 +67,10 @@ public class GetRequestDefinitionsQueryHandler : IRequestHandler<GetRequestDefin
             Id = d.Id,
             RequestType = d.RequestType,
             IsActive = d.IsActive,
-            Steps = d.WorkflowSteps.Select(s => new WorkflowStepDto(s.RequiredRole, s.SortOrder)).ToList(),
-            Schema = string.IsNullOrEmpty(d.FormSchemaJson) 
-                ? _validator.GetSchema(d.RequestType) 
-                : System.Text.Json.JsonSerializer.Deserialize<object>(d.FormSchemaJson)
+            Steps = d.WorkflowSteps.Select(s => new WorkflowStepDto { OrgNodeId = s.OrgNodeId, SortOrder = s.SortOrder }).ToList(),
+            Schema = string.IsNullOrEmpty(d.FormSchemaJson)
+                ? _validator.GetSchema(d.RequestType)
+                : JsonSerializer.Deserialize<object>(d.FormSchemaJson)
         }).ToList();
 
         return Result.Success(dtos);

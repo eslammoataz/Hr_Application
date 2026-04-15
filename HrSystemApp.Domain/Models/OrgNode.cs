@@ -6,6 +6,12 @@ public class OrgNode : AuditableEntity
     public Guid? ParentId { get; set; }
     public string? Type { get; set; }
 
+    /// <summary>
+    /// The company this node belongs to.
+    /// All nodes in a hierarchy share the same CompanyId.
+    /// </summary>
+    public Guid CompanyId { get; set; }
+
     // Navigation
     public OrgNode? Parent { get; set; }
     public ICollection<OrgNode> Children { get; set; } = new List<OrgNode>();

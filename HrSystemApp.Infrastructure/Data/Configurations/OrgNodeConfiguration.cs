@@ -19,8 +19,12 @@ public class OrgNodeConfiguration : IEntityTypeConfiguration<OrgNode>
             .HasMaxLength(50)
             .IsRequired(false);
 
+        builder.Property(n => n.CompanyId)
+            .IsRequired();
+
         // Indexes
         builder.HasIndex(n => n.ParentId);
+        builder.HasIndex(n => n.CompanyId);
 
         // Self-referencing parent (Restrict to prevent circular cascade delete)
         builder.HasOne(n => n.Parent)

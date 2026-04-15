@@ -1,4 +1,5 @@
 using HrSystemApp.Application.Interfaces.Repositories;
+using HrSystemApp.Domain.Enums;
 using HrSystemApp.Domain.Models;
 using HrSystemApp.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -35,4 +36,18 @@ public class OrgNodeAssignmentRepository : Repository<OrgNodeAssignment>, IOrgNo
             .Where(a => a.EmployeeId == employeeId && !a.IsDeleted)
             .Include(a => a.OrgNode)
             .FirstOrDefaultAsync(ct);
+
+    public async Task<IReadOnlyList<Employee>> GetManagersByNodeAsync(Guid orgNodeId, CancellationToken ct)
+        => await _context.OrgNodeAssignments
+            .Where(a => a.OrgNodeId == orgNodeId && a.Role == OrgRole.Manager && !a.IsDeleted)
+            .Include(a => a.Employee)
+            .Select(a => a.Employee)
+            .ToListAsync(ct);
+
+    public async Task<bool> IsManagerAtNodeAsync(Guid employeeId, Guid orgNodeId, CancellationToken ct)
+        => await _context.OrgNodeAssignments
+            .AnyAsync(a => a.EmployeeId == employeeId
+                        && a.OrgNodeId == orgNodeId
+                        && a.Role == OrgRole.Manager
+                        && !a.IsDeleted, ct);
 }

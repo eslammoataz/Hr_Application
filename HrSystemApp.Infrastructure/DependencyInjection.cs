@@ -112,6 +112,7 @@ public static class DependencyInjection
         services.AddScoped<ISmsService, SmsService>();
 
         services.AddScoped<IWorkflowService, WorkflowService>();
+        services.AddScoped<IWorkflowResolutionService, WorkflowResolutionService>();
         services.AddScoped<IHierarchyService, HierarchyService>();
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<ICurrentUserService, CurrentUserService>();

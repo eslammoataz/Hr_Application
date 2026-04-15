@@ -32,10 +32,10 @@ public class RequestWorkflowStep : BaseEntity
     public Guid RequestDefinitionId { get; set; }
 
     /// <summary>
-    /// The role required at this step. 
-    /// The system will find the specific employee occupying this role for the requester.
+    /// The OrgNode that this step targets.
+    /// Approvers are the employees with OrgRole = Manager assigned to this node.
     /// </summary>
-    public UserRole RequiredRole { get; set; }
+    public Guid OrgNodeId { get; set; }
 
     /// <summary>
     /// Sequence order (1, 2, 3...)
@@ -44,4 +44,5 @@ public class RequestWorkflowStep : BaseEntity
 
     // Navigation
     public RequestDefinition RequestDefinition { get; set; } = null!;
+    public OrgNode OrgNode { get; set; } = null!;
 }

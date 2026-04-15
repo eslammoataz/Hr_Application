@@ -83,4 +83,108 @@ public class OrgNodeRepository : Repository<OrgNode>, IOrgNodeRepository
             .Where(n => n.ParentId == null)
             .Include(n => n.Assignments).ThenInclude(a => a.Employee)
             .ToListAsync(ct);
+
+    public async Task<IReadOnlyList<OrgNode>> GetAncestorsAsync(Guid nodeId, CancellationToken ct)
+    {
+        // Phase 1: Walk up collecting ParentId values (N lightweight queries)
+        var ancestorIds = new List<Guid>();
+        var currentParentId = await _context.OrgNodes
+            .AsNoTracking()
+            .Where(n => n.Id == nodeId)
+            .Select(n => n.ParentId)
+            .FirstOrDefaultAsync(ct);
+
+        while (currentParentId.HasValue)
+        {
+            ancestorIds.Add(currentParentId.Value);
+            currentParentId = await _context.OrgNodes
+                .AsNoTracking()
+                .Where(n => n.Id == currentParentId.Value)
+                .Select(n => n.ParentId)
+                .FirstOrDefaultAsync(ct);
+        }
+
+        if (ancestorIds.Count == 0)
+            return new List<OrgNode>();
+
+        // Phase 2: Fetch all ancestors with assignments in ONE query
+        var ancestors = await _context.OrgNodes
+            .AsNoTracking()
+            .Where(n => ancestorIds.Contains(n.Id))
+            .Include(n => n.Assignments).ThenInclude(a => a.Employee)
+            .ToListAsync(ct);
+
+        // Preserve order from immediate parent to root (ancestorIds is already in this order)
+        return ancestorIds
+            .Select(id => ancestors.First(a => a.Id == id))
+            .ToList();
+    }
+
+    public async Task<IReadOnlyList<OrgNode>> GetAncestorChainAsync(Guid startNodeId, Guid targetRootId, CancellationToken ct)
+    {
+        // Phase 1: Walk up collecting ParentId values (N lightweight queries)
+        var ancestorIds = new List<Guid>();
+        var currentParentId = await _context.OrgNodes
+            .AsNoTracking()
+            .Where(n => n.Id == startNodeId)
+            .Select(n => n.ParentId)
+            .FirstOrDefaultAsync(ct);
+
+        while (currentParentId.HasValue && currentParentId.Value != targetRootId)
+        {
+            ancestorIds.Add(currentParentId.Value);
+            currentParentId = await _context.OrgNodes
+                .AsNoTracking()
+                .Where(n => n.Id == currentParentId.Value)
+                .Select(n => n.ParentId)
+                .FirstOrDefaultAsync(ct);
+        }
+
+        if (ancestorIds.Count == 0)
+            return new List<OrgNode>();
+
+        // Phase 2: Fetch all ancestors with assignments in ONE query
+        var ancestors = await _context.OrgNodes
+            .AsNoTracking()
+            .Where(n => ancestorIds.Contains(n.Id))
+            .Include(n => n.Assignments).ThenInclude(a => a.Employee)
+            .ToListAsync(ct);
+
+        // Preserve order from immediate parent to root
+        return ancestorIds
+            .Select(id => ancestors.First(a => a.Id == id))
+            .ToList();
+    }
+
+    public async Task<OrgNode> GetRootNodeAsync(Guid nodeId, CancellationToken ct)
+    {
+        // Walk up collecting IDs (N lightweight queries)
+        var nodeIds = new List<Guid> { nodeId };
+        var currentParentId = await _context.OrgNodes
+            .AsNoTracking()
+            .Where(n => n.Id == nodeId)
+            .Select(n => n.ParentId)
+            .FirstOrDefaultAsync(ct);
+
+        while (currentParentId.HasValue)
+        {
+            nodeIds.Add(currentParentId.Value);
+            currentParentId = await _context.OrgNodes
+                .AsNoTracking()
+                .Where(n => n.Id == currentParentId.Value)
+                .Select(n => n.ParentId)
+                .FirstOrDefaultAsync(ct);
+        }
+
+        if (nodeIds.Count == 0)
+            throw new InvalidOperationException($"Node {nodeId} not found.");
+
+        // Fetch the root node (last in the list) in ONE query
+        var rootId = nodeIds.Last();
+        return await _context.OrgNodes
+            .AsNoTracking()
+            .Include(n => n.Assignments).ThenInclude(a => a.Employee)
+            .FirstOrDefaultAsync(n => n.Id == rootId, ct)
+            ?? throw new InvalidOperationException($"Node {rootId} not found.");
+    }
 }

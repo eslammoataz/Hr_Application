@@ -4,6 +4,12 @@ namespace HrSystemApp.Application.DTOs.OrgNodes;
 
 public class BulkSetupOrgNodesRequest
 {
+    /// <summary>
+    /// The company ID this hierarchy belongs to.
+    /// All nodes in the hierarchy will be associated with this company.
+    /// </summary>
+    public Guid CompanyId { get; set; }
+
     public List<BulkOrgNodeDto> Nodes { get; set; } = new();
 }
 

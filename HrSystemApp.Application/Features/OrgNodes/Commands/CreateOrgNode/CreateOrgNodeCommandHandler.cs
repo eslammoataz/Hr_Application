@@ -38,6 +38,14 @@ public class CreateOrgNodeCommandHandler : IRequestHandler<CreateOrgNodeCommand,
                 _logger.LogWarning("CreateOrgNode failed: Parent {ParentId} not found.", request.ParentId);
                 return Result.Failure<Guid>(DomainErrors.OrgNode.NotFound);
             }
+
+            // Ensure node belongs to the same company as parent
+            if (parent.CompanyId != request.CompanyId)
+            {
+                _logger.LogWarning("CreateOrgNode failed: Parent {ParentId} belongs to company {ParentCompanyId}, not {RequestCompanyId}",
+                    request.ParentId, parent.CompanyId, request.CompanyId);
+                return Result.Failure<Guid>(DomainErrors.General.ArgumentError);
+            }
         }
 
         // Create the node
@@ -45,7 +53,8 @@ public class CreateOrgNodeCommandHandler : IRequestHandler<CreateOrgNodeCommand,
         {
             Name = request.Name,
             ParentId = request.ParentId,
-            Type = request.Type?.Trim().ToLower()
+            Type = request.Type?.Trim().ToLower(),
+            CompanyId = request.CompanyId
         };
 
         await _unitOfWork.OrgNodes.AddAsync(node, cancellationToken);

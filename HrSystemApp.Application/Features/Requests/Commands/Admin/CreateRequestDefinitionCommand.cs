@@ -1,3 +1,4 @@
+using HrSystemApp.Application.DTOs.Requests;
 using HrSystemApp.Application.Interfaces;
 using HrSystemApp.Application.Interfaces.Services;
 using HrSystemApp.Application.Common;
@@ -15,8 +16,6 @@ public record CreateRequestDefinitionCommand : IRequest<Result<Guid>>
     public RequestType RequestType { get; set; }
     public List<WorkflowStepDto> Steps { get; set; } = new();
 }
-
-public record WorkflowStepDto(UserRole Role, int SortOrder);
 
 public class CreateRequestDefinitionCommandHandler : IRequestHandler<CreateRequestDefinitionCommand, Result<Guid>>
 {
@@ -41,8 +40,8 @@ public class CreateRequestDefinitionCommandHandler : IRequestHandler<CreateReque
         if (_currentUserService.Role == nameof(UserRole.SuperAdmin))
         {
             if (!request.CompanyId.HasValue || request.CompanyId.Value == Guid.Empty)
-                return Result.Failure<Guid>(DomainErrors.General.ArgumentError); 
-                
+                return Result.Failure<Guid>(DomainErrors.General.ArgumentError);
+
             targetCompanyId = request.CompanyId.Value;
         }
         else
@@ -58,28 +57,38 @@ public class CreateRequestDefinitionCommandHandler : IRequestHandler<CreateReque
             targetCompanyId = employee.CompanyId;
         }
 
-        _logger.LogInformation("Attempting to create Request Definition for Company {CompanyId} (Type: {Type}).", 
+        _logger.LogInformation("Attempting to create Request Definition for Company {CompanyId} (Type: {Type}).",
             targetCompanyId, request.RequestType);
 
         // 1. Check if already exists
         var existing = await _unitOfWork.RequestDefinitions.GetByTypeAsync(targetCompanyId, request.RequestType, cancellationToken);
-        if (existing != null) 
+        if (existing != null)
         {
-            _logger.LogWarning("CreateRequestDefinition failed: Definition already exists for Company {CompanyId}, Type {Type}.", 
+            _logger.LogWarning("CreateRequestDefinition failed: Definition already exists for Company {CompanyId}, Type {Type}.",
                 targetCompanyId, request.RequestType);
             return Result.Failure<Guid>(DomainErrors.Requests.DefinitionNotFound);
         }
 
-        // 2. Validate hierarchy roles and sort order
-        var hierarchyPositions = await _unitOfWork.HierarchyPositions.GetByCompanyAsync(targetCompanyId, cancellationToken);
-        var validationResult = WorkflowValidationHelper.ValidateWorkflowSteps(request.Steps, hierarchyPositions);
-        if (validationResult.IsFailure)
+        // 2. Validate steps have unique sort orders
+        var sortOrders = request.Steps.Select(s => s.SortOrder).ToList();
+        if (sortOrders.Distinct().Count() != sortOrders.Count)
         {
-            _logger.LogWarning("CreateRequestDefinition failed: {Error}", validationResult.Error.Message);
-            return Result.Failure<Guid>(validationResult.Error);
+            _logger.LogWarning("CreateRequestDefinition failed: Duplicate sort orders detected.");
+            return Result.Failure<Guid>(DomainErrors.General.ArgumentError);
         }
 
-        // 3. Create Definition
+        // 3. Validate each OrgNode exists
+        foreach (var step in request.Steps)
+        {
+            var node = await _unitOfWork.OrgNodes.GetByIdAsync(step.OrgNodeId, cancellationToken);
+            if (node == null)
+            {
+                _logger.LogWarning("CreateRequestDefinition failed: OrgNode {NodeId} not found.", step.OrgNodeId);
+                return Result.Failure<Guid>(DomainErrors.OrgNode.NotFound);
+            }
+        }
+
+        // 4. Create Definition
         var definition = new RequestDefinition
         {
             CompanyId = targetCompanyId,
@@ -87,7 +96,7 @@ public class CreateRequestDefinitionCommandHandler : IRequestHandler<CreateReque
             IsActive = true,
             WorkflowSteps = request.Steps.Select(s => new RequestWorkflowStep
             {
-                RequiredRole = s.Role,
+                OrgNodeId = s.OrgNodeId,
                 SortOrder = s.SortOrder
             }).ToList()
         };
@@ -95,7 +104,7 @@ public class CreateRequestDefinitionCommandHandler : IRequestHandler<CreateReque
         await _unitOfWork.RequestDefinitions.AddAsync(definition, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        _logger.LogInformation("Successfully created Request Definition ID {DefinitionId} for Company {CompanyId} (Type: {Type}) with {StepCount} logic steps.", 
+        _logger.LogInformation("Successfully created Request Definition ID {DefinitionId} for Company {CompanyId} (Type: {Type}) with {StepCount} logic steps.",
             definition.Id, definition.CompanyId, definition.RequestType, definition.WorkflowSteps.Count);
 
         return Result.Success(definition.Id);

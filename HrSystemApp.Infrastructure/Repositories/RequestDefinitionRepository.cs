@@ -31,11 +31,10 @@ public class RequestDefinitionRepository : Repository<RequestDefinition>, IReque
         return await query.ToListAsync(cancellationToken);
     }
 
+    [Obsolete("Role-based workflow is deprecated. Use OrgNode-based workflow steps.")]
     public async Task<bool> AnyDefinitionUsingRoleAsync(Guid companyId, UserRole role, CancellationToken ct = default)
     {
-        return await _dbSet
-            .AnyAsync(x => x.CompanyId == companyId && x.WorkflowSteps.Any(s => s.RequiredRole == role), ct);
+        // This method is deprecated and always returns false since we no longer use role-based workflow.
+        return await Task.FromResult(false);
     }
-
-
 }

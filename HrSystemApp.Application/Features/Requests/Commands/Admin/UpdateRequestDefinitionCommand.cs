@@ -1,3 +1,4 @@
+using HrSystemApp.Application.DTOs.Requests;
 using HrSystemApp.Application.Interfaces;
 using HrSystemApp.Application.Interfaces.Services;
 using HrSystemApp.Application.Common;
@@ -65,22 +66,31 @@ public class UpdateRequestDefinitionCommandHandler : IRequestHandler<UpdateReque
             return Result.Failure<Guid>(DomainErrors.Auth.Unauthorized);
         }
 
-        // 3. Validate hierarchy roles and sort order
-        var hierarchyPositions =
-            await _unitOfWork.HierarchyPositions.GetByCompanyAsync(definition.CompanyId, cancellationToken);
-        var validationResult = WorkflowValidationHelper.ValidateWorkflowSteps(request.Steps, hierarchyPositions);
-        if (validationResult.IsFailure)
+        // 3. Validate steps have unique sort orders
+        var sortOrders = request.Steps.Select(s => s.SortOrder).ToList();
+        if (sortOrders.Distinct().Count() != sortOrders.Count)
         {
-            _logger.LogWarning("UpdateRequestDefinition failed: {Error}", validationResult.Error.Message);
-            return Result.Failure<Guid>(validationResult.Error);
+            _logger.LogWarning("UpdateRequestDefinition failed: Duplicate sort orders detected.");
+            return Result.Failure<Guid>(DomainErrors.General.ArgumentError);
         }
 
-        // 4. Update
+        // 4. Validate each OrgNode exists
+        foreach (var step in request.Steps)
+        {
+            var node = await _unitOfWork.OrgNodes.GetByIdAsync(step.OrgNodeId, cancellationToken);
+            if (node == null)
+            {
+                _logger.LogWarning("UpdateRequestDefinition failed: OrgNode {NodeId} not found.", step.OrgNodeId);
+                return Result.Failure<Guid>(DomainErrors.OrgNode.NotFound);
+            }
+        }
+
+        // 5. Update
         definition.IsActive = request.IsActive;
         definition.WorkflowSteps.Clear();
         definition.WorkflowSteps = request.Steps.Select(s => new RequestWorkflowStep
         {
-            RequiredRole = s.Role,
+            OrgNodeId = s.OrgNodeId,
             SortOrder = s.SortOrder,
             RequestDefinitionId = definition.Id
         }).ToList();
