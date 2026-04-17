@@ -18,6 +18,10 @@ public class RequestConfiguration : IEntityTypeConfiguration<Request>
 
         builder.Property(x => x.Details).HasMaxLength(2000);
         builder.Property(x => x.PlannedStepsJson).HasMaxLength(8000);
+        builder.Property(x => x.CurrentStepApproverIds).HasMaxLength(1000);
+
+        // Index for fast pending approval queries
+        builder.HasIndex(x => x.CurrentStepApproverIds);
 
         builder.HasOne(x => x.Employee)
             .WithMany()

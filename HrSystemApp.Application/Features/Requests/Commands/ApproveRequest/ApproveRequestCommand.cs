@@ -105,6 +105,7 @@ public class ApproveRequestCommandHandler : IRequestHandler<ApproveRequestComman
         {
             existingRequest.Status = RequestStatus.Approved;
             existingRequest.CurrentStepOrder = 0;
+            existingRequest.CurrentStepApproverIds = null;
 
             // Execute final actions via strategy
             var strategy = _strategyFactory.GetStrategy(existingRequest.RequestType);
@@ -120,6 +121,9 @@ public class ApproveRequestCommandHandler : IRequestHandler<ApproveRequestComman
         else
         {
             existingRequest.Status = RequestStatus.InProgress;
+            // Update denormalized approver IDs for the new step
+            var nextStep = plannedSteps[existingRequest.CurrentStepOrder - 1];
+            existingRequest.CurrentStepApproverIds = string.Join(",", nextStep.Approvers.Select(a => a.EmployeeId));
             _logger.LogInformation("Request {RequestId} moved to step {StepOrder} of {TotalSteps}",
                 existingRequest.Id, existingRequest.CurrentStepOrder, plannedSteps.Count);
         }

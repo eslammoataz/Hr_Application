@@ -19,10 +19,9 @@ The base entity for all requests. Stores type-specific data as JSON.
 | `RequestType` | `RequestType` enum | Determines which workflow applies |
 | `Data` | JSON string | Type-specific payload (e.g., leave dates, duration) |
 | `Status` | `RequestStatus` enum | `Draft`, `Submitted`, `InProgress`, `Approved`, `Rejected`, `Escalated`, `Cancelled` |
-| `CurrentApproverId` | Guid? | Who must currently act on it (null if fully approved) |
-| `PlannedChainJson` | JSON string | Snapshot of the entire approval chain at submission |
+| `CurrentStepOrder` | int | 1-based current step; 0 = completed (approved/rejected) |
+| `PlannedStepsJson` | JSON string | Snapshot of the entire approval chain at submission |
 | `Employee` | navigation | The requester |
-| `CurrentApprover` | navigation | The current approver |
 | `ApprovalHistory` | collection | Immutable audit trail |
 
 #### `RequestDefinition`
@@ -39,29 +38,30 @@ A workflow **template** per company per request type. One definition, many reque
 **Unique constraint:** `(CompanyId, RequestType)` — one workflow definition per type per company.
 
 #### `RequestWorkflowStep`
-A single step in an approval chain. Links a role to a position in the sequence.
+A single step in an approval chain. Links an OrgNode to a position in the sequence.
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `RequiredRole` | `UserRole` enum | Which role must approve at this step |
+| `OrgNodeId` | Guid | Which OrgNode's managers must approve at this step |
 | `SortOrder` | int | Position in the chain (1 = first approver) |
 
 #### Supporting Hierarchy Entities
 
-Each `Employee` belongs to a hierarchy:
+Each `Employee` belongs to an OrgNode hierarchy via `OrgNodeAssignment`:
 ```
 Company
-  └── Department (has ManagerId, VicePresidentId)
-        └── Unit (has UnitLeaderId)
-              └── Team (has TeamLeaderId)
+  └── OrgNode (root)
+        └── OrgNode (child)
+              └── OrgNode (leaf - where employees are assigned)
 ```
 
-`CompanyHierarchyPosition` defines the authority ladder per company:
-| Field | Description |
+Each `OrgNodeAssignment` links an employee to an OrgNode and records their `OrgRole` (Manager or Member) at that node.
+
+`OrgRole` enum:
+| Value | Description |
 |-------|-------------|
-| `Role` | e.g., `CEO`, `VicePresident`, `TeamLeader` |
-| `PositionTitle` | Human-readable title |
-| `SortOrder` | 1 = highest authority, higher numbers = lower authority |
+| `Member` | Regular employee |
+| `Manager` | Manager at their assigned node |
 
 ---
 
@@ -128,15 +128,13 @@ Field types supported: `string`, `number`, `boolean`, `date`, `datetime`.
 2. Duplicate check
    └── Fail if (CompanyId, RequestType) already exists
 
-3. Workflow validation (WorkflowValidationHelper.ValidateWorkflowSteps)
-   ├── Every role in the steps must exist in CompanyHierarchyPosition
-   └── Steps must ESCALATE in authority — each step's SortOrder must be
-       LOWER (higher rank) than the previous step
-       Example valid: TeamLeader(5) → DepartmentManager(3) → HR(6)
+3. Validate steps have unique sort orders
 
-4. Persist
+4. Validate each OrgNode exists
+
+5. Persist
    ├── Create RequestDefinition
-   └── Create RequestWorkflowStep records for each step
+   └── Create RequestWorkflowStep records for each step (OrgNodeId + SortOrder)
 ```
 
 ### Example
@@ -149,19 +147,21 @@ Creating a Leave workflow for a company:
   "requestType": "Leave",
   "isActive": true,
   "steps": [
-    { "role": "TeamLeader",       "sortOrder": 5 },
-    { "role": "DepartmentManager", "sortOrder": 3 },
-    { "role": "HR",               "sortOrder": 6 }
+    { "orgNodeId": "3fa85f64-5717-4562-b3fc-2c963f66afa6", "sortOrder": 1 },
+    { "orgNodeId": "7fa85f64-5717-4562-b3fc-2c963f66afa7", "sortOrder": 2 },
+    { "orgNodeId": "8fa85f64-5717-4562-b3fc-2c963f66afa8", "sortOrder": 3 }
   ]
 }
 ```
+
+**Note:** Step validation (ensuring each OrgNode has at least one manager) happens at **request creation time**, not at definition creation time.
 
 ---
 
 ## How the Workflow Engine Resolves Approvers
 
-**Class:** `WorkflowService` (`HrSystemApp.Infrastructure/Services/WorkflowService.cs`)
-**Method:** `GetApprovalPathAsync`
+**Class:** `WorkflowResolutionService` (`HrSystemApp.Infrastructure/Services/WorkflowResolutionService.cs`)
+**Method:** `BuildApprovalChainAsync`
 
 This is the core engine that translates a workflow template into a **concrete list of approver IDs** at the moment a request is submitted.
 
@@ -169,33 +169,36 @@ This is the core engine that translates a workflow template into a **concrete li
 
 For each `RequestWorkflowStep` in `SortOrder`:
 
-| Role | Resolved By |
-|------|-------------|
-| `TeamLeader` | `Employee.Team.TeamLeaderId` |
-| `UnitLeader` | `Employee.Unit.UnitLeaderId` |
-| `DepartmentManager` | `Employee.Department.ManagerId` |
-| `VicePresident` | `Employee.Department.VicePresidentId` |
-| `CEO` / `HR` / `AssetAdmin` / `CompanyAdmin` | First employee in the company with that role (via `UserManager`) |
-| `SuperAdmin` | First SuperAdmin in the system |
+1. **Get requester's node** from `OrgNodeAssignment`
+2. **Get all ancestor nodes** of the requester's node (ordered from immediate parent to root)
+3. **For each step:**
+   - If the step references the requester's **own node** and the requester is a **manager** at that node → **skip** (self-approval prevention)
+   - If the step references the requester's **own node** and the requester is **not** a manager → get managers at the requester's node
+   - If the step references an **ancestor node** → get managers at that ancestor node via `OrgNodeAssignments.GetManagersByNodeAsync`
+   - **Exclude the requester** from the approver list (self-approval prevention)
+   - If all managers were excluded (requester was the only manager) → keep them anyway
+
+### Validation Rules
+
+- Each step must reference the requester's **own node** or one of its **ancestors**
+- Each step must have **at least one active manager** at the referenced node
+- If validation fails, request creation fails with `NoActiveManagersAtStep` or `InvalidWorkflowChain`
 
 ### Self-Approval Prevention
 
-If the resolved approver is the **same person as the requester**, that step is **skipped**. The chain continues to the next step.
-
-### Deduplication
-
-If two steps resolve to the **same person**, they appear only once in the final chain.
+- If the employee is a manager at their own node, steps targeting that node are **skipped**
+- The requester is excluded from any approver list
 
 ### Fallback
 
-If **no approvers** are resolved at all → fallback to `CompanyAdmin`, then `HR`.
+If **all steps are skipped** (e.g., employee is manager at all definition nodes) → **auto-approve** the request immediately.
 
 ### Chain Snapshotted at Submission
 
-The entire approval chain is serialized to `PlannedChainJson` at submission time. Future changes to:
+The entire approval chain is serialized to `PlannedStepsJson` at submission time. Future changes to:
 - The `RequestDefinition` workflow steps
-- The `CompanyHierarchyPosition` table
-- Who holds a leadership role
+- The `OrgNode` hierarchy
+- Manager assignments via `OrgNodeAssignment`
 
 **Do not affect in-flight requests.** The chain is frozen.
 
@@ -225,15 +228,20 @@ The entire approval chain is serialized to `PlannedChainJson` at submission time
    └── Example: LeaveRequestStrategy checks leave balance
        RemainingDays - PendingDurations >= RequestedDuration
 
-5. Resolve Workflow (WorkflowService.GetApprovalPathAsync)
-   └── Get the approval chain for this employee + request type
-   └── Fail if no approvers found
+5. Resolve Workflow (WorkflowResolutionService.BuildApprovalChainAsync)
+   └── Get employee's OrgNode assignment
+   └── Build approval chain based on definition steps and OrgNode hierarchy
+   └── Fail if step references a node without managers
 
 6. Persist
    ├── Create Request with Status = Submitted
-   ├── CurrentApproverId = approvalPath.First().Id (first approver)
-   ├── PlannedChainJson = JSON snapshot of full chain
+   ├── CurrentStepOrder = 1
+   ├── PlannedStepsJson = JSON snapshot of full chain with approvers
    └── Return the new RequestId
+
+7. Auto-approve (if chain is empty)
+   └── All steps were skipped due to self-approval prevention
+   └── Status = Approved, comment = "Auto accepted by system"
 ```
 
 ---
@@ -256,50 +264,57 @@ Runs when a leave request is **created** and when it reaches **final approval**.
 
 ## Approving a Request
 
-**Endpoint:** `POST /api/requests/{id}/approve`
+**Endpoint:** `POST /api/requests/approvals/{id}/approve`
 
 ### Flow
 
 ```
 1. Security
-   └── Only CurrentApproverId can approve
+   └── Resolve approver from JWT user
+   └── Approver must be in current step's approver list
 
 2. Validate
    └── Status must be Submitted or InProgress
+   └── CurrentStepOrder must be within bounds
 
 3. Record in ApprovalHistory
-   └── RequestId, ApproverId, Status, Comment, Timestamp
+   └── RequestId, ApproverId, Status = Approved, Comment, Timestamp
 
-4. Determine next step
-   └── From PlannedChainJson snapshot:
-       ├── If more approvers remain:
-       │     CurrentApproverId = next approver's Id
-       │     Status = InProgress
-       └── If last approver:
-             CurrentApproverId = null
-             Status = Approved
-             Call OnFinalApprovalAsync (e.g., deduct leave balance)
+4. Advance step
+   └── CurrentStepOrder++
 
-5. Notify requester
+5. Determine next step
+   └── From PlannedStepsJson snapshot:
+       ├── If CurrentStepOrder > steps.Count:
+       │     Status = Approved
+       │     CurrentStepOrder = 0
+       │     Call OnFinalApprovalAsync (e.g., deduct leave balance)
+       └── Else:
+             Status = InProgress
+
+6. Notify requester (only on final approval)
 ```
 
 ---
 
 ## Rejecting a Request
 
-**Endpoint:** `POST /api/requests/{id}/reject`
+**Endpoint:** `POST /api/requests/approvals/{id}/reject`
 
 ### Flow
 
 ```
 1. Security
-   └── Only CurrentApproverId can reject
+   └── Resolve approver from JWT user
+   └── Approver must be in current step's approver list
 
 2. Update Request
    └── Status = Rejected
-   └── CurrentApproverId = null
+   └── CurrentStepOrder = 0
 
 3. Record in ApprovalHistory
+   └── Status = Rejected
+   └── Comment = rejection reason
 
 4. Notify requester with rejection reason
 ```
@@ -310,12 +325,11 @@ Runs when a leave request is **created** and when it reaches **final approval**.
 
 | Area | File |
 |------|------|
-| Domain Models | `Domain/Models/Request.cs` (Request, RequestDefinition, RequestWorkflowStep) |
-| Domain Enums | `Domain/Enums/RequestType.cs`, `RequestStatus.cs`, `UserRole.cs` |
+| Domain Models | `Domain/Models/Request.cs` (Request, RequestApprovalHistory), `Domain/Models/RequestWorkflow.cs` (RequestDefinition, RequestWorkflowStep) |
+| Domain Enums | `Domain/Enums/RequestType.cs`, `RequestStatus.cs`, `OrgRole.cs` |
 | Schema Definition | `Application/Common/RequestSchemas.json` |
 | Schema Validator | `Infrastructure/Services/RequestSchemaValidator.cs` |
-| Workflow Engine | `Infrastructure/Services/WorkflowService.cs` |
-| Workflow Validation | `Application/Features/Requests/Commands/Admin/WorkflowValidationHelper.cs` |
+| Workflow Resolution | `Infrastructure/Services/WorkflowResolutionService.cs` |
 | Create Request | `Application/Features/Requests/Commands/CreateRequest/CreateRequestCommand.cs` |
 | Create Definition | `Application/Features/Requests/Commands/Admin/CreateRequestDefinitionCommand.cs` |
 | Update Definition | `Application/Features/Requests/Commands/Admin/UpdateRequestDefinitionCommand.cs` |
@@ -324,9 +338,8 @@ Runs when a leave request is **created** and when it reaches **final approval**.
 | Reject Request | `Application/Features/Requests/Commands/RejectRequest/RejectRequestCommand.cs` |
 | Leave Strategy | `Application/Features/Requests/Strategies/LeaveRequestStrategy.cs` |
 | Strategy Factory | `Application/Features/Requests/Strategies/RequestStrategyFactory.cs` |
-| DB Config | `Infrastructure/Data/Configurations/RequestConfiguration.cs` |
-| Repositories | `Infrastructure/Repositories/RequestRepository.cs`, `RequestDefinitionRepository.cs` |
-| API Controller | `Api/Controllers/RequestDefinitionsController.cs` |
+| DTOs | `Application/DTOs/Requests/PlannedStepDto.cs`, `WorkflowStepDto.cs` |
+| API Controllers | `Api/Controllers/RequestsController.cs`, `Api/Controllers/RequestDefinitionsController.cs` | |
 
 ---
 
@@ -349,21 +362,23 @@ Employee submits a Request
          │
          ▼
 ┌─────────────────────────┐
-│  Workflow Resolution     │  ← WorkflowService.GetApprovalPathAsync
-│  (role → person)         │    Looks up TeamLeader/UnitLeader/etc. from
-│                           │    Employee's Team/Unit/Department hierarchy
+│  Workflow Resolution     │  ← WorkflowResolutionService.BuildApprovalChainAsync
+│  (OrgNode → Managers)    │    Walks up OrgNode hierarchy from employee's node
+│                           │    Gets managers via OrgNodeAssignment
+│                           │    Self-approval: skips if employee is manager at step's node
 └─────────────────────────┘
          │
          ▼
 ┌─────────────────────────┐
 │  Persist Request         │  ← Status = Submitted
-│  Snapshot Chain           │    PlannedChainJson = full approval chain
-│  Set First Approver      │    CurrentApproverId = first approver
+│  Snapshot Chain           │    PlannedStepsJson = [{NodeId, NodeName, Approvers}]
+│  Set CurrentStepOrder    │    CurrentStepOrder = 1
 └─────────────────────────┘
          │
          ▼ (each approval)
 ┌─────────────────────────┐
-│  Approval Flow           │  ← Move to next approver in PlannedChainJson
+│  Approval Flow           │  ← CurrentStepOrder++
 │  or Finalize             │    On final: call OnFinalApprovalAsync
+│                           │    Reject: sets CurrentStepOrder = 0
 └─────────────────────────┘
 ```

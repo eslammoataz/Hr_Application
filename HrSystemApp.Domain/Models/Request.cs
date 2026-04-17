@@ -32,6 +32,13 @@ public class Request : AuditableEntity
     /// </summary>
     public string? PlannedStepsJson { get; set; }
 
+    /// <summary>
+    /// Denormalized list of current step approver IDs for fast database filtering.
+    /// Format: "empId1,empId2,empId3"
+    /// Updated when request is created and when step advances.
+    /// </summary>
+    public string? CurrentStepApproverIds { get; set; }
+
     // Navigation
     public Employee Employee { get; set; } = null!;
     public ICollection<RequestApprovalHistory> ApprovalHistory { get; set; } = new List<RequestApprovalHistory>();

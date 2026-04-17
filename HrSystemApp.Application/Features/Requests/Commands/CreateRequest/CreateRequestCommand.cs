@@ -131,7 +131,10 @@ public class CreateRequestCommandHandler : IRequestHandler<CreateRequestCommand,
             Details = request.Details,
             Status = RequestStatus.Submitted,
             CurrentStepOrder = 1,
-            PlannedStepsJson = JsonSerializer.Serialize(plannedSteps)
+            PlannedStepsJson = JsonSerializer.Serialize(plannedSteps),
+            CurrentStepApproverIds = plannedSteps.Count > 0
+                ? string.Join(",", plannedSteps[0].Approvers.Select(a => a.EmployeeId))
+                : null
         };
 
         await _unitOfWork.Requests.AddAsync(newRequest, cancellationToken);
