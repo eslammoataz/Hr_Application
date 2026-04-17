@@ -536,59 +536,6 @@ namespace HrSystemApp.Infrastructure.Migrations
                     b.ToTable("ContactAdminRequests");
                 });
 
-            modelBuilder.Entity("HrSystemApp.Domain.Models.Department", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("CompanyId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("CreatedById")
-                        .HasMaxLength(450)
-                        .HasColumnType("character varying(450)");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("boolean");
-
-                    b.Property<Guid?>("ManagerId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("UpdatedById")
-                        .HasMaxLength(450)
-                        .HasColumnType("character varying(450)");
-
-                    b.Property<Guid?>("VicePresidentId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ManagerId");
-
-                    b.HasIndex("VicePresidentId");
-
-                    b.HasIndex("CompanyId", "Name")
-                        .IsUnique();
-
-                    b.ToTable("Departments");
-                });
-
             modelBuilder.Entity("HrSystemApp.Domain.Models.Employee", b =>
                 {
                     b.Property<Guid>("Id")
@@ -614,9 +561,6 @@ namespace HrSystemApp.Infrastructure.Migrations
                     b.Property<string>("CreatedById")
                         .HasMaxLength(450)
                         .HasColumnType("character varying(450)");
-
-                    b.Property<Guid?>("DepartmentId")
-                        .HasColumnType("uuid");
 
                     b.Property<string>("Email")
                         .IsRequired()
@@ -659,12 +603,6 @@ namespace HrSystemApp.Infrastructure.Migrations
                     b.Property<Guid?>("SalaryPackageId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("TeamId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("UnitId")
-                        .HasColumnType("uuid");
-
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -682,18 +620,12 @@ namespace HrSystemApp.Infrastructure.Migrations
 
                     b.HasIndex("CompanyLocationId");
 
-                    b.HasIndex("DepartmentId");
-
                     b.HasIndex("Email");
 
                     b.HasIndex("EmployeeCode")
                         .IsUnique();
 
                     b.HasIndex("ManagerId");
-
-                    b.HasIndex("TeamId");
-
-                    b.HasIndex("UnitId");
 
                     b.HasIndex("UserId")
                         .IsUnique()
@@ -981,6 +913,10 @@ namespace HrSystemApp.Infrastructure.Migrations
                     b.Property<string>("CreatedById")
                         .HasColumnType("text");
 
+                    b.Property<string>("CurrentStepApproverIds")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
                     b.Property<int>("CurrentStepOrder")
                         .HasColumnType("integer");
 
@@ -1017,6 +953,8 @@ namespace HrSystemApp.Infrastructure.Migrations
                         .HasColumnType("text");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CurrentStepApproverIds");
 
                     b.HasIndex("EmployeeId");
 
@@ -1163,102 +1101,6 @@ namespace HrSystemApp.Infrastructure.Migrations
                     b.HasIndex("RequestDefinitionId");
 
                     b.ToTable("RequestWorkflowSteps", (string)null);
-                });
-
-            modelBuilder.Entity("HrSystemApp.Domain.Models.Team", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("CreatedById")
-                        .HasMaxLength(450)
-                        .HasColumnType("character varying(450)");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<Guid?>("TeamLeaderId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("UnitId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("UpdatedById")
-                        .HasMaxLength(450)
-                        .HasColumnType("character varying(450)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TeamLeaderId");
-
-                    b.HasIndex("UnitId", "Name")
-                        .IsUnique();
-
-                    b.ToTable("Teams");
-                });
-
-            modelBuilder.Entity("HrSystemApp.Domain.Models.Unit", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("CreatedById")
-                        .HasMaxLength(450)
-                        .HasColumnType("character varying(450)");
-
-                    b.Property<Guid>("DepartmentId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<Guid?>("UnitLeaderId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("UpdatedById")
-                        .HasMaxLength(450)
-                        .HasColumnType("character varying(450)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UnitLeaderId");
-
-                    b.HasIndex("DepartmentId", "Name")
-                        .IsUnique();
-
-                    b.ToTable("Units");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -1497,31 +1339,6 @@ namespace HrSystemApp.Infrastructure.Migrations
                     b.Navigation("Company");
                 });
 
-            modelBuilder.Entity("HrSystemApp.Domain.Models.Department", b =>
-                {
-                    b.HasOne("HrSystemApp.Domain.Models.Company", "Company")
-                        .WithMany("Departments")
-                        .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("HrSystemApp.Domain.Models.Employee", "Manager")
-                        .WithMany()
-                        .HasForeignKey("ManagerId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("HrSystemApp.Domain.Models.Employee", "VicePresident")
-                        .WithMany()
-                        .HasForeignKey("VicePresidentId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("Company");
-
-                    b.Navigation("Manager");
-
-                    b.Navigation("VicePresident");
-                });
-
             modelBuilder.Entity("HrSystemApp.Domain.Models.Employee", b =>
                 {
                     b.HasOne("HrSystemApp.Domain.Models.Company", "Company")
@@ -1535,24 +1352,9 @@ namespace HrSystemApp.Infrastructure.Migrations
                         .HasForeignKey("CompanyLocationId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("HrSystemApp.Domain.Models.Department", "Department")
-                        .WithMany()
-                        .HasForeignKey("DepartmentId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.HasOne("HrSystemApp.Domain.Models.Employee", "Manager")
                         .WithMany()
                         .HasForeignKey("ManagerId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("HrSystemApp.Domain.Models.Team", "Team")
-                        .WithMany("Members")
-                        .HasForeignKey("TeamId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("HrSystemApp.Domain.Models.Unit", "Unit")
-                        .WithMany()
-                        .HasForeignKey("UnitId")
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("HrSystemApp.Domain.Models.ApplicationUser", "User")
@@ -1564,13 +1366,7 @@ namespace HrSystemApp.Infrastructure.Migrations
 
                     b.Navigation("CompanyLocation");
 
-                    b.Navigation("Department");
-
                     b.Navigation("Manager");
-
-                    b.Navigation("Team");
-
-                    b.Navigation("Unit");
 
                     b.Navigation("User");
                 });
@@ -1725,42 +1521,6 @@ namespace HrSystemApp.Infrastructure.Migrations
                     b.Navigation("RequestDefinition");
                 });
 
-            modelBuilder.Entity("HrSystemApp.Domain.Models.Team", b =>
-                {
-                    b.HasOne("HrSystemApp.Domain.Models.Employee", "TeamLeader")
-                        .WithMany()
-                        .HasForeignKey("TeamLeaderId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("HrSystemApp.Domain.Models.Unit", "Unit")
-                        .WithMany("Teams")
-                        .HasForeignKey("UnitId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("TeamLeader");
-
-                    b.Navigation("Unit");
-                });
-
-            modelBuilder.Entity("HrSystemApp.Domain.Models.Unit", b =>
-                {
-                    b.HasOne("HrSystemApp.Domain.Models.Department", "Department")
-                        .WithMany("Units")
-                        .HasForeignKey("DepartmentId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("HrSystemApp.Domain.Models.Employee", "UnitLeader")
-                        .WithMany()
-                        .HasForeignKey("UnitLeaderId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("Department");
-
-                    b.Navigation("UnitLeader");
-                });
-
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
@@ -1828,18 +1588,11 @@ namespace HrSystemApp.Infrastructure.Migrations
 
             modelBuilder.Entity("HrSystemApp.Domain.Models.Company", b =>
                 {
-                    b.Navigation("Departments");
-
                     b.Navigation("Employees");
 
                     b.Navigation("HierarchyPositions");
 
                     b.Navigation("Locations");
-                });
-
-            modelBuilder.Entity("HrSystemApp.Domain.Models.Department", b =>
-                {
-                    b.Navigation("Units");
                 });
 
             modelBuilder.Entity("HrSystemApp.Domain.Models.Employee", b =>
@@ -1868,16 +1621,6 @@ namespace HrSystemApp.Infrastructure.Migrations
             modelBuilder.Entity("HrSystemApp.Domain.Models.RequestDefinition", b =>
                 {
                     b.Navigation("WorkflowSteps");
-                });
-
-            modelBuilder.Entity("HrSystemApp.Domain.Models.Team", b =>
-                {
-                    b.Navigation("Members");
-                });
-
-            modelBuilder.Entity("HrSystemApp.Domain.Models.Unit", b =>
-                {
-                    b.Navigation("Teams");
                 });
 #pragma warning restore 612, 618
         }

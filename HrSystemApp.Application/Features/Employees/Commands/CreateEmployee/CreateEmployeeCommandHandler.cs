@@ -64,9 +64,10 @@ public class CreateEmployeeCommandHandler : IRequestHandler<CreateEmployeeComman
 
         try
         {
-            // 2. User Creation
+            // 2. User Creation - Generate compliant temporary password
+            var tempPassword = $"{request.PhoneNumber}!Aa";
             var created =
-                await _unitOfWork.Users.CreateUserAsync(user, request.PhoneNumber, request.Role, cancellationToken);
+                await _unitOfWork.Users.CreateUserAsync(user, tempPassword, request.Role, cancellationToken);
             if (!created)
             {
                 await _unitOfWork.RollbackTransactionAsync(cancellationToken);
@@ -100,7 +101,7 @@ public class CreateEmployeeCommandHandler : IRequestHandler<CreateEmployeeComman
                 PhoneNumber = employee.PhoneNumber,
                 EmployeeCode = employee.EmployeeCode,
                 Role = request.Role.ToString(),
-                TemporaryPassword = request.PhoneNumber
+                TemporaryPassword = tempPassword
             });
         }
         catch (Exception)
