@@ -9,9 +9,6 @@ public record UpdateEmployeeCommand(
     string? FullName,
     string? PhoneNumber,
     string? Address,
-    Guid? DepartmentId,
-    Guid? UnitId,
-    Guid? TeamId,
     Guid? ManagerId,
     string? MedicalClass,
     DateTime? ContractEndDate) : IRequest<Result<EmployeeResponse>>;

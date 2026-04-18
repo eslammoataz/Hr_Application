@@ -20,9 +20,6 @@ public class EmployeeRepository : Repository<Employee>, IEmployeeRepository
 
     public async Task<Employee?> GetWithDetailsAsync(Guid id, CancellationToken cancellationToken = default)
         => await _dbSet
-            .Include(e => e.Department)
-            .Include(e => e.Unit)
-            .Include(e => e.Team)
             .Include(e => e.Manager)
             .Include(e => e.User)
             .FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
@@ -41,9 +38,6 @@ public class EmployeeRepository : Repository<Employee>, IEmployeeRepository
                 Email = e.Email,
                 PhoneNumber = e.PhoneNumber,
                 Address = e.Address,
-                DepartmentName = e.Department != null ? e.Department.Name : string.Empty,
-                UnitName = e.Unit != null ? e.Unit.Name : string.Empty,
-                TeamName = e.Team != null ? e.Team.Name : string.Empty,
                 ManagerName = e.Manager != null ? e.Manager.FullName : string.Empty,
                 EmploymentStatus = e.EmploymentStatus.ToString(),
                 MedicalClass = e.MedicalClass.HasValue ? e.MedicalClass.Value.ToString() : null,
@@ -62,7 +56,6 @@ public class EmployeeRepository : Repository<Employee>, IEmployeeRepository
 
     public async Task<EmployeesPagedResult> GetPagedForListAsync(
         Guid? companyId,
-        Guid? teamId,
         string? searchTerm,
         UserRole? role,
         EmploymentStatus? employmentStatus,
@@ -87,12 +80,6 @@ public class EmployeeRepository : Repository<Employee>, IEmployeeRepository
                 Address = employee.Address,
                 EmployeeCode = employee.EmployeeCode,
                 CompanyId = employee.CompanyId,
-                DepartmentId = employee.DepartmentId,
-                DepartmentName = employee.Department != null ? employee.Department.Name : null,
-                UnitId = employee.UnitId,
-                UnitName = employee.Unit != null ? employee.Unit.Name : null,
-                TeamId = employee.TeamId,
-                TeamName = employee.Team != null ? employee.Team.Name : null,
                 ManagerId = employee.ManagerId,
                 ManagerName = employee.Manager != null ? employee.Manager.FullName : null,
                 EmploymentStatus = employee.EmploymentStatus,
@@ -111,9 +98,6 @@ public class EmployeeRepository : Repository<Employee>, IEmployeeRepository
         // ──────────────────────────────────────────────────────────
         if (companyId.HasValue)
             query = query.Where(e => e.CompanyId == companyId.Value);
-
-        if (teamId.HasValue)
-            query = query.Where(e => e.TeamId == teamId.Value);
 
         if (role.HasValue)
         {
@@ -173,12 +157,6 @@ public class EmployeeRepository : Repository<Employee>, IEmployeeRepository
             Address = row.Address,
             EmployeeCode = row.EmployeeCode,
             CompanyId = row.CompanyId,
-            DepartmentId = row.DepartmentId,
-            DepartmentName = row.DepartmentName,
-            UnitId = row.UnitId,
-            UnitName = row.UnitName,
-            TeamId = row.TeamId,
-            TeamName = row.TeamName,
             ManagerId = row.ManagerId,
             ManagerName = row.ManagerName,
             EmploymentStatus = row.EmploymentStatus.ToString(),
@@ -207,12 +185,6 @@ public class EmployeeRepository : Repository<Employee>, IEmployeeRepository
         public string? Address { get; init; }
         public string EmployeeCode { get; init; } = string.Empty;
         public Guid CompanyId { get; init; }
-        public Guid? DepartmentId { get; init; }
-        public string? DepartmentName { get; init; }
-        public Guid? UnitId { get; init; }
-        public string? UnitName { get; init; }
-        public Guid? TeamId { get; init; }
-        public string? TeamName { get; init; }
         public Guid? ManagerId { get; init; }
         public string? ManagerName { get; init; }
         public EmploymentStatus EmploymentStatus { get; init; }

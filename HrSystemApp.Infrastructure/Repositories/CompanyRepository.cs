@@ -18,13 +18,11 @@ public class CompanyRepository : Repository<Company>, ICompanyRepository
     public async Task<Company?> GetWithDetailsAsync(
         Guid id,
         bool includeLocations = false,
-        bool includeDepartments = false,
         CancellationToken cancellationToken = default)
     {
         var query = _dbSet.AsNoTracking();
 
         if (includeLocations) query = query.Include(c => c.Locations);
-        if (includeDepartments) query = query.Include(c => c.Departments);
 
         return await query.FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
     }
@@ -35,13 +33,11 @@ public class CompanyRepository : Repository<Company>, ICompanyRepository
         int pageNumber,
         int pageSize,
         bool includeLocations = false,
-        bool includeDepartments = false,
         CancellationToken cancellationToken = default)
     {
         var query = _dbSet.AsNoTracking();
 
         if (includeLocations) query = query.Include(c => c.Locations);
-        if (includeDepartments) query = query.Include(c => c.Departments);
 
         if (status.HasValue)
         {

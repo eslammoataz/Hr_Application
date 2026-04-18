@@ -11,11 +11,6 @@ public class Employee : AuditableEntity
     public string? Address { get; set; }
     public string Email { get; set; } = string.Empty;
 
-    // Organization placement
-    public Guid? DepartmentId { get; set; }
-    public Guid? UnitId { get; set; }
-    public Guid? TeamId { get; set; }
-
     // Reporting
     public Guid? ManagerId { get; set; }
 
@@ -32,9 +27,6 @@ public class Employee : AuditableEntity
 
     // Navigation
     public Company Company { get; set; } = null!;
-    public Department? Department { get; set; }
-    public Unit? Unit { get; set; }
-    public Team? Team { get; set; }
     public Employee? Manager { get; set; }
     public ApplicationUser? User { get; set; }
     public CompanyLocation? CompanyLocation { get; set; }

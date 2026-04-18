@@ -11,9 +11,6 @@ public interface IUnitOfWork : IAsyncDisposable
     IEmployeeRepository Employees { get; }
     ICompanyRepository Companies { get; }
     ICompanyLocationRepository CompanyLocations { get; }
-    IDepartmentRepository Departments { get; }
-    IUnitRepository Units { get; }
-    ITeamRepository Teams { get; }
     ILeaveBalanceRepository LeaveBalances { get; }
     IContactAdminRequestRepository ContactAdminRequests { get; }
     IProfileUpdateRequestRepository ProfileUpdateRequests { get; }
@@ -25,6 +22,8 @@ public interface IUnitOfWork : IAsyncDisposable
     IAttendanceLogRepository AttendanceLogs { get; }
     IAttendanceReminderLogRepository AttendanceReminderLogs { get; }
     IAttendanceAdjustmentRepository AttendanceAdjustments { get; }
+    IOrgNodeRepository OrgNodes { get; }
+    IOrgNodeAssignmentRepository OrgNodeAssignments { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     Task BeginTransactionAsync(CancellationToken cancellationToken = default);

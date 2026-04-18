@@ -66,9 +66,6 @@ public static class DependencyInjection
         services.AddScoped<IEmployeeRepository, EmployeeRepository>();
         services.AddScoped<ICompanyRepository, CompanyRepository>();
         services.AddScoped<ICompanyLocationRepository, CompanyLocationRepository>();
-        services.AddScoped<IDepartmentRepository, DepartmentRepository>();
-        services.AddScoped<IUnitRepository, UnitRepository>();
-        services.AddScoped<ITeamRepository, TeamRepository>();
         services.AddScoped<ILeaveBalanceRepository, LeaveBalanceRepository>();
         services.AddScoped<IContactAdminRequestRepository, ContactAdminRequestRepository>();
         services.AddScoped<IProfileUpdateRequestRepository, ProfileUpdateRequestRepository>();
@@ -80,6 +77,8 @@ public static class DependencyInjection
         services.AddScoped<IAttendanceLogRepository, AttendanceLogRepository>();
         services.AddScoped<IAttendanceReminderLogRepository, AttendanceReminderLogRepository>();
         services.AddScoped<IAttendanceAdjustmentRepository, AttendanceAdjustmentRepository>();
+        services.AddScoped<IOrgNodeRepository, OrgNodeRepository>();
+        services.AddScoped<IOrgNodeAssignmentRepository, OrgNodeAssignmentRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         services.Configure<EmailSettings>(configuration.GetSection("EmailSettings"));
@@ -110,7 +109,7 @@ public static class DependencyInjection
         services.AddScoped<ISmsService, SmsService>();
 
         services.AddScoped<IWorkflowService, WorkflowService>();
-        services.AddScoped<IHierarchyService, HierarchyService>();
+        services.AddScoped<IWorkflowResolutionService, WorkflowResolutionService>();
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<IDataScopeService, DataScopeService>();

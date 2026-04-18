@@ -1,9 +1,11 @@
-using HrSystemApp.Application.Interfaces;
+using System.Text.Json;
 using HrSystemApp.Application.Common;
+using HrSystemApp.Application.DTOs.Requests;
 using HrSystemApp.Application.Errors;
+using HrSystemApp.Application.Interfaces;
+using HrSystemApp.Application.Interfaces.Services;
 using HrSystemApp.Domain.Enums;
 using HrSystemApp.Domain.Models;
-using HrSystemApp.Application.Interfaces.Services;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -44,13 +46,40 @@ public class RejectRequestCommandHandler : IRequestHandler<RejectRequestCommand,
         if (existingRequest == null)
             return Result.Failure<bool>(DomainErrors.Requests.NotFound);
 
-        // 1. Security: Is this the current approver?
-        if (existingRequest.CurrentApproverId != employee.Id)
-            return Result.Failure<bool>(DomainErrors.Requests.Unauthorized);
+        // 1. Status: Is it pending?
+        if (existingRequest.Status != RequestStatus.Submitted && existingRequest.Status != RequestStatus.InProgress)
+            return Result.Failure<bool>(DomainErrors.Requests.Locked);
 
-        // 2. Action: Set to Rejected
+        // 2. Deserialize planned steps
+        var plannedSteps = JsonSerializer.Deserialize<List<PlannedStepDto>>(existingRequest.PlannedStepsJson ?? "[]");
+        if (plannedSteps == null || plannedSteps.Count == 0)
+        {
+            _logger.LogWarning("RejectRequest failed: No planned steps found for request {RequestId}", request.RequestId);
+            return Result.Failure<bool>(DomainErrors.Request.InvalidWorkflowChain);
+        }
+
+        // 3. Validate current step order
+        if (existingRequest.CurrentStepOrder < 1 || existingRequest.CurrentStepOrder > plannedSteps.Count)
+        {
+            _logger.LogWarning("RejectRequest failed: Invalid step order {StepOrder} for request {RequestId}",
+                existingRequest.CurrentStepOrder, request.RequestId);
+            return Result.Failure<bool>(DomainErrors.Request.StepOrderExceeded);
+        }
+
+        // 4. Get current step and validate approver
+        var currentStep = plannedSteps[existingRequest.CurrentStepOrder - 1];
+        var approverIds = currentStep.Approvers.Select(a => a.EmployeeId).ToList();
+
+        if (!approverIds.Contains(employee.Id))
+        {
+            _logger.LogWarning("Unauthorized reject attempt for request {RequestId} by {EmployeeId}.",
+                request.RequestId, employee.Id);
+            return Result.Failure<bool>(DomainErrors.Requests.Unauthorized);
+        }
+
+        // 5. Reject the request
         existingRequest.Status = RequestStatus.Rejected;
-        existingRequest.CurrentApproverId = null; // Process stops
+        existingRequest.CurrentStepOrder = 0;
 
         var history = new RequestApprovalHistory
         {
@@ -63,6 +92,9 @@ public class RejectRequestCommandHandler : IRequestHandler<RejectRequestCommand,
 
         await _unitOfWork.Requests.UpdateAsync(existingRequest, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation("Request {RequestId} has been REJECTED by {EmployeeId}. Reason: {Reason}",
+            existingRequest.Id, employee.Id, request.Reason);
 
         try
         {

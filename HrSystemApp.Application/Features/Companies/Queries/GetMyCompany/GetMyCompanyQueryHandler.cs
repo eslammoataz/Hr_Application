@@ -30,9 +30,8 @@ public class GetMyCompanyQueryHandler : IRequestHandler<GetMyCompanyQuery, Resul
             return Result.Failure<CompanyResponse>(DomainErrors.Employee.NotFound);
 
         var company = await _unitOfWork.Companies.GetWithDetailsAsync(
-            employee.CompanyId, 
-            request.IncludeLocations, 
-            request.IncludeDepartments, 
+            employee.CompanyId,
+            request.IncludeLocations,
             cancellationToken);
 
         if (company is null)

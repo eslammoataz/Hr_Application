@@ -16,6 +16,5 @@ public class Company : AuditableEntity
     // Navigation
     public ICollection<CompanyLocation> Locations { get; set; } = new List<CompanyLocation>();
     public ICollection<CompanyHierarchyPosition> HierarchyPositions { get; set; } = new List<CompanyHierarchyPosition>();
-    public ICollection<Department> Departments { get; set; } = new List<Department>();
     public ICollection<Employee> Employees { get; set; } = new List<Employee>();
 }

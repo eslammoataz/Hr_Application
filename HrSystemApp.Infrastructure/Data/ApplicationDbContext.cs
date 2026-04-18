@@ -19,9 +19,6 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     }
 
     public DbSet<Employee> Employees { get; set; } = null!;
-    public DbSet<Department> Departments { get; set; } = null!;
-    public DbSet<Unit> Units { get; set; } = null!;
-    public DbSet<Team> Teams { get; set; } = null!;
     public DbSet<Attendance> Attendances { get; set; } = null!;
     public DbSet<AttendanceLog> AttendanceLogs { get; set; } = null!;
     public DbSet<AttendanceAdjustment> AttendanceAdjustments { get; set; } = null!;
@@ -36,6 +33,8 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<ProfileUpdateRequest> ProfileUpdateRequests { get; set; } = null!;
     public DbSet<RequestDefinition> RequestDefinitions { get; set; } = null!;
     public DbSet<Request> Requests { get; set; } = null!;
+    public DbSet<OrgNode> OrgNodes { get; set; } = null!;
+    public DbSet<OrgNodeAssignment> OrgNodeAssignments { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

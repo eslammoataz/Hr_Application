@@ -161,6 +161,9 @@ public static class DomainErrors
         public static readonly Error DefinitionNotFound = new(
             "Request.DefinitionNotFound", Messages.Errors.RequestDefinitionNotFound);
 
+        public static readonly Error DefinitionAlreadyExists = new(
+            "Request.DefinitionAlreadyExists", "A request definition for this type already exists for this company.");
+
         public static readonly Error Unauthorized = new(
             "Request.Unauthorized", Messages.Errors.RequestUnauthorized);
 
@@ -368,5 +371,71 @@ public static class DomainErrors
 
         public static readonly Error Error = new(
             "Validation.Error", Messages.Validation.ValidationError);
+    }
+
+    public static class OrgNode
+    {
+        public static readonly Error NotFound = new(
+            "OrgNode.NotFound", "The requested organization node was not found.");
+
+        public static readonly Error CircularReference = new(
+            "OrgNode.CircularReference", "Cannot create a circular hierarchy reference.");
+
+        public static readonly Error DuplicateAssignment = new(
+            "OrgNode.DuplicateAssignment", "This employee is already assigned to this node.");
+
+        public static readonly Error AssignmentNotFound = new(
+            "OrgNode.AssignmentNotFound", "Assignment not found.");
+
+        public static readonly Error InvalidHierarchyConfiguration = new(
+            "OrgNode.InvalidHierarchyConfiguration", "Invalid hierarchy configuration detected.");
+    }
+
+    public static class Request
+    {
+        public static readonly Error NoActiveManagersAtStep = new(
+            "Request.NoActiveManagersAtStep", "A workflow step has no active managers assigned.");
+
+        public static readonly Error InvalidWorkflowChain = new(
+            "Request.InvalidWorkflowChain", "Workflow step references a node not in the approval chain.");
+
+        public static readonly Error NotPendingApproval = new(
+            "Request.NotPendingApproval", "This request is not currently awaiting approval.");
+
+        public static readonly Error StepOrderExceeded = new(
+            "Request.StepOrderExceeded", "Step order exceeds the number of workflow steps.");
+
+        public static readonly Error OrgNodeNotInCompany = new(
+            "Request.OrgNodeNotInCompany", "The referenced OrgNode does not belong to this company.");
+
+        public static readonly Error DirectEmployeeNotInCompany = new(
+            "Request.DirectEmployeeNotInCompany", "The referenced employee does not belong to this company.");
+
+        public static readonly Error DirectEmployeeAlsoNodeManager = new(
+            "Request.DirectEmployeeAlsoNodeManager", "A DirectEmployee approver cannot also be a manager at an OrgNode step in the same chain.");
+
+        public static readonly Error DirectEmployeeNotActive = new(
+            "Request.DirectEmployeeNotActive", "The DirectEmployee approver is not an active employee.");
+
+        public static readonly Error MissingOrgNodeId = new(
+            "Request.MissingOrgNodeId", "OrgNode step must have an OrgNodeId.");
+
+        public static readonly Error MissingDirectEmployeeId = new(
+            "Request.MissingDirectEmployeeId", "DirectEmployee step must have a DirectEmployeeId.");
+
+        public static readonly Error MissingLevelsUp = new(
+            "Request.MissingLevelsUp", "HierarchyLevel step must have LevelsUp >= 1.");
+
+        public static readonly Error InvalidStartFromLevel = new(
+            "Request.InvalidStartFromLevel", "HierarchyLevel step StartFromLevel must be >= 1 when specified.");
+
+        public static readonly Error HierarchyRangesOverlap = new(
+            "Request.HierarchyRangesOverlap", "Two HierarchyLevel steps in this definition cover overlapping levels.");
+
+        public static readonly Error HierarchyLevelFieldsOnNonHierarchyStep = new(
+            "Request.HierarchyLevelFieldsOnNonHierarchyStep", "StartFromLevel/LevelsUp are only valid on HierarchyLevel steps.");
+
+        public static readonly Error UnexpectedFieldsOnHierarchyLevelStep = new(
+            "Request.UnexpectedFieldsOnHierarchyLevelStep", "HierarchyLevel steps must not have OrgNodeId, DirectEmployeeId, or BypassHierarchyCheck set.");
     }
 }

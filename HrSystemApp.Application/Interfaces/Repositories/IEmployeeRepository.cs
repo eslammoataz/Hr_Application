@@ -14,7 +14,6 @@ public interface IEmployeeRepository : IRepository<Employee>
 
     Task<EmployeesPagedResult> GetPagedForListAsync(
         Guid? companyId,
-        Guid? teamId,
         string? searchTerm,
         UserRole? role,
         EmploymentStatus? employmentStatus,

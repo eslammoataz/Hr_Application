@@ -4,7 +4,19 @@
       "Bash(dotnet build:*)",
       "Bash(dotnet run:*)",
       "Bash(curl -s http://localhost:5119/swagger/index.html -o /dev/null -w \"%{http_code}\")",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(grep -l \"GetCompanyHierarchy\\\\|/api/companies/hierarchy\" HrSystemApp.Api/Controllers/*.cs)",
+      "Bash(taskkill //F //PID 32880)",
+      "Bash(dotnet ef:*)",
+      "Bash(taskkill //F //PID 24600)",
+      "Bash(taskkill //F //PID 22896)",
+      "Bash(taskkill //F //PID 2740)",
+      "Bash(taskkill //F //PID 17628)",
+      "Bash(taskkill //F //PID 8076)",
+      "Bash(taskkill //F //PID 16528)",
+      "Bash(netstat -ano)",
+      "Bash(awk '{print $5}')",
+      "Bash(xargs -I{} taskkill //F //PID {})"
     ]
   }
 }

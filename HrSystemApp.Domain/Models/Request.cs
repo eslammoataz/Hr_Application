@@ -17,23 +17,30 @@ public class Request : AuditableEntity
     public string Data { get; set; } = "{}";
 
     public RequestStatus Status { get; set; } = RequestStatus.Submitted;
-    
+
     public string? Details { get; set; }
-    
+
     /// <summary>
-    /// Current pending approver ID. 
-    /// If null and status is Approved, the process is complete.
+    /// The current step order (1-based). When CurrentStepOrder > step count, request is Approved.
+    /// When request is Rejected, CurrentStepOrder = 0.
     /// </summary>
-    public Guid? CurrentApproverId { get; set; }
-    
+    public int CurrentStepOrder { get; set; } = 1;
+
     /// <summary>
     /// Snapshotted approval path at the time of submission.
+    /// Structure: [{nodeId, nodeName, sortOrder, approvers: [{employeeId, employeeName}]}]
     /// </summary>
-    public string? PlannedChainJson { get; set; }
+    public string? PlannedStepsJson { get; set; }
+
+    /// <summary>
+    /// Denormalized list of current step approver IDs for fast database filtering.
+    /// Format: "empId1,empId2,empId3"
+    /// Updated when request is created and when step advances.
+    /// </summary>
+    public string? CurrentStepApproverIds { get; set; }
 
     // Navigation
     public Employee Employee { get; set; } = null!;
-    public Employee? CurrentApprover { get; set; }
     public ICollection<RequestApprovalHistory> ApprovalHistory { get; set; } = new List<RequestApprovalHistory>();
     public ICollection<RequestAttachment> Attachments { get; set; } = new List<RequestAttachment>();
 }

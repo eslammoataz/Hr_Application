@@ -1,6 +1,8 @@
+using System.Text.Json;
 using HrSystemApp.Application.Interfaces;
 using HrSystemApp.Application.Interfaces.Services;
 using HrSystemApp.Application.Common;
+using HrSystemApp.Application.DTOs.Requests;
 using HrSystemApp.Application.Errors;
 using HrSystemApp.Domain.Enums;
 using MediatR;
@@ -24,7 +26,16 @@ public record AdminRequestDto
     public RequestStatus Status { get; set; }
     public DateTime CreatedAt { get; set; }
     public string? Details { get; set; }
-    public string? CurrentApproverName { get; set; }
+
+    /// <summary>
+    /// Current step order (1-based). 0 means fully approved or no steps.
+    /// </summary>
+    public int CurrentStepOrder { get; set; }
+
+    /// <summary>
+    /// Total number of approval steps.
+    /// </summary>
+    public int TotalSteps { get; set; }
 }
 
 public class GetCompanyRequestsQueryHandler : IRequestHandler<GetCompanyRequestsQuery, Result<PagedResult<AdminRequestDto>>>
@@ -49,10 +60,8 @@ public class GetCompanyRequestsQueryHandler : IRequestHandler<GetCompanyRequests
             return Result.Failure<PagedResult<AdminRequestDto>>(DomainErrors.Employee.NotFound);
 
         // Query all requests for the company
-        // We use FindAsync with an expression to leverage EF Core change tracking and includes if needed, 
-        // though for paginated lists we usually project or use a dedicated repository method.
         var requests = await _unitOfWork.Requests.FindAsync(
-            r => r.Employee.CompanyId == admin.CompanyId, 
+            r => r.Employee.CompanyId == admin.CompanyId,
             cancellationToken);
 
         var queryable = requests.AsQueryable();
@@ -60,7 +69,7 @@ public class GetCompanyRequestsQueryHandler : IRequestHandler<GetCompanyRequests
         // Apply filters
         if (request.Status.HasValue)
             queryable = queryable.Where(r => r.Status == request.Status.Value);
-        
+
         if (request.Type.HasValue)
             queryable = queryable.Where(r => r.RequestType == request.Type.Value);
 
@@ -71,16 +80,21 @@ public class GetCompanyRequestsQueryHandler : IRequestHandler<GetCompanyRequests
             .Take(request.PageSize)
             .ToList();
 
-        var dtos = items.Select(r => new AdminRequestDto
+        var dtos = items.Select(r =>
         {
-            Id = r.Id,
-            EmployeeName = r.Employee?.FullName ?? "Unknown",
-            EmployeeCode = r.Employee?.EmployeeCode ?? string.Empty,
-            Type = r.RequestType,
-            Status = r.Status,
-            CreatedAt = r.CreatedAt,
-            Details = r.Details,
-            CurrentApproverName = r.CurrentApprover?.FullName ?? "N/A"
+            var plannedSteps = JsonSerializer.Deserialize<List<PlannedStepDto>>(r.PlannedStepsJson ?? "[]") ?? new List<PlannedStepDto>();
+            return new AdminRequestDto
+            {
+                Id = r.Id,
+                EmployeeName = r.Employee?.FullName ?? "Unknown",
+                EmployeeCode = r.Employee?.EmployeeCode ?? string.Empty,
+                Type = r.RequestType,
+                Status = r.Status,
+                CreatedAt = r.CreatedAt,
+                Details = r.Details,
+                CurrentStepOrder = r.CurrentStepOrder,
+                TotalSteps = plannedSteps.Count
+            };
         }).ToList();
 
         return Result.Success(PagedResult<AdminRequestDto>.Create(dtos, request.PageNumber, request.PageSize, totalCount));

@@ -27,7 +27,6 @@ public class GetEmployeesQueryHandler : IRequestHandler<GetEmployeesQuery, Resul
 
         var paged = await _unitOfWork.Employees.GetPagedForListAsync(
             companyScopeResult.Value,
-            request.TeamId,
             request.SearchTerm,
             request.Role,
             request.EmploymentStatus,

@@ -20,9 +20,6 @@ public class UnitOfWork : IUnitOfWork
     private IEmployeeRepository? _employeeRepository;
     private ICompanyRepository? _companyRepository;
     private ICompanyLocationRepository? _companyLocationRepository;
-    private IDepartmentRepository? _departmentRepository;
-    private IUnitRepository? _unitRepository;
-    private ITeamRepository? _teamRepository;
     private ILeaveBalanceRepository? _leaveBalanceRepository;
     private IContactAdminRequestRepository? _contactAdminRequestRepository;
     private IProfileUpdateRequestRepository? _profileUpdateRequestRepository;
@@ -34,6 +31,8 @@ public class UnitOfWork : IUnitOfWork
     private IAttendanceLogRepository? _attendanceLogRepository;
     private IAttendanceReminderLogRepository? _attendanceReminderLogRepository;
     private IAttendanceAdjustmentRepository? _attendanceAdjustmentRepository;
+    private IOrgNodeRepository? _orgNodeRepository;
+    private IOrgNodeAssignmentRepository? _orgNodeAssignmentRepository;
 
 
     public UnitOfWork(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
@@ -53,15 +52,6 @@ public class UnitOfWork : IUnitOfWork
 
     public ICompanyLocationRepository CompanyLocations =>
         _companyLocationRepository ??= new CompanyLocationRepository(_context);
-
-    public IDepartmentRepository Departments =>
-        _departmentRepository ??= new DepartmentRepository(_context);
-
-    public IUnitRepository Units =>
-        _unitRepository ??= new UnitRepository(_context);
-
-    public ITeamRepository Teams =>
-        _teamRepository ??= new TeamRepository(_context);
 
     public ILeaveBalanceRepository LeaveBalances =>
         _leaveBalanceRepository ??= new LeaveBalanceRepository(_context);
@@ -95,6 +85,12 @@ public class UnitOfWork : IUnitOfWork
 
     public IAttendanceAdjustmentRepository AttendanceAdjustments =>
         _attendanceAdjustmentRepository ??= new AttendanceAdjustmentRepository(_context);
+
+    public IOrgNodeRepository OrgNodes =>
+        _orgNodeRepository ??= new OrgNodeRepository(_context);
+
+    public IOrgNodeAssignmentRepository OrgNodeAssignments =>
+        _orgNodeAssignmentRepository ??= new OrgNodeAssignmentRepository(_context);
 
 
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

@@ -19,9 +19,8 @@ public class GetCompanyByIdQueryHandler : IRequestHandler<GetCompanyByIdQuery, R
     public async Task<Result<CompanyResponse>> Handle(GetCompanyByIdQuery request, CancellationToken cancellationToken)
     {
         var company = await _unitOfWork.Companies.GetWithDetailsAsync(
-            request.Id, 
-            request.IncludeLocations, 
-            request.IncludeDepartments, 
+            request.Id,
+            request.IncludeLocations,
             cancellationToken);
 
         if (company is null)

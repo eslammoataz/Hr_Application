@@ -51,7 +51,7 @@ public class CreateContactAdminRequestHandler : IRequestHandler<CreateContactAdm
             Name = request.Name,
             Email = request.Email,
             CompanyName = request.CompanyName,
-            Role = UserRole.CompanyAdmin.ToString(),
+            Role = UserRole.Executive.ToString(),
             PhoneNumber = request.PhoneNumber
         };
 

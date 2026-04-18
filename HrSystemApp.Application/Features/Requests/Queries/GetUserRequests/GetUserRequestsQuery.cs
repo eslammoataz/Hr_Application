@@ -1,6 +1,8 @@
+using System.Text.Json;
 using HrSystemApp.Application.Interfaces;
 using HrSystemApp.Application.Interfaces.Services;
 using HrSystemApp.Application.Common;
+using HrSystemApp.Application.DTOs.Requests;
 using HrSystemApp.Application.Errors;
 using HrSystemApp.Domain.Enums;
 using MediatR;
@@ -22,7 +24,16 @@ public record RequestDto
     public RequestStatus Status { get; set; }
     public DateTime CreatedAt { get; set; }
     public string? Details { get; set; }
-    public string? CurrentApproverName { get; set; }
+
+    /// <summary>
+    /// Current step order (1-based). 0 means fully approved or no steps.
+    /// </summary>
+    public int CurrentStepOrder { get; set; }
+
+    /// <summary>
+    /// Total number of approval steps.
+    /// </summary>
+    public int TotalSteps { get; set; }
 }
 
 public class GetUserRequestsQueryHandler : IRequestHandler<GetUserRequestsQuery, Result<PagedResult<RequestDto>>>
@@ -39,11 +50,11 @@ public class GetUserRequestsQueryHandler : IRequestHandler<GetUserRequestsQuery,
     public async Task<Result<PagedResult<RequestDto>>> Handle(GetUserRequestsQuery request, CancellationToken cancellationToken)
     {
         var userId = _currentUserService.UserId;
-        if (string.IsNullOrEmpty(userId)) 
+        if (string.IsNullOrEmpty(userId))
             return Result.Failure<PagedResult<RequestDto>>(DomainErrors.Auth.Unauthorized);
 
         var employee = await _unitOfWork.Employees.GetByUserIdAsync(userId, cancellationToken);
-        if (employee == null) 
+        if (employee == null)
             return Result.Failure<PagedResult<RequestDto>>(DomainErrors.Employee.NotFound);
 
         var requests = await _unitOfWork.Requests.FindAsync(r => r.EmployeeId == employee.Id, cancellationToken);
@@ -60,16 +71,21 @@ public class GetUserRequestsQueryHandler : IRequestHandler<GetUserRequestsQuery,
             .OrderByDescending(r => r.CreatedAt)
             .Skip((request.PageNumber - 1) * request.PageSize)
             .Take(request.PageSize)
-            .ToList(); // Materialize to avoid lambda issues if IRequestRepository didn't include enough
+            .ToList();
 
-        var mappedItems = items.Select(r => new RequestDto
+        var mappedItems = items.Select(r =>
         {
-            Id = r.Id,
-            Type = r.RequestType,
-            Status = r.Status,
-            CreatedAt = r.CreatedAt,
-            Details = r.Details,
-            CurrentApproverName = r.CurrentApprover != null ? r.CurrentApprover.FullName : "N/A"
+            var plannedSteps = JsonSerializer.Deserialize<List<PlannedStepDto>>(r.PlannedStepsJson ?? "[]") ?? new List<PlannedStepDto>();
+            return new RequestDto
+            {
+                Id = r.Id,
+                Type = r.RequestType,
+                Status = r.Status,
+                CreatedAt = r.CreatedAt,
+                Details = r.Details,
+                CurrentStepOrder = r.CurrentStepOrder,
+                TotalSteps = plannedSteps.Count
+            };
         }).ToList();
 
         return Result.Success(PagedResult<RequestDto>.Create(mappedItems, request.PageNumber, request.PageSize, totalCount));

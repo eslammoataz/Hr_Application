@@ -16,9 +16,6 @@ using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using HrSystemApp.Application.Features.Hierarchy.Commands.ConfigureHierarchyPositions;
-using HrSystemApp.Application.Features.Hierarchy.Queries.GetCompanyHierarchy;
-using HrSystemApp.Application.Features.Hierarchy.Queries.GetCompanyPositions;
 
 namespace HrSystemApp.Api.Controllers;
 
@@ -64,12 +61,11 @@ public class CompaniesController : BaseApiController
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 20,
         [FromQuery] bool includeLocations = false,
-        [FromQuery] bool includeDepartments = false,
         CancellationToken cancellationToken = default)
     {
         var result =
             await _sender.Send(
-                new GetCompaniesQuery(searchTerm, status, pageNumber, pageSize, includeLocations, includeDepartments),
+                new GetCompaniesQuery(searchTerm, status, pageNumber, pageSize, includeLocations),
                 cancellationToken);
         return HandleResult(result);
     }
@@ -82,10 +78,9 @@ public class CompaniesController : BaseApiController
     public async Task<IActionResult> GetById(
         Guid id,
         [FromQuery] bool includeLocations = false,
-        [FromQuery] bool includeDepartments = false,
         CancellationToken cancellationToken = default)
     {
-        var result = await _sender.Send(new GetCompanyByIdQuery(id, includeLocations, includeDepartments),
+        var result = await _sender.Send(new GetCompanyByIdQuery(id, includeLocations),
             cancellationToken);
         return HandleResult(result);
     }
@@ -126,10 +121,9 @@ public class CompaniesController : BaseApiController
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetMyCompany(
         [FromQuery] bool includeLocations = false,
-        [FromQuery] bool includeDepartments = false,
         CancellationToken cancellationToken = default)
     {
-        var result = await _sender.Send(new GetMyCompanyQuery(includeLocations, includeDepartments), cancellationToken);
+        var result = await _sender.Send(new GetMyCompanyQuery(includeLocations), cancellationToken);
         return HandleResult(result);
     }
 
@@ -229,45 +223,6 @@ public class CompaniesController : BaseApiController
     {
         var command = new DeleteCompanyLocationCommand(id);
         var result = await _sender.Send(command, cancellationToken);
-        return HandleResult(result);
-    }
-
-    /// <summary>
-    /// Gets the organizational hierarchy for the current user's company (Lazy loading supported).
-    /// </summary>
-    [HttpGet("hierarchy")]
-    [Authorize(Roles = Roles.Viewers)]
-    public async Task<IActionResult> GetHierarchy(
-        [FromQuery] Guid? parentId,
-        [FromQuery] string? parentType,
-        CancellationToken ct)
-    {
-        var result = await _sender.Send(new GetCompanyHierarchyQuery(parentId, parentType), ct);
-        return HandleResult(result);
-    }
-
-    /// <summary>
-    /// Configures the allowed roles and their order in the company hierarchy.
-    /// Typically performed by a Company Admin or HR.
-    /// </summary>
-    [HttpPost("hierarchy/positions")]
-    [Authorize(Roles = Roles.CompanyAdmins)]
-    public async Task<IActionResult> ConfigurePositions([FromBody] List<HierarchyPositionInputDto> positions,
-        CancellationToken ct)
-    {
-        var result = await _sender.Send(new ConfigureHierarchyPositionsCommand(positions), ct);
-        return HandleResult(result);
-    }
-
-    /// <summary>
-    /// Gets the allowed roles and their order in the company hierarchy.
-    /// </summary>
-    [HttpGet("me/positions")]
-    [Authorize(Roles = Roles.Viewers)]
-    [ProducesResponseType(typeof(IReadOnlyList<CompanyPositionResponse>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetPositions(CancellationToken ct)
-    {
-        var result = await _sender.Send(new GetCompanyPositionsQuery(), ct);
         return HandleResult(result);
     }
 }

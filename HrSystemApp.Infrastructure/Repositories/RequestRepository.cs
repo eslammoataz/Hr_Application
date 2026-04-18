@@ -31,9 +31,14 @@ public class RequestRepository : Repository<Request>, IRequestRepository
 
     public async Task<List<Request>> GetPendingApprovalsAsync(Guid approverId, CancellationToken cancellationToken = default)
     {
+        var approverIdString = approverId.ToString();
+
+        // Database-level filtering using denormalized CurrentStepApproverIds column
         return await _dbSet
             .AsNoTracking()
-            .Where(x => x.CurrentApproverId == approverId && x.Status == RequestStatus.InProgress)
+            .Where(x => (x.Status == RequestStatus.Submitted || x.Status == RequestStatus.InProgress)
+                        && x.CurrentStepApproverIds != null
+                        && x.CurrentStepApproverIds.Contains(approverIdString))
             .Include(x => x.Employee)
             .OrderByDescending(x => x.CreatedAt)
             .ToListAsync(cancellationToken);

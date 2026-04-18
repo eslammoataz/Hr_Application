@@ -15,7 +15,7 @@ public class RequestWorkflowConfiguration : IEntityTypeConfiguration<RequestDefi
             .WithMany()
             .HasForeignKey(x => x.CompanyId)
             .OnDelete(DeleteBehavior.Cascade);
-            
+
         builder.HasMany(x => x.WorkflowSteps)
             .WithOne(x => x.RequestDefinition)
             .HasForeignKey(x => x.RequestDefinitionId)
@@ -26,6 +26,30 @@ public class RequestWorkflowConfiguration : IEntityTypeConfiguration<RequestDefi
     {
         builder.ToTable("RequestWorkflowSteps");
         builder.HasKey(x => x.Id);
+
+        builder.Property(x => x.StepType)
+            .IsRequired();
+
+        builder.Property(x => x.BypassHierarchyCheck)
+            .HasDefaultValue(false);
+
+        builder.Property(x => x.StartFromLevel)
+            .IsRequired(false);
+
+        builder.Property(x => x.LevelsUp)
+            .IsRequired(false);
+
+        // OrgNode FK - now optional (nullable) for DirectEmployee steps
+        builder.HasOne(x => x.OrgNode)
+            .WithMany()
+            .HasForeignKey(x => x.OrgNodeId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // DirectEmployee FK - optional, only for DirectEmployee steps
+        builder.HasOne(x => x.DirectEmployee)
+            .WithMany()
+            .HasForeignKey(x => x.DirectEmployeeId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }
 
@@ -61,4 +85,3 @@ public class RequestAttachmentConfiguration : IEntityTypeConfiguration<RequestAt
             .OnDelete(DeleteBehavior.Cascade);
     }
 }
-

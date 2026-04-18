@@ -3,7 +3,6 @@ using HrSystemApp.Application.Common;
 using HrSystemApp.Application.DTOs.Employees;
 using HrSystemApp.Application.Errors;
 using HrSystemApp.Application.Interfaces;
-using HrSystemApp.Application.Interfaces.Services;
 using HrSystemApp.Domain.Enums;
 using HrSystemApp.Domain.Models;
 
@@ -12,12 +11,10 @@ namespace HrSystemApp.Application.Features.Employees.Commands.CreateEmployee;
 public class CreateEmployeeCommandHandler : IRequestHandler<CreateEmployeeCommand, Result<CreateEmployeeResponse>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IEmployeePlacementService _placementService;
 
-    public CreateEmployeeCommandHandler(IUnitOfWork unitOfWork, IEmployeePlacementService placementService)
+    public CreateEmployeeCommandHandler(IUnitOfWork unitOfWork)
     {
         _unitOfWork = unitOfWork;
-        _placementService = placementService;
     }
 
     public async Task<Result<CreateEmployeeResponse>> Handle(
@@ -34,11 +31,6 @@ public class CreateEmployeeCommandHandler : IRequestHandler<CreateEmployeeComman
         var company = await _unitOfWork.Companies.GetByIdAsync(request.CompanyId, cancellationToken);
         if (company == null)
             return Result.Failure<CreateEmployeeResponse>(DomainErrors.Company.NotFound);
-
-        var placementResult = await _placementService.ResolvePlacementAsync(
-            request.CompanyId, request.DepartmentId, request.UnitId, request.TeamId, cancellationToken);
-        if (placementResult.IsFailure)
-            return Result.Failure<CreateEmployeeResponse>(placementResult.Error);
 
         // 1. Prepare Entities
         var employeeId = Guid.NewGuid();
@@ -65,19 +57,17 @@ public class CreateEmployeeCommandHandler : IRequestHandler<CreateEmployeeComman
             Email = request.Email,
             EmployeeCode = employeeCode,
             EmploymentStatus = EmploymentStatus.Active,
-            UserId = user.Id,
-            DepartmentId = placementResult.Value.DepartmentId,
-            UnitId = placementResult.Value.UnitId,
-            TeamId = placementResult.Value.TeamId
+            UserId = user.Id
         };
 
         await _unitOfWork.BeginTransactionAsync(cancellationToken);
 
         try
         {
-            // 2. User Creation
+            // 2. User Creation - Generate compliant temporary password
+            var tempPassword = $"{request.PhoneNumber}!Aa";
             var created =
-                await _unitOfWork.Users.CreateUserAsync(user, request.PhoneNumber, request.Role, cancellationToken);
+                await _unitOfWork.Users.CreateUserAsync(user, tempPassword, request.Role, cancellationToken);
             if (!created)
             {
                 await _unitOfWork.RollbackTransactionAsync(cancellationToken);
@@ -87,15 +77,7 @@ public class CreateEmployeeCommandHandler : IRequestHandler<CreateEmployeeComman
             // 3. Employee Creation
             await _unitOfWork.Employees.AddAsync(employee, cancellationToken);
 
-            // 4. Leadership assignment (for leadership roles only)
-            var leadershipAssignmentResult = await _placementService.AssignLeadershipIfNeededAsync(employee, request.Role, cancellationToken);
-            if (leadershipAssignmentResult.IsFailure)
-            {
-                await _unitOfWork.RollbackTransactionAsync(cancellationToken);
-                return Result.Failure<CreateEmployeeResponse>(leadershipAssignmentResult.Error);
-            }
-
-            // 5. Vacation Balance
+            // 4. Vacation Balance
             var initialBalance = new LeaveBalance
             {
                 EmployeeId = employee.Id,
@@ -106,7 +88,7 @@ public class CreateEmployeeCommandHandler : IRequestHandler<CreateEmployeeComman
             };
             await _unitOfWork.LeaveBalances.AddAsync(initialBalance, cancellationToken);
 
-            // 6. Atomic Commit
+            // 5. Atomic Commit
             await _unitOfWork.SaveChangesAsync(cancellationToken);
             await _unitOfWork.CommitTransactionAsync(cancellationToken);
 
@@ -119,7 +101,7 @@ public class CreateEmployeeCommandHandler : IRequestHandler<CreateEmployeeComman
                 PhoneNumber = employee.PhoneNumber,
                 EmployeeCode = employee.EmployeeCode,
                 Role = request.Role.ToString(),
-                TemporaryPassword = request.PhoneNumber
+                TemporaryPassword = tempPassword
             });
         }
         catch (Exception)
