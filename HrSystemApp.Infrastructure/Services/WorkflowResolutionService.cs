@@ -3,6 +3,7 @@ using HrSystemApp.Application.DTOs.Requests;
 using HrSystemApp.Application.Errors;
 using HrSystemApp.Application.Interfaces;
 using HrSystemApp.Application.Interfaces.Services;
+using HrSystemApp.Domain.Enums;
 using HrSystemApp.Domain.Models;
 using Microsoft.Extensions.Logging;
 
@@ -49,82 +50,116 @@ public class WorkflowResolutionService : IWorkflowResolutionService
 
         var plannedSteps = new List<PlannedStepDto>();
 
-        // Determine which nodes need approval:
-        // 1. If employee is NOT a manager at their own node → own node's manager is first approver
-        // 2. If employee IS a manager at their own node → skip own node, start from ancestors
-        // 3. Then continue through ancestors per definition steps
-
         foreach (var step in sortedSteps)
         {
-            // Determine which node this step references
-            // If this step references the employee's own node:
-            //   - If employee is manager → SKIP this step (no self-approval)
-            //   - If employee is NOT manager → process normally (get managers at own node)
-            // If this step references an ancestor node → process normally
-
-            if (step.OrgNodeId == requesterNodeId && isManagerAtOwnNode)
+            if (step.StepType == WorkflowStepType.DirectEmployee)
             {
-                // Employee is a manager at their own node → skip self-approval
-                _logger.LogInformation("Skipping step {SortOrder}: employee {EmployeeId} is a manager at node {NodeId} (self-approval prevention)",
-                    step.SortOrder, requesterEmployeeId, requesterNodeId);
-                continue;
-            }
+                // ── DIRECT EMPLOYEE STEP ─────────────────────────────────────────────
 
-            // Validate step references either the employee's own node OR an ancestor
-            if (step.OrgNodeId != requesterNodeId && !ancestorIds.Contains(step.OrgNodeId))
-            {
-                _logger.LogWarning("Workflow step {StepOrder} references node {NodeId} which is not in the approval path (own node or ancestor)",
-                    step.SortOrder, step.OrgNodeId);
-                return Result.Failure<List<PlannedStepDto>>(DomainErrors.Request.InvalidWorkflowChain);
-            }
+                if (step.DirectEmployeeId == null)
+                    return Result.Failure<List<PlannedStepDto>>(DomainErrors.Request.MissingDirectEmployeeId);
 
-            // Get the node details for this step
-            var stepNode = step.OrgNodeId == requesterNodeId
-                ? ownNode
-                : ancestors.First(a => a.Id == step.OrgNodeId);
+                var directEmployee = await _unitOfWork.Employees.GetByIdAsync(step.DirectEmployeeId.Value, ct);
+                if (directEmployee == null)
+                    return Result.Failure<List<PlannedStepDto>>(DomainErrors.Request.DirectEmployeeNotInCompany);
 
-            // Get managers at this node
-            var managers = await _unitOfWork.OrgNodeAssignments.GetManagersByNodeAsync(step.OrgNodeId, ct);
+                // No hierarchy validation. No self-approval skip.
+                // The admin explicitly named this person. They approve regardless.
 
-            if (managers.Count == 0)
-            {
-                _logger.LogWarning("No active managers at step {StepOrder} (node: {NodeName})",
-                    step.SortOrder, stepNode.Name);
-                return Result.Failure<List<PlannedStepDto>>(DomainErrors.Request.NoActiveManagersAtStep);
-            }
-
-            // Exclude requester from approvers (self-approval prevention)
-            var approvers = managers
-                .Where(m => m.Id != requesterEmployeeId)
-                .Select(m => new ApproverDto
+                plannedSteps.Add(new PlannedStepDto
                 {
-                    EmployeeId = m.Id,
-                    EmployeeName = m.FullName
-                })
-                .ToList();
-
-            // If all managers were excluded (self-approval edge case), keep them
-            if (approvers.Count == 0)
-            {
-                approvers = managers
-                    .Select(m => new ApproverDto
+                    StepType = WorkflowStepType.DirectEmployee,
+                    NodeId = null,
+                    NodeName = directEmployee.FullName,
+                    SortOrder = step.SortOrder,
+                    Approvers = new List<ApproverDto>
                     {
-                        EmployeeId = m.Id,
-                        EmployeeName = m.FullName
-                    })
+                        new ApproverDto
+                        {
+                            EmployeeId = directEmployee.Id,
+                            EmployeeName = directEmployee.FullName
+                        }
+                    }
+                });
+            }
+            else
+            {
+                // ── ORG NODE STEP ────────────────────────────────────────────────────
+
+                if (step.OrgNodeId == null)
+                    return Result.Failure<List<PlannedStepDto>>(DomainErrors.Request.MissingOrgNodeId);
+
+                // Self-approval skip: if this node is the requester's own node
+                // and the requester is a manager there, skip this step.
+                if (step.OrgNodeId == requesterNodeId && isManagerAtOwnNode)
+                {
+                    _logger.LogInformation("Skipping step {SortOrder}: employee {EmployeeId} is a manager at node {NodeId} (self-approval prevention)",
+                        step.SortOrder, requesterEmployeeId, requesterNodeId);
+                    continue;
+                }
+
+                // Hierarchy validation (skip if BypassHierarchyCheck is true)
+                if (!step.BypassHierarchyCheck)
+                {
+                    if (step.OrgNodeId != requesterNodeId && !ancestorIds.Contains(step.OrgNodeId.Value))
+                    {
+                        _logger.LogWarning("Workflow step {StepOrder} references node {NodeId} which is not in the approval path",
+                            step.SortOrder, step.OrgNodeId);
+                        return Result.Failure<List<PlannedStepDto>>(DomainErrors.Request.InvalidWorkflowChain);
+                    }
+                }
+
+                // Resolve the node object for its name
+                OrgNode? stepNode;
+                if (step.OrgNodeId == requesterNodeId)
+                {
+                    stepNode = ownNode;
+                }
+                else if (ancestorIds.Contains(step.OrgNodeId.Value))
+                {
+                    stepNode = ancestors.First(a => a.Id == step.OrgNodeId.Value);
+                }
+                else
+                {
+                    // BypassHierarchyCheck is true and it's not an ancestor — load it fresh
+                    stepNode = await _unitOfWork.OrgNodes.GetByIdAsync(step.OrgNodeId.Value, ct);
+                    if (stepNode == null)
+                        return Result.Failure<List<PlannedStepDto>>(DomainErrors.OrgNode.NotFound);
+                }
+
+                // Get managers at this node
+                var managers = await _unitOfWork.OrgNodeAssignments.GetManagersByNodeAsync(step.OrgNodeId.Value, ct);
+                if (managers.Count == 0)
+                {
+                    _logger.LogWarning("No active managers at step {SortOrder} (node: {NodeName})",
+                        step.SortOrder, stepNode.Name);
+                    return Result.Failure<List<PlannedStepDto>>(DomainErrors.Request.NoActiveManagersAtStep);
+                }
+
+                // Exclude requester from approvers (self-approval prevention)
+                var approvers = managers
+                    .Where(m => m.Id != requesterEmployeeId)
+                    .Select(m => new ApproverDto { EmployeeId = m.Id, EmployeeName = m.FullName })
                     .ToList();
 
-                _logger.LogInformation("Self-approval edge case: requester {EmployeeId} was the only manager, keeping them",
-                    requesterEmployeeId);
-            }
+                // Edge case: requester was the only manager — keep them
+                if (approvers.Count == 0)
+                {
+                    approvers = managers
+                        .Select(m => new ApproverDto { EmployeeId = m.Id, EmployeeName = m.FullName })
+                        .ToList();
+                    _logger.LogInformation("Self-approval edge case: requester is the only manager at step {SortOrder}", step.SortOrder);
+                }
 
-            plannedSteps.Add(new PlannedStepDto
-            {
-                NodeId = stepNode.Id,
-                NodeName = stepNode.Name,
-                SortOrder = step.SortOrder,
-                Approvers = approvers
-            });
+                plannedSteps.Add(new PlannedStepDto
+                {
+                    StepType = WorkflowStepType.OrgNode,
+                    NodeId = stepNode.Id,
+                    NodeName = stepNode.Name,
+                    SortOrder = step.SortOrder,
+                    Approvers = approvers
+                });
+            }
         }
 
         // If all steps were skipped (e.g., employee is manager at all definition nodes),
@@ -168,30 +203,35 @@ public class WorkflowResolutionService : IWorkflowResolutionService
         // Check each step references a valid node (own node or ancestor)
         foreach (var step in definitionSteps)
         {
-            if (step.OrgNodeId == requesterNodeId && isManagerAtOwnNode)
+            if (step.StepType == WorkflowStepType.DirectEmployee)
             {
-                // Employee is a manager at own node → this step will be skipped
+                if (step.DirectEmployeeId == null)
+                    return Result.Failure(DomainErrors.Request.MissingDirectEmployeeId);
+
+                var emp = await _unitOfWork.Employees.GetByIdAsync(step.DirectEmployeeId.Value, ct);
+                if (emp == null)
+                    return Result.Failure(DomainErrors.Request.DirectEmployeeNotInCompany);
+
+                // No hierarchy validation needed for direct employee steps
                 continue;
             }
 
-            if (step.OrgNodeId != requesterNodeId && !ancestorIds.Contains(step.OrgNodeId))
+            // OrgNode step
+            if (step.OrgNodeId == null)
+                return Result.Failure(DomainErrors.Request.MissingOrgNodeId);
+
+            if (step.OrgNodeId == requesterNodeId && isManagerAtOwnNode)
+                continue; // will be skipped at build time
+
+            if (!step.BypassHierarchyCheck)
             {
-                _logger.LogWarning("Step {SortOrder} references {NodeId} which is not in the approval path",
-                    step.SortOrder, step.OrgNodeId);
-                return Result.Failure(DomainErrors.Request.InvalidWorkflowChain);
+                if (step.OrgNodeId != requesterNodeId && !ancestorIds.Contains(step.OrgNodeId.Value))
+                    return Result.Failure(DomainErrors.Request.InvalidWorkflowChain);
             }
 
-            // Check step has at least one manager
-            var managers = await _unitOfWork.OrgNodeAssignments.GetManagersByNodeAsync(step.OrgNodeId, ct);
+            var managers = await _unitOfWork.OrgNodeAssignments.GetManagersByNodeAsync(step.OrgNodeId.Value, ct);
             if (managers.Count == 0)
-            {
-                var nodeName = step.OrgNodeId == requesterNodeId
-                    ? ownNode.Name
-                    : ancestors.FirstOrDefault(a => a.Id == step.OrgNodeId)?.Name ?? step.OrgNodeId.ToString();
-                _logger.LogWarning("Step {SortOrder} (node: {NodeName}) has no active managers",
-                    step.SortOrder, nodeName);
                 return Result.Failure(DomainErrors.Request.NoActiveManagersAtStep);
-            }
         }
 
         return Result.Success();

@@ -190,15 +190,15 @@ Write-Host "Created $($hierarchyResult.data.nodes.Count) nodes" -ForegroundColor
 Write-Host "`n=== Creating Employees ===" -ForegroundColor Cyan
 
 $employees = @(
-    @{ fullName = "John CEO"; email = "ceo@testcompany.com"; phoneNumber = "01111111111"; role = 2 },
-    @{ fullName = "Jane CFO"; email = "cfo@testcompany.com"; phoneNumber = "02222222222"; role = 2 },
-    @{ fullName = "Bob HR Director"; email = "hr-dir@testcompany.com"; phoneNumber = "03333333333"; role = 3 },
-    @{ fullName = "Alice CTO"; email = "cto@testcompany.com"; phoneNumber = "04444444444"; role = 2 },
-    @{ fullName = "Charlie Developer"; email = "dev1@testcompany.com"; phoneNumber = "05555555555"; role = 4 },
-    @{ fullName = "Diana Developer"; email = "dev2@testcompany.com"; phoneNumber = "06666666666"; role = 4 },
-    @{ fullName = "Eve QA"; email = "qa1@testcompany.com"; phoneNumber = "07777777777"; role = 4 },
-    @{ fullName = "Frank Finance"; email = "fin1@testcompany.com"; phoneNumber = "08888888888"; role = 4 },
-    @{ fullName = "Grace HR"; email = "hr1@testcompany.com"; phoneNumber = "09999999999"; role = 4 }
+    @{ fullName = "John CEO"; email = "ceo@democompany.com"; phoneNumber = "11111111111"; role = 2 },
+    @{ fullName = "Jane CFO"; email = "cfo@democompany.com"; phoneNumber = "22222222222"; role = 2 },
+    @{ fullName = "Bob HR Director"; email = "hr-dir@democompany.com"; phoneNumber = "33333333333"; role = 3 },
+    @{ fullName = "Alice CTO"; email = "cto@democompany.com"; phoneNumber = "44444444444"; role = 2 },
+    @{ fullName = "Charlie Developer"; email = "dev1@democompany.com"; phoneNumber = "55555555555"; role = 4 },
+    @{ fullName = "Diana Developer"; email = "dev2@democompany.com"; phoneNumber = "66666666666"; role = 4 },
+    @{ fullName = "Eve QA"; email = "qa1@democompany.com"; phoneNumber = "77777777777"; role = 4 },
+    @{ fullName = "Frank Finance"; email = "fin1@democompany.com"; phoneNumber = "88888888888"; role = 4 },
+    @{ fullName = "Grace HR"; email = "hr1@democompany.com"; phoneNumber = "99999999999"; role = 4 }
 )
 
 $createdEmployees = @()
@@ -238,16 +238,16 @@ Write-Host "Created $($createdEmployees.Count) employees" -ForegroundColor Green
 Write-Host "`n=== Assigning Employees to Nodes ===" -ForegroundColor Cyan
 
 $assignments = @(
-    @{ nodeTempId = "exec"; empEmail = "ceo@testcompany.com"; role = 0 },        # Manager
-    @{ nodeTempId = "fin"; empEmail = "cfo@testcompany.com"; role = 0 },         # Manager
-    @{ nodeTempId = "hr"; empEmail = "hr-dir@testcompany.com"; role = 0 },       # Manager
-    @{ nodeTempId = "eng"; empEmail = "cto@testcompany.com"; role = 0 },         # Manager
-    @{ nodeTempId = "accounting"; empEmail = "fin1@testcompany.com"; role = 0 }, # Manager
-    @{ nodeTempId = "payables"; empEmail = "fin1@testcompany.com"; role = 1 },    # Member
-    @{ nodeTempId = "talent-acq"; empEmail = "hr1@testcompany.com"; role = 0 },   # Manager
-    @{ nodeTempId = "campus-recruit"; empEmail = "hr1@testcompany.com"; role = 1 }, # Member
-    @{ nodeTempId = "web"; empEmail = "dev1@testcompany.com"; role = 0 },        # Manager
-    @{ nodeTempId = "qa"; empEmail = "qa1@testcompany.com"; role = 0 }          # Manager
+    @{ nodeTempId = "exec"; empEmail = "ceo@democompany.com"; role = 0 },        # Manager
+    @{ nodeTempId = "fin"; empEmail = "cfo@democompany.com"; role = 0 },         # Manager
+    @{ nodeTempId = "hr"; empEmail = "hr-dir@democompany.com"; role = 0 },       # Manager
+    @{ nodeTempId = "eng"; empEmail = "cto@democompany.com"; role = 0 },         # Manager
+    @{ nodeTempId = "accounting"; empEmail = "fin1@democompany.com"; role = 0 }, # Manager
+    @{ nodeTempId = "payables"; empEmail = "dev2@democompany.com"; role = 1 },    # Member (Diana)
+    @{ nodeTempId = "talent-acq"; empEmail = "hr1@democompany.com"; role = 0 },   # Manager
+    @{ nodeTempId = "campus-recruit"; empEmail = "dev1@democompany.com"; role = 1 }, # Member (Charlie)
+    @{ nodeTempId = "web"; empEmail = "dev1@democompany.com"; role = 0 },        # Manager
+    @{ nodeTempId = "qa"; empEmail = "qa1@democompany.com"; role = 0 }          # Manager
 )
 
 $roleNames = @("Manager", "Member")
@@ -305,6 +305,7 @@ foreach ($def in $requestDefs) {
 
     $steps = $def.steps | ForEach-Object {
         @{
+            stepType = 0  # OrgNode
             orgNodeId = $nodeMap[$_.nodeTempId]
             sortOrder = $_.sortOrder
         }

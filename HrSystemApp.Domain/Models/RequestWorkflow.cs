@@ -24,18 +24,37 @@ public class RequestDefinition : AuditableEntity, IHardDelete
 }
 
 /// <summary>
-/// A single step in an approval chain, defining a required role.
-/// e.g. Step 1: TeamLeader, Step 2: HR.
+/// A single step in an approval chain.
+/// Can be either an OrgNode step (managers at a node approve) or a DirectEmployee step (specific employee approves).
 /// </summary>
 public class RequestWorkflowStep : BaseEntity
 {
     public Guid RequestDefinitionId { get; set; }
 
     /// <summary>
+    /// The type of this step - OrgNode or DirectEmployee.
+    /// </summary>
+    public WorkflowStepType StepType { get; set; } = WorkflowStepType.OrgNode;
+
+    /// <summary>
     /// The OrgNode that this step targets.
     /// Approvers are the employees with OrgRole = Manager assigned to this node.
+    /// NULL when StepType is DirectEmployee.
     /// </summary>
-    public Guid OrgNodeId { get; set; }
+    public Guid? OrgNodeId { get; set; }
+
+    /// <summary>
+    /// For OrgNode steps: if true, bypasses ancestor validation.
+    /// Allows referencing an HR node that is not in the requester's hierarchy.
+    /// Ignored for DirectEmployee steps.
+    /// </summary>
+    public bool BypassHierarchyCheck { get; set; } = false;
+
+    /// <summary>
+    /// The specific employee who must approve this step.
+    /// Only set when StepType is DirectEmployee.
+    /// </summary>
+    public Guid? DirectEmployeeId { get; set; }
 
     /// <summary>
     /// Sequence order (1, 2, 3...)
@@ -44,5 +63,6 @@ public class RequestWorkflowStep : BaseEntity
 
     // Navigation
     public RequestDefinition RequestDefinition { get; set; } = null!;
-    public OrgNode OrgNode { get; set; } = null!;
+    public OrgNode? OrgNode { get; set; }
+    public Employee? DirectEmployee { get; set; }
 }

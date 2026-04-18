@@ -3,6 +3,7 @@ using HrSystemApp.Application.Interfaces;
 using HrSystemApp.Application.Interfaces.Services;
 using HrSystemApp.Application.Common;
 using HrSystemApp.Application.Errors;
+using HrSystemApp.Domain.Enums;
 using HrSystemApp.Domain.Models;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -74,23 +75,63 @@ public class UpdateRequestDefinitionCommandHandler : IRequestHandler<UpdateReque
             return Result.Failure<Guid>(DomainErrors.General.ArgumentError);
         }
 
-        // 4. Validate each OrgNode exists
+        // 4. Validate each step's referenced entity exists and belongs to this company
         foreach (var step in request.Steps)
         {
-            var node = await _unitOfWork.OrgNodes.GetByIdAsync(step.OrgNodeId, cancellationToken);
-            if (node == null)
+            if (step.StepType == WorkflowStepType.OrgNode)
             {
-                _logger.LogWarning("UpdateRequestDefinition failed: OrgNode {NodeId} not found.", step.OrgNodeId);
-                return Result.Failure<Guid>(DomainErrors.OrgNode.NotFound);
+                if (!step.OrgNodeId.HasValue)
+                    return Result.Failure<Guid>(DomainErrors.Request.MissingOrgNodeId);
+
+                var node = await _unitOfWork.OrgNodes.GetByIdAsync(step.OrgNodeId.Value, cancellationToken);
+                if (node == null)
+                    return Result.Failure<Guid>(DomainErrors.OrgNode.NotFound);
+
+                if (node.CompanyId != definition.CompanyId)
+                    return Result.Failure<Guid>(DomainErrors.Request.OrgNodeNotInCompany);
+            }
+            else if (step.StepType == WorkflowStepType.DirectEmployee)
+            {
+                if (!step.DirectEmployeeId.HasValue)
+                    return Result.Failure<Guid>(DomainErrors.Request.MissingDirectEmployeeId);
+
+                var emp = await _unitOfWork.Employees.GetByIdAsync(step.DirectEmployeeId.Value, cancellationToken);
+                if (emp == null)
+                    return Result.Failure<Guid>(DomainErrors.Employee.NotFound);
+
+                if (emp.CompanyId != definition.CompanyId)
+                    return Result.Failure<Guid>(DomainErrors.Request.DirectEmployeeNotInCompany);
             }
         }
 
-        // 5. Update
+        // 5. Cross-step conflict check:
+        //    A DirectEmployee approver must not also be a manager at any OrgNode step.
+        var directEmployeeIds = request.Steps
+            .Where(s => s.StepType == WorkflowStepType.DirectEmployee && s.DirectEmployeeId.HasValue)
+            .Select(s => s.DirectEmployeeId!.Value)
+            .ToHashSet();
+
+        if (directEmployeeIds.Count > 0)
+        {
+            var orgNodeSteps = request.Steps.Where(s => s.StepType == WorkflowStepType.OrgNode && s.OrgNodeId.HasValue);
+            foreach (var nodeStep in orgNodeSteps)
+            {
+                var managers = await _unitOfWork.OrgNodeAssignments.GetManagersByNodeAsync(nodeStep.OrgNodeId!.Value, cancellationToken);
+                var conflict = managers.Any(m => directEmployeeIds.Contains(m.Id));
+                if (conflict)
+                    return Result.Failure<Guid>(DomainErrors.Request.DirectEmployeeAlsoNodeManager);
+            }
+        }
+
+        // 6. Update
         definition.IsActive = request.IsActive;
         definition.WorkflowSteps.Clear();
         definition.WorkflowSteps = request.Steps.Select(s => new RequestWorkflowStep
         {
-            OrgNodeId = s.OrgNodeId,
+            StepType = s.StepType,
+            OrgNodeId = s.StepType == WorkflowStepType.OrgNode ? s.OrgNodeId : null,
+            BypassHierarchyCheck = s.StepType == WorkflowStepType.OrgNode && s.BypassHierarchyCheck,
+            DirectEmployeeId = s.StepType == WorkflowStepType.DirectEmployee ? s.DirectEmployeeId : null,
             SortOrder = s.SortOrder,
             RequestDefinitionId = definition.Id
         }).ToList();

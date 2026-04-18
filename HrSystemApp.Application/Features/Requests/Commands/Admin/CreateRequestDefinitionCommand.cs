@@ -66,7 +66,7 @@ public class CreateRequestDefinitionCommandHandler : IRequestHandler<CreateReque
         {
             _logger.LogWarning("CreateRequestDefinition failed: Definition already exists for Company {CompanyId}, Type {Type}.",
                 targetCompanyId, request.RequestType);
-            return Result.Failure<Guid>(DomainErrors.Requests.DefinitionNotFound);
+            return Result.Failure<Guid>(DomainErrors.Requests.DefinitionAlreadyExists);
         }
 
         // 2. Validate steps have unique sort orders
@@ -77,18 +77,55 @@ public class CreateRequestDefinitionCommandHandler : IRequestHandler<CreateReque
             return Result.Failure<Guid>(DomainErrors.General.ArgumentError);
         }
 
-        // 3. Validate each OrgNode exists
+        // 3. Validate each step's referenced entity exists and belongs to this company
         foreach (var step in request.Steps)
         {
-            var node = await _unitOfWork.OrgNodes.GetByIdAsync(step.OrgNodeId, cancellationToken);
-            if (node == null)
+            if (step.StepType == WorkflowStepType.OrgNode)
             {
-                _logger.LogWarning("CreateRequestDefinition failed: OrgNode {NodeId} not found.", step.OrgNodeId);
-                return Result.Failure<Guid>(DomainErrors.OrgNode.NotFound);
+                if (!step.OrgNodeId.HasValue)
+                    return Result.Failure<Guid>(DomainErrors.Request.MissingOrgNodeId);
+
+                var node = await _unitOfWork.OrgNodes.GetByIdAsync(step.OrgNodeId.Value, cancellationToken);
+                if (node == null)
+                    return Result.Failure<Guid>(DomainErrors.OrgNode.NotFound);
+
+                if (node.CompanyId != targetCompanyId)
+                    return Result.Failure<Guid>(DomainErrors.Request.OrgNodeNotInCompany);
+            }
+            else if (step.StepType == WorkflowStepType.DirectEmployee)
+            {
+                if (!step.DirectEmployeeId.HasValue)
+                    return Result.Failure<Guid>(DomainErrors.Request.MissingDirectEmployeeId);
+
+                var emp = await _unitOfWork.Employees.GetByIdAsync(step.DirectEmployeeId.Value, cancellationToken);
+                if (emp == null)
+                    return Result.Failure<Guid>(DomainErrors.Employee.NotFound);
+
+                if (emp.CompanyId != targetCompanyId)
+                    return Result.Failure<Guid>(DomainErrors.Request.DirectEmployeeNotInCompany);
             }
         }
 
-        // 4. Create Definition
+        // 4. Cross-step conflict check:
+        //    A DirectEmployee approver must not also be a manager at any OrgNode step.
+        var directEmployeeIds = request.Steps
+            .Where(s => s.StepType == WorkflowStepType.DirectEmployee && s.DirectEmployeeId.HasValue)
+            .Select(s => s.DirectEmployeeId!.Value)
+            .ToHashSet();
+
+        if (directEmployeeIds.Count > 0)
+        {
+            var orgNodeSteps = request.Steps.Where(s => s.StepType == WorkflowStepType.OrgNode && s.OrgNodeId.HasValue);
+            foreach (var nodeStep in orgNodeSteps)
+            {
+                var managers = await _unitOfWork.OrgNodeAssignments.GetManagersByNodeAsync(nodeStep.OrgNodeId!.Value, cancellationToken);
+                var conflict = managers.Any(m => directEmployeeIds.Contains(m.Id));
+                if (conflict)
+                    return Result.Failure<Guid>(DomainErrors.Request.DirectEmployeeAlsoNodeManager);
+            }
+        }
+
+        // 5. Create Definition
         var definition = new RequestDefinition
         {
             CompanyId = targetCompanyId,
@@ -96,7 +133,10 @@ public class CreateRequestDefinitionCommandHandler : IRequestHandler<CreateReque
             IsActive = true,
             WorkflowSteps = request.Steps.Select(s => new RequestWorkflowStep
             {
-                OrgNodeId = s.OrgNodeId,
+                StepType = s.StepType,
+                OrgNodeId = s.StepType == WorkflowStepType.OrgNode ? s.OrgNodeId : null,
+                BypassHierarchyCheck = s.StepType == WorkflowStepType.OrgNode && s.BypassHierarchyCheck,
+                DirectEmployeeId = s.StepType == WorkflowStepType.DirectEmployee ? s.DirectEmployeeId : null,
                 SortOrder = s.SortOrder
             }).ToList()
         };

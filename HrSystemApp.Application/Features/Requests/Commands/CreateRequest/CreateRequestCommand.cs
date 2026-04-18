@@ -101,10 +101,38 @@ public class CreateRequestCommandHandler : IRequestHandler<CreateRequestCommand,
             return Result.Failure<Guid>(DomainErrors.OrgNode.NotFound);
         }
 
-        // 5. Build workflow steps from definition
+        // 5. Build workflow steps from definition (map all fields)
         var definitionSteps = definition.WorkflowSteps
-            .Select(s => new WorkflowStepDto { OrgNodeId = s.OrgNodeId, SortOrder = s.SortOrder })
+            .Select(s => new WorkflowStepDto
+            {
+                StepType = s.StepType,
+                OrgNodeId = s.OrgNodeId,
+                BypassHierarchyCheck = s.BypassHierarchyCheck,
+                DirectEmployeeId = s.DirectEmployeeId,
+                SortOrder = s.SortOrder
+            })
             .ToList();
+
+        // 5b. Submission-time validation: ensure all referenced entities still exist and belong to this company
+        foreach (var step in definitionSteps)
+        {
+            if (step.StepType == WorkflowStepType.OrgNode && step.OrgNodeId.HasValue)
+            {
+                var node = await _unitOfWork.OrgNodes.GetByIdAsync(step.OrgNodeId.Value, cancellationToken);
+                if (node == null || node.CompanyId != employee.CompanyId)
+                    return Result.Failure<Guid>(DomainErrors.Request.OrgNodeNotInCompany);
+            }
+            else if (step.StepType == WorkflowStepType.DirectEmployee && step.DirectEmployeeId.HasValue)
+            {
+                var directEmp = await _unitOfWork.Employees.GetByIdAsync(step.DirectEmployeeId.Value, cancellationToken);
+                if (directEmp == null || directEmp.CompanyId != employee.CompanyId)
+                    return Result.Failure<Guid>(DomainErrors.Request.DirectEmployeeNotInCompany);
+
+                // Also check employee is still active
+                if (directEmp.EmploymentStatus != EmploymentStatus.Active)
+                    return Result.Failure<Guid>(DomainErrors.Request.DirectEmployeeNotActive);
+            }
+        }
 
         // 6. Build approval chain (validates steps and populates approvers)
         var approvalChainResult = await _workflowResolutionService.BuildApprovalChainAsync(

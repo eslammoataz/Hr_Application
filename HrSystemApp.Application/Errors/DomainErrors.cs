@@ -161,6 +161,9 @@ public static class DomainErrors
         public static readonly Error DefinitionNotFound = new(
             "Request.DefinitionNotFound", Messages.Errors.RequestDefinitionNotFound);
 
+        public static readonly Error DefinitionAlreadyExists = new(
+            "Request.DefinitionAlreadyExists", "A request definition for this type already exists for this company.");
+
         public static readonly Error Unauthorized = new(
             "Request.Unauthorized", Messages.Errors.RequestUnauthorized);
 
@@ -401,5 +404,23 @@ public static class DomainErrors
 
         public static readonly Error StepOrderExceeded = new(
             "Request.StepOrderExceeded", "Step order exceeds the number of workflow steps.");
+
+        public static readonly Error OrgNodeNotInCompany = new(
+            "Request.OrgNodeNotInCompany", "The referenced OrgNode does not belong to this company.");
+
+        public static readonly Error DirectEmployeeNotInCompany = new(
+            "Request.DirectEmployeeNotInCompany", "The referenced employee does not belong to this company.");
+
+        public static readonly Error DirectEmployeeAlsoNodeManager = new(
+            "Request.DirectEmployeeAlsoNodeManager", "A DirectEmployee approver cannot also be a manager at an OrgNode step in the same chain.");
+
+        public static readonly Error DirectEmployeeNotActive = new(
+            "Request.DirectEmployeeNotActive", "The DirectEmployee approver is not an active employee.");
+
+        public static readonly Error MissingOrgNodeId = new(
+            "Request.MissingOrgNodeId", "OrgNode step must have an OrgNodeId.");
+
+        public static readonly Error MissingDirectEmployeeId = new(
+            "Request.MissingDirectEmployeeId", "DirectEmployee step must have a DirectEmployeeId.");
     }
 }

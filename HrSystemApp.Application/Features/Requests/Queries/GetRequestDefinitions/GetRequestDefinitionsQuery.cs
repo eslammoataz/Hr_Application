@@ -67,7 +67,14 @@ public class GetRequestDefinitionsQueryHandler : IRequestHandler<GetRequestDefin
             Id = d.Id,
             RequestType = d.RequestType,
             IsActive = d.IsActive,
-            Steps = d.WorkflowSteps.Select(s => new WorkflowStepDto { OrgNodeId = s.OrgNodeId, SortOrder = s.SortOrder }).ToList(),
+            Steps = d.WorkflowSteps.Select(s => new WorkflowStepDto
+            {
+                StepType = s.StepType,
+                OrgNodeId = s.OrgNodeId,
+                BypassHierarchyCheck = s.BypassHierarchyCheck,
+                DirectEmployeeId = s.DirectEmployeeId,
+                SortOrder = s.SortOrder
+            }).ToList(),
             Schema = string.IsNullOrEmpty(d.FormSchemaJson)
                 ? _validator.GetSchema(d.RequestType)
                 : JsonSerializer.Deserialize<object>(d.FormSchemaJson)
