@@ -34,7 +34,7 @@ public record RequestDetailDto
     public List<PlannedStepDto> PlannedSteps { get; set; } = new();
 }
 
-public record ApprovalHistoryDto(string ApproverName, RequestStatus Status, DateTime CreatedAt, string? Comment);
+public record ApprovalHistoryDto(string ApproverName, Guid ApproverId, RequestStatus Status, DateTime CreatedAt, string? Comment);
 
 public class GetRequestByIdQueryHandler : IRequestHandler<GetRequestByIdQuery, Result<RequestDetailDto>>
 {
@@ -70,6 +70,7 @@ public class GetRequestByIdQueryHandler : IRequestHandler<GetRequestByIdQuery, R
 
             History = existingRequest.ApprovalHistory.Select(h => new ApprovalHistoryDto(
                 h.Approver.FullName,
+                h.ApproverId,
                 h.Status,
                 h.CreatedAt,
                 h.Comment
