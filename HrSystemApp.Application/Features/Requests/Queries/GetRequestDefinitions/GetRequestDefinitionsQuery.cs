@@ -70,9 +70,12 @@ public class GetRequestDefinitionsQueryHandler : IRequestHandler<GetRequestDefin
             Steps = d.WorkflowSteps.Select(s => new WorkflowStepDto
             {
                 StepType = s.StepType,
+                StepTypeName = s.StepType.ToString(),
                 OrgNodeId = s.OrgNodeId,
                 BypassHierarchyCheck = s.BypassHierarchyCheck,
                 DirectEmployeeId = s.DirectEmployeeId,
+                StartFromLevel = s.StartFromLevel,
+                LevelsUp = s.LevelsUp,
                 SortOrder = s.SortOrder
             }).ToList(),
             Schema = string.IsNullOrEmpty(d.FormSchemaJson)

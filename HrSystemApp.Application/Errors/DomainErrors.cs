@@ -422,5 +422,20 @@ public static class DomainErrors
 
         public static readonly Error MissingDirectEmployeeId = new(
             "Request.MissingDirectEmployeeId", "DirectEmployee step must have a DirectEmployeeId.");
+
+        public static readonly Error MissingLevelsUp = new(
+            "Request.MissingLevelsUp", "HierarchyLevel step must have LevelsUp >= 1.");
+
+        public static readonly Error InvalidStartFromLevel = new(
+            "Request.InvalidStartFromLevel", "HierarchyLevel step StartFromLevel must be >= 1 when specified.");
+
+        public static readonly Error HierarchyRangesOverlap = new(
+            "Request.HierarchyRangesOverlap", "Two HierarchyLevel steps in this definition cover overlapping levels.");
+
+        public static readonly Error HierarchyLevelFieldsOnNonHierarchyStep = new(
+            "Request.HierarchyLevelFieldsOnNonHierarchyStep", "StartFromLevel/LevelsUp are only valid on HierarchyLevel steps.");
+
+        public static readonly Error UnexpectedFieldsOnHierarchyLevelStep = new(
+            "Request.UnexpectedFieldsOnHierarchyLevelStep", "HierarchyLevel steps must not have OrgNodeId, DirectEmployeeId, or BypassHierarchyCheck set.");
     }
 }

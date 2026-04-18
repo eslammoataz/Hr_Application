@@ -33,6 +33,12 @@ public class RequestWorkflowConfiguration : IEntityTypeConfiguration<RequestDefi
         builder.Property(x => x.BypassHierarchyCheck)
             .HasDefaultValue(false);
 
+        builder.Property(x => x.StartFromLevel)
+            .IsRequired(false);
+
+        builder.Property(x => x.LevelsUp)
+            .IsRequired(false);
+
         // OrgNode FK - now optional (nullable) for DirectEmployee steps
         builder.HasOne(x => x.OrgNode)
             .WithMany()

@@ -61,6 +61,19 @@ public class RequestWorkflowStep : BaseEntity
     /// </summary>
     public int SortOrder { get; set; }
 
+    /// <summary>
+    /// For HierarchyLevel steps: the first ancestor level to include (1-based).
+    /// Level 1 = requester's own node. Level 2 = immediate parent. Etc.
+    /// NULL for non-HierarchyLevel steps. Defaults to 1 if omitted on a HierarchyLevel step.
+    /// </summary>
+    public int? StartFromLevel { get; set; }
+
+    /// <summary>
+    /// For HierarchyLevel steps: how many consecutive levels this step covers starting at StartFromLevel.
+    /// NULL for non-HierarchyLevel steps. Required (>= 1) for HierarchyLevel steps.
+    /// </summary>
+    public int? LevelsUp { get; set; }
+
     // Navigation
     public RequestDefinition RequestDefinition { get; set; } = null!;
     public OrgNode? OrgNode { get; set; }

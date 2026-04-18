@@ -109,6 +109,8 @@ public class CreateRequestCommandHandler : IRequestHandler<CreateRequestCommand,
                 OrgNodeId = s.OrgNodeId,
                 BypassHierarchyCheck = s.BypassHierarchyCheck,
                 DirectEmployeeId = s.DirectEmployeeId,
+                StartFromLevel = s.StartFromLevel,
+                LevelsUp = s.LevelsUp,
                 SortOrder = s.SortOrder
             })
             .ToList();

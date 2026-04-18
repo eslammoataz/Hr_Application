@@ -75,6 +75,58 @@ public class UpdateRequestDefinitionCommandHandler : IRequestHandler<UpdateReque
             return Result.Failure<Guid>(DomainErrors.General.ArgumentError);
         }
 
+        // (NEW) Per-step field consistency
+        foreach (var step in request.Steps)
+        {
+            if (step.StepType == WorkflowStepType.HierarchyLevel)
+            {
+                // HierarchyLevel must have LevelsUp >= 1
+                if (!step.LevelsUp.HasValue || step.LevelsUp.Value < 1)
+                    return Result.Failure<Guid>(DomainErrors.Request.MissingLevelsUp);
+
+                // StartFromLevel (if set) must be >= 1
+                if (step.StartFromLevel.HasValue && step.StartFromLevel.Value < 1)
+                    return Result.Failure<Guid>(DomainErrors.Request.InvalidStartFromLevel);
+
+                // HierarchyLevel must NOT have OrgNodeId, DirectEmployeeId, or BypassHierarchyCheck
+                if (step.OrgNodeId.HasValue || step.DirectEmployeeId.HasValue || step.BypassHierarchyCheck)
+                    return Result.Failure<Guid>(DomainErrors.Request.UnexpectedFieldsOnHierarchyLevelStep);
+            }
+            else
+            {
+                // OrgNode and DirectEmployee steps must NOT have StartFromLevel or LevelsUp
+                if (step.StartFromLevel.HasValue || step.LevelsUp.HasValue)
+                    return Result.Failure<Guid>(DomainErrors.Request.HierarchyLevelFieldsOnNonHierarchyStep);
+            }
+        }
+
+        // (NEW) HierarchyLevel ranges must not overlap
+        var hierarchyRanges = request.Steps
+            .Where(s => s.StepType == WorkflowStepType.HierarchyLevel)
+            .Select(s => new
+            {
+                Start = s.StartFromLevel ?? 1,
+                End = (s.StartFromLevel ?? 1) + s.LevelsUp!.Value - 1,
+                s.SortOrder
+            })
+            .ToList();
+
+        for (int i = 0; i < hierarchyRanges.Count; i++)
+        {
+            for (int j = i + 1; j < hierarchyRanges.Count; j++)
+            {
+                var a = hierarchyRanges[i];
+                var b = hierarchyRanges[j];
+                // Overlap test: max(start) <= min(end)
+                if (Math.Max(a.Start, b.Start) <= Math.Min(a.End, b.End))
+                {
+                    _logger.LogWarning("HierarchyLevel ranges overlap between steps sortOrder {A} [{As}..{Ae}] and {B} [{Bs}..{Be}]",
+                        a.SortOrder, a.Start, a.End, b.SortOrder, b.Start, b.End);
+                    return Result.Failure<Guid>(DomainErrors.Request.HierarchyRangesOverlap);
+                }
+            }
+        }
+
         // 4. Validate each step's referenced entity exists and belongs to this company
         foreach (var step in request.Steps)
         {
@@ -102,6 +154,7 @@ public class UpdateRequestDefinitionCommandHandler : IRequestHandler<UpdateReque
                 if (emp.CompanyId != definition.CompanyId)
                     return Result.Failure<Guid>(DomainErrors.Request.DirectEmployeeNotInCompany);
             }
+            // HierarchyLevel steps are already validated above; no additional entity lookup needed.
         }
 
         // 5. Cross-step conflict check:
@@ -132,6 +185,8 @@ public class UpdateRequestDefinitionCommandHandler : IRequestHandler<UpdateReque
             OrgNodeId = s.StepType == WorkflowStepType.OrgNode ? s.OrgNodeId : null,
             BypassHierarchyCheck = s.StepType == WorkflowStepType.OrgNode && s.BypassHierarchyCheck,
             DirectEmployeeId = s.StepType == WorkflowStepType.DirectEmployee ? s.DirectEmployeeId : null,
+            StartFromLevel = s.StepType == WorkflowStepType.HierarchyLevel ? (s.StartFromLevel ?? 1) : (int?)null,
+            LevelsUp = s.StepType == WorkflowStepType.HierarchyLevel ? s.LevelsUp : (int?)null,
             SortOrder = s.SortOrder,
             RequestDefinitionId = definition.Id
         }).ToList();
