@@ -1,6 +1,7 @@
 using HrSystemApp.Application.Common;
 using HrSystemApp.Application.DTOs.Attendance;
 using HrSystemApp.Application.Errors;
+using HrSystemApp.Application.Features.Attendance.Common;
 using HrSystemApp.Application.Interfaces;
 using HrSystemApp.Application.Interfaces.Services;
 using MediatR;
@@ -66,7 +67,9 @@ public class GetMyAttendanceQueryHandler
             a.Status.ToString(),
             a.IsLate,
             a.IsEarlyLeave,
-            a.Reason)).ToList();
+            a.Reason,
+            AttendanceSummaryCalculator.BuildSessions(
+                a.Logs.OrderBy(l => l.TimestampUtc).ToList()))).ToList();
 
         return Result.Success(PagedResult<AttendanceSummaryResponse>.Create(
             items, paged.PageNumber, paged.PageSize, paged.TotalCount));

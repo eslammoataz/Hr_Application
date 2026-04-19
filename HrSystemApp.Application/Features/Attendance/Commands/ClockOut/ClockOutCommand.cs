@@ -54,7 +54,12 @@ public class ClockOutCommandHandler : IRequestHandler<ClockOutCommand, Result<At
             return Result.Failure<AttendanceResponse>(DomainErrors.Attendance.AlreadyClockedOut);
         }
 
-        if (attendance.FirstClockInUtc is null || clockOutUtc <= attendance.FirstClockInUtc.Value)
+        // Resolve the start of the current session: the most recent ClockIn for this attendance.
+        // This is used both for the InvalidClockOut guard and for accurate TotalHours accumulation.
+        var lastClockIn = await _unitOfWork.AttendanceLogs.GetLastClockInAsync(attendance.Id, cancellationToken);
+        var sessionStartUtc = lastClockIn?.TimestampUtc ?? attendance.FirstClockInUtc;
+
+        if (sessionStartUtc is null || clockOutUtc <= sessionStartUtc.Value)
         {
             return Result.Failure<AttendanceResponse>(DomainErrors.Attendance.InvalidClockOut);
         }
@@ -78,12 +83,16 @@ public class ClockOutCommandHandler : IRequestHandler<ClockOutCommand, Result<At
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             attendance.LastClockOutLogId = log.Id;
-            AttendanceSummaryCalculator.ApplyClockOut(attendance, clockOutUtc, rules.ShiftEndUtc);
+            AttendanceSummaryCalculator.ApplyClockOut(attendance, clockOutUtc, rules.ShiftEndUtc, sessionStartUtc.Value);
 
             await _unitOfWork.Attendances.UpdateAsync(attendance, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             await _unitOfWork.CommitTransactionAsync(cancellationToken);
+
+            var logs = await _unitOfWork.AttendanceLogs
+                .GetByAttendanceIdAsync(attendance.Id, cancellationToken);
+            var sessions = AttendanceSummaryCalculator.BuildSessions(logs);
 
             return Result.Success(new AttendanceResponse(
                 attendance.Id,
@@ -95,7 +104,8 @@ public class ClockOutCommandHandler : IRequestHandler<ClockOutCommand, Result<At
                 attendance.Status.ToString(),
                 attendance.IsLate,
                 attendance.IsEarlyLeave,
-                attendance.Reason));
+                attendance.Reason,
+                sessions));
         }
         catch
         {

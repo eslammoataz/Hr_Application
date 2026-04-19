@@ -47,6 +47,11 @@ public class AutoClockOutService : IAutoClockOutService
                 continue;
             }
 
+            // Resolve the current session start so TotalHours accumulation is correct
+            // for employees who clock in/out multiple times per day.
+            var lastClockIn = await _unitOfWork.AttendanceLogs.GetLastClockInAsync(attendance.Id, cancellationToken);
+            var sessionStartUtc = lastClockIn?.TimestampUtc ?? attendance.FirstClockInUtc!.Value;
+
             await _unitOfWork.BeginTransactionAsync(cancellationToken);
             try
             {
@@ -66,7 +71,7 @@ public class AutoClockOutService : IAutoClockOutService
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
 
                 attendance.LastClockOutLogId = log.Id;
-                AttendanceSummaryCalculator.ApplyClockOut(attendance, rules.ShiftEndUtc, rules.ShiftEndUtc, "Auto Clock-Out");
+                AttendanceSummaryCalculator.ApplyClockOut(attendance, rules.ShiftEndUtc, rules.ShiftEndUtc, sessionStartUtc, "Auto Clock-Out");
                 await _unitOfWork.Attendances.UpdateAsync(attendance, cancellationToken);
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
                 await _unitOfWork.CommitTransactionAsync(cancellationToken);

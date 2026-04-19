@@ -2,7 +2,9 @@ using HrSystemApp.Api.Authorization;
 using HrSystemApp.Application.Features.Attendance.Commands.BatchOverrideClockOut;
 using HrSystemApp.Application.Features.Attendance.Commands.ClockIn;
 using HrSystemApp.Application.Features.Attendance.Commands.ClockOut;
+using HrSystemApp.Application.Features.Attendance.Commands.OverrideClockIn;
 using HrSystemApp.Application.Features.Attendance.Commands.OverrideClockOut;
+using HrSystemApp.Application.Features.Attendance.Queries.GetAttendanceSessions;
 using HrSystemApp.Application.Features.Attendance.Queries.GetCompanyAttendance;
 using HrSystemApp.Application.Features.Attendance.Queries.GetMyAttendance;
 using HrSystemApp.Domain.Enums;
@@ -71,6 +73,30 @@ public class AttendanceController : BaseApiController
         return HandleResult(result);
     }
 
+    /// <summary>
+    /// Returns the individual clock-in/clock-out session pairs for a specific attendance record.
+    /// Any authenticated user can call this; business logic should restrict employees to their own records.
+    /// </summary>
+    [HttpGet("{attendanceId:guid}/sessions")]
+    public async Task<IActionResult> GetAttendanceSessions(
+        Guid attendanceId, CancellationToken cancellationToken)
+    {
+        var result = await _sender.Send(
+            new GetAttendanceSessionsQuery(attendanceId), cancellationToken);
+        return HandleResult(result);
+    }
+
+    [HttpPost("admin/override-clock-in")]
+    [Authorize(Roles = Roles.HrOrAbove)]
+    public async Task<IActionResult> OverrideClockIn(
+        [FromBody] OverrideClockInRequest request, CancellationToken cancellationToken)
+    {
+        var result = await _sender.Send(
+            new OverrideClockInCommand(request.EmployeeId, request.Date, request.ClockInUtc, request.Reason),
+            cancellationToken);
+        return HandleResult(result);
+    }
+
     [HttpPost("admin/override-clock-out")]
     [Authorize(Roles = Roles.HrOrAbove)]
     public async Task<IActionResult> OverrideClockOut([FromBody] OverrideClockOutRequest request, CancellationToken cancellationToken)
@@ -95,7 +121,6 @@ public class AttendanceController : BaseApiController
 }
 
 public sealed record ClockActionRequest(DateTime? TimestampUtc);
-
+public sealed record OverrideClockInRequest(Guid EmployeeId, DateOnly Date, DateTime ClockInUtc, string Reason);
 public sealed record OverrideClockOutRequest(Guid EmployeeId, DateOnly Date, DateTime ClockOutUtc, string Reason);
-
 public sealed record BatchOverrideClockOutRequest(IReadOnlyList<OverrideClockOutRequest> Items);
