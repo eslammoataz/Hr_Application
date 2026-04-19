@@ -86,39 +86,89 @@ public class OrgNodeRepository : Repository<OrgNode>, IOrgNodeRepository
 
     public async Task<IReadOnlyList<OrgNode>> GetAncestorsAsync(Guid nodeId, CancellationToken ct)
     {
-        // Phase 1: Walk up collecting ParentId values (N lightweight queries)
-        var ancestorIds = new List<Guid>();
-        var currentParentId = await _context.OrgNodes
-            .AsNoTracking()
-            .Where(n => n.Id == nodeId)
-            .Select(n => n.ParentId)
-            .FirstOrDefaultAsync(ct);
+        // STEP 1: Get ancestor IDs using recursive CTE
+        var ancestorIds = await _context.OrgNodes
+            .FromSqlRaw(@"
+            WITH Ancestors AS (
+                SELECT Id, ParentId, 0 AS Depth
+                FROM OrgNodes
+                WHERE Id = {0}
 
-        while (currentParentId.HasValue)
-        {
-            ancestorIds.Add(currentParentId.Value);
-            currentParentId = await _context.OrgNodes
-                .AsNoTracking()
-                .Where(n => n.Id == currentParentId.Value)
-                .Select(n => n.ParentId)
-                .FirstOrDefaultAsync(ct);
-        }
+                UNION ALL
+
+                SELECT p.Id, p.ParentId, a.Depth + 1
+                FROM OrgNodes p
+                INNER JOIN Ancestors a ON p.Id = a.ParentId
+            )
+            SELECT Id, Depth
+            FROM Ancestors
+            WHERE Id != {0}
+            ORDER BY Depth
+        ", nodeId)
+            .AsNoTracking()
+            .Select(x => x.Id)
+            .ToListAsync(ct);
 
         if (ancestorIds.Count == 0)
-            return new List<OrgNode>();
+            return Array.Empty<OrgNode>();
 
-        // Phase 2: Fetch all ancestors with assignments in ONE query
+        // STEP 2: Load full entities with navigation properties
         var ancestors = await _context.OrgNodes
             .AsNoTracking()
             .Where(n => ancestorIds.Contains(n.Id))
-            .Include(n => n.Assignments).ThenInclude(a => a.Employee)
+            .Include(n => n.Assignments)
+                .ThenInclude(a => a.Employee)
             .ToListAsync(ct);
 
-        // Preserve order from immediate parent to root (ancestorIds is already in this order)
-        return ancestorIds
-            .Select(id => ancestors.First(a => a.Id == id))
-            .ToList();
+        // STEP 3: Preserve correct order
+        var map = ancestors.ToDictionary(a => a.Id);
+
+        var result = new List<OrgNode>(ancestorIds.Count);
+
+        foreach (var id in ancestorIds)
+        {
+            if (map.TryGetValue(id, out var node))
+                result.Add(node);
+        }
+
+        return result;
     }
+
+    // public async Task<IReadOnlyList<OrgNode>> GetAncestorsAsync(Guid nodeId, CancellationToken ct)
+    // {
+    //     // Phase 1: Walk up collecting ParentId values (N lightweight queries)
+    //     var ancestorIds = new List<Guid>();
+    //     var currentParentId = await _context.OrgNodes
+    //         .AsNoTracking()
+    //         .Where(n => n.Id == nodeId)
+    //         .Select(n => n.ParentId)
+    //         .FirstOrDefaultAsync(ct);
+
+    //     while (currentParentId.HasValue)
+    //     {
+    //         ancestorIds.Add(currentParentId.Value);
+    //         currentParentId = await _context.OrgNodes
+    //             .AsNoTracking()
+    //             .Where(n => n.Id == currentParentId.Value)
+    //             .Select(n => n.ParentId)
+    //             .FirstOrDefaultAsync(ct);
+    //     }
+
+    //     if (ancestorIds.Count == 0)
+    //         return new List<OrgNode>();
+
+    //     // Phase 2: Fetch all ancestors with assignments in ONE query
+    //     var ancestors = await _context.OrgNodes
+    //         .AsNoTracking()
+    //         .Where(n => ancestorIds.Contains(n.Id))
+    //         .Include(n => n.Assignments).ThenInclude(a => a.Employee)
+    //         .ToListAsync(ct);
+
+    //     // Preserve order from immediate parent to root (ancestorIds is already in this order)
+    //     return ancestorIds
+    //         .Select(id => ancestors.First(a => a.Id == id))
+    //         .ToList();
+    // }
 
     public async Task<IReadOnlyList<OrgNode>> GetAncestorChainAsync(Guid startNodeId, Guid targetRootId, CancellationToken ct)
     {

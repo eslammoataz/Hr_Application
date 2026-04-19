@@ -41,41 +41,43 @@ public class CreateRequestCommandHandler : IRequestHandler<CreateRequestCommand,
 
     public async Task<Result<Guid>> Handle(CreateRequestCommand request, CancellationToken cancellationToken)
     {
+        _logger.LogInformation("[RequestCreate] Starting — RequestType={RequestType}", request.RequestType);
+
         var userId = _currentUserService.UserId;
         if (string.IsNullOrEmpty(userId))
+        {
+            _logger.LogWarning("[RequestCreate] Unauthorized — no userId");
             return Result.Failure<Guid>(DomainErrors.Auth.Unauthorized);
+        }
 
         var employee = await _unitOfWork.Employees.GetByUserIdAsync(userId, cancellationToken);
         if (employee == null)
         {
-            _logger.LogWarning("CreateRequest failed: Employee profile not found for UserId {UserId}", userId);
+            _logger.LogWarning("[RequestCreate] Employee not found — UserId={UserId}", userId);
             return Result.Failure<Guid>(DomainErrors.Employee.NotFound);
         }
 
-        _logger.LogInformation("Employee {EmployeeId} ({FullName}) found. Company: {CompanyId}",
+        _logger.LogInformation("[RequestCreate] Employee resolved — EmployeeId={EmployeeId}, Name={Name}, CompanyId={CompanyId}",
             employee.Id, employee.FullName, employee.CompanyId);
-
-        _logger.LogInformation("Attempting to create {RequestType} request for employee {EmployeeId} ({FullName})",
-            request.RequestType, employee.Id, employee.FullName);
 
         var jsonData = request.Data.GetRawText();
 
         // 1. Resolve Definition
-        var definition =
-            await _unitOfWork.RequestDefinitions.GetByTypeAsync(employee.CompanyId, request.RequestType, cancellationToken);
+        var definition = await _unitOfWork.RequestDefinitions.GetByTypeAsync(employee.CompanyId, request.RequestType, cancellationToken);
         if (definition == null || !definition.IsActive)
         {
-            _logger.LogWarning("{RequestType} is disabled or missing definition for company {CompanyId}", request.RequestType,
-                employee.CompanyId);
+            _logger.LogWarning("[RequestCreate] Definition not found or disabled — CompanyId={CompanyId}, RequestType={RequestType}",
+                employee.CompanyId, request.RequestType);
             return Result.Failure<Guid>(DomainErrors.Requests.TypeDisabled);
         }
+        _logger.LogInformation("[RequestCreate] Definition found — DefinitionId={DefinitionId}", definition.Id);
 
         // 2. Structural Schema Validation
         var schemaResult = _schemaValidator.Validate(request.RequestType, jsonData, definition.FormSchemaJson);
         if (!schemaResult.IsSuccess)
         {
-            _logger.LogWarning("Schema validation failed for {RequestType}. Error: {Error}", request.RequestType,
-                schemaResult.Error.Message);
+            _logger.LogWarning("[RequestCreate] Schema validation failed — DefinitionId={DefinitionId}, Error={Error}",
+                definition.Id, schemaResult.Error.Message);
             return Result.Failure<Guid>(schemaResult.Error);
         }
 
@@ -83,12 +85,11 @@ public class CreateRequestCommandHandler : IRequestHandler<CreateRequestCommand,
         var strategy = _strategyFactory.GetStrategy(request.RequestType);
         if (strategy != null)
         {
-            var strategyResult =
-                await strategy.ValidateBusinessRulesAsync(employee.Id, request.Data, cancellationToken);
+            var strategyResult = await strategy.ValidateBusinessRulesAsync(employee.Id, request.Data, cancellationToken);
             if (!strategyResult.IsSuccess)
             {
-                _logger.LogWarning("Business strategy validation failed for {RequestType}. Error: {Error}",
-                    request.RequestType, strategyResult.Error.Message);
+                _logger.LogWarning("[RequestCreate] Business rules failed — EmployeeId={EmployeeId}, RequestType={RequestType}, Error={Error}",
+                    employee.Id, request.RequestType, strategyResult.Error.Message);
                 return Result.Failure<Guid>(strategyResult.Error);
             }
         }
@@ -97,7 +98,7 @@ public class CreateRequestCommandHandler : IRequestHandler<CreateRequestCommand,
         var assignment = await _unitOfWork.OrgNodeAssignments.GetByEmployeeWithNodeAsync(employee.Id, cancellationToken);
         if (assignment == null)
         {
-            _logger.LogWarning("CreateRequest failed: Employee {EmployeeId} is not assigned to any OrgNode.", employee.Id);
+            _logger.LogWarning("[RequestCreate] No OrgNode assignment — EmployeeId={EmployeeId}", employee.Id);
             return Result.Failure<Guid>(DomainErrors.OrgNode.NotFound);
         }
 
@@ -114,29 +115,40 @@ public class CreateRequestCommandHandler : IRequestHandler<CreateRequestCommand,
                 SortOrder = s.SortOrder
             })
             .ToList();
+        _logger.LogInformation("[RequestCreate] Definition steps mapped — Count={Count}", definitionSteps.Count);
 
-        // 5b. Submission-time validation: ensure all referenced entities still exist and belong to this company
+        // 5b. Submission-time validation
         foreach (var step in definitionSteps)
         {
             if (step.StepType == WorkflowStepType.OrgNode && step.OrgNodeId.HasValue)
             {
                 var node = await _unitOfWork.OrgNodes.GetByIdAsync(step.OrgNodeId.Value, cancellationToken);
                 if (node == null || node.CompanyId != employee.CompanyId)
+                {
+                    _logger.LogWarning("[RequestCreate] OrgNode validation failed — NodeId={NodeId}", step.OrgNodeId);
                     return Result.Failure<Guid>(DomainErrors.Request.OrgNodeNotInCompany);
+                }
             }
             else if (step.StepType == WorkflowStepType.DirectEmployee && step.DirectEmployeeId.HasValue)
             {
                 var directEmp = await _unitOfWork.Employees.GetByIdAsync(step.DirectEmployeeId.Value, cancellationToken);
                 if (directEmp == null || directEmp.CompanyId != employee.CompanyId)
+                {
+                    _logger.LogWarning("[RequestCreate] DirectEmployee validation failed — DirectEmployeeId={DirectEmployeeId}", step.DirectEmployeeId);
                     return Result.Failure<Guid>(DomainErrors.Request.DirectEmployeeNotInCompany);
-
-                // Also check employee is still active
+                }
                 if (directEmp.EmploymentStatus != EmploymentStatus.Active)
+                {
+                    _logger.LogWarning("[RequestCreate] DirectEmployee not active — DirectEmployeeId={DirectEmployeeId}", step.DirectEmployeeId);
                     return Result.Failure<Guid>(DomainErrors.Request.DirectEmployeeNotActive);
+                }
             }
         }
 
-        // 6. Build approval chain (validates steps and populates approvers)
+        // 6. Build approval chain
+        _logger.LogInformation("[RequestCreate] Building approval chain — EmployeeId={EmployeeId}, NodeId={NodeId}",
+            employee.Id, assignment.OrgNodeId);
+
         var approvalChainResult = await _workflowResolutionService.BuildApprovalChainAsync(
             employee.Id,
             assignment.OrgNodeId,
@@ -145,12 +157,13 @@ public class CreateRequestCommandHandler : IRequestHandler<CreateRequestCommand,
 
         if (!approvalChainResult.IsSuccess)
         {
-            _logger.LogWarning("Workflow resolution failed for {RequestType}: {Error}",
-                request.RequestType, approvalChainResult.Error.Message);
+            _logger.LogError("[RequestCreate] Chain build failed — EmployeeId={EmployeeId}, Error={Error}",
+                employee.Id, approvalChainResult.Error.Message);
             return Result.Failure<Guid>(approvalChainResult.Error);
         }
 
         var plannedSteps = approvalChainResult.Value;
+        _logger.LogInformation("[RequestCreate] Chain built — StepsCount={StepsCount}", plannedSteps.Count);
 
         // 7. Persist Unified Request
         var newRequest = new Request
@@ -169,16 +182,15 @@ public class CreateRequestCommandHandler : IRequestHandler<CreateRequestCommand,
 
         await _unitOfWork.Requests.AddAsync(newRequest, cancellationToken);
 
-        // 8. Auto-approve if chain is empty (all steps were skipped due to self-approval prevention)
+        // 8. Auto-approve if chain is empty
         if (plannedSteps.Count == 0)
         {
-            _logger.LogInformation("Request {RequestId} has empty approval chain - auto-approving as system", newRequest.Id);
+            _logger.LogInformation("[RequestCreate] Empty chain — AUTO-APPROVING — RequestId={RequestId}", newRequest.Id);
 
-            // Auto-approve with system comment
             var history = new RequestApprovalHistory
             {
                 RequestId = newRequest.Id,
-                ApproverId = employee.Id, // Self-approver when no other approvers available
+                ApproverId = employee.Id,
                 Status = RequestStatus.Approved,
                 Comment = "Auto accepted by system - no valid approvers in workflow chain"
             };
@@ -186,7 +198,6 @@ public class CreateRequestCommandHandler : IRequestHandler<CreateRequestCommand,
             newRequest.Status = RequestStatus.Approved;
             newRequest.CurrentStepOrder = 0;
 
-            // Execute final approval strategy
             var finalApprovalStrategy = _strategyFactory.GetStrategy(request.RequestType);
             if (finalApprovalStrategy != null)
             {
@@ -194,16 +205,14 @@ public class CreateRequestCommandHandler : IRequestHandler<CreateRequestCommand,
             }
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-            _logger.LogInformation("Request {RequestId} was auto-approved by system", newRequest.Id);
+            _logger.LogInformation("[RequestCreate] Auto-approval complete — RequestId={RequestId}", newRequest.Id);
             return Result.Success(newRequest.Id);
         }
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        _logger.LogInformation(
-            "Successfully created {RequestType} request {RequestId} with {StepCount} approval stages.",
-            request.RequestType, newRequest.Id, plannedSteps.Count);
+        _logger.LogInformation("[RequestCreate] SUCCESS — RequestId={RequestId}, Status={Status}, Steps={Steps}",
+            newRequest.Id, newRequest.Status, plannedSteps.Count);
 
         return Result.Success(newRequest.Id);
     }

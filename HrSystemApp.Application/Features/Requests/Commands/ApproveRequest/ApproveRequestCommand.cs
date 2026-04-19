@@ -2,9 +2,9 @@ using System.Text.Json;
 using HrSystemApp.Application.Common;
 using HrSystemApp.Application.DTOs.Requests;
 using HrSystemApp.Application.Errors;
+using HrSystemApp.Application.Features.Requests.Strategies;
 using HrSystemApp.Application.Interfaces;
 using HrSystemApp.Application.Interfaces.Services;
-using HrSystemApp.Application.Features.Requests.Strategies;
 using HrSystemApp.Domain.Enums;
 using HrSystemApp.Domain.Models;
 using MediatR;
@@ -38,41 +38,56 @@ public class ApproveRequestCommandHandler : IRequestHandler<ApproveRequestComman
 
     public async Task<Result<bool>> Handle(ApproveRequestCommand request, CancellationToken cancellationToken)
     {
+        _logger.LogInformation("[RequestApprove] Starting — RequestId={RequestId}", request.RequestId);
+
         var userId = _currentUserService.UserId;
         if (string.IsNullOrEmpty(userId))
+        {
+            _logger.LogWarning("[RequestApprove] Unauthorized — no userId");
             return Result.Failure<bool>(DomainErrors.Auth.Unauthorized);
+        }
 
         var employee = await _unitOfWork.Employees.GetByUserIdAsync(userId, cancellationToken);
         if (employee == null)
         {
-            _logger.LogWarning("ApproveRequest failed: Employee profile not found for UserId {UserId}", userId);
+            _logger.LogWarning("[RequestApprove] Approver not found — UserId={UserId}", userId);
             return Result.Failure<bool>(DomainErrors.Employee.NotFound);
         }
 
-        _logger.LogInformation("Approver {EmployeeId} ({FullName}) attempting to approve request {RequestId}",
-            employee.Id, employee.FullName, request.RequestId);
+        _logger.LogInformation("[RequestApprove] Approver resolved — EmployeeId={EmployeeId}, Name={Name}",
+            employee.Id, employee.FullName);
 
         var existingRequest = await _unitOfWork.Requests.GetByIdWithHistoryAsync(request.RequestId, cancellationToken);
         if (existingRequest == null)
+        {
+            _logger.LogWarning("[RequestApprove] Request not found — RequestId={RequestId}", request.RequestId);
             return Result.Failure<bool>(DomainErrors.Requests.NotFound);
+        }
 
-        // 1. Status: Is it pending?
+        _logger.LogInformation("[RequestApprove] Request loaded — Status={Status}, CurrentStep={Step}",
+            existingRequest.Status, existingRequest.CurrentStepOrder);
+
+        // 1. Status check
         if (existingRequest.Status != RequestStatus.Submitted && existingRequest.Status != RequestStatus.InProgress)
+        {
+            _logger.LogWarning("[RequestApprove] Invalid status — RequestId={RequestId}, Status={Status}",
+                request.RequestId, existingRequest.Status);
             return Result.Failure<bool>(DomainErrors.Requests.Locked);
+        }
 
-        // 2. Deserialize the planned steps
+        // 2. Deserialize planned steps
         var plannedSteps = JsonSerializer.Deserialize<List<PlannedStepDto>>(existingRequest.PlannedStepsJson ?? "[]");
         if (plannedSteps == null || plannedSteps.Count == 0)
         {
-            _logger.LogWarning("ApproveRequest failed: No planned steps found for request {RequestId}", request.RequestId);
+            _logger.LogWarning("[RequestApprove] No planned steps — RequestId={RequestId}", request.RequestId);
             return Result.Failure<bool>(DomainErrors.Request.InvalidWorkflowChain);
         }
 
-        // 3. Validate current step order is within bounds
+        // 3. Validate step order bounds
         if (existingRequest.CurrentStepOrder < 1 || existingRequest.CurrentStepOrder > plannedSteps.Count)
         {
-            _logger.LogWarning("ApproveRequest failed: Invalid step order {StepOrder} for request {RequestId}",
-                existingRequest.CurrentStepOrder, request.RequestId);
+            _logger.LogWarning("[RequestApprove] Step out of bounds — RequestId={RequestId}, Step={Step}, Total={Total}",
+                request.RequestId, existingRequest.CurrentStepOrder, plannedSteps.Count);
             return Result.Failure<bool>(DomainErrors.Request.StepOrderExceeded);
         }
 
@@ -80,9 +95,12 @@ public class ApproveRequestCommandHandler : IRequestHandler<ApproveRequestComman
         var currentStep = plannedSteps[existingRequest.CurrentStepOrder - 1];
         var approverIds = currentStep.Approvers.Select(a => a.EmployeeId).ToList();
 
+        _logger.LogInformation("[RequestApprove] Current step — Order={Order}, Node={Node}, Type={Type}, Approvers={Approvers}",
+            existingRequest.CurrentStepOrder, currentStep.NodeName, currentStep.StepType, approverIds.Count);
+
         if (!approverIds.Contains(employee.Id))
         {
-            _logger.LogWarning("Unauthorized approval attempt for request {RequestId} by {EmployeeId}. Not in current approver list.",
+            _logger.LogWarning("[RequestApprove] Unauthorized — RequestId={RequestId}, EmployeeId={EmployeeId}",
                 request.RequestId, employee.Id);
             return Result.Failure<bool>(DomainErrors.Requests.Unauthorized);
         }
@@ -93,45 +111,37 @@ public class ApproveRequestCommandHandler : IRequestHandler<ApproveRequestComman
             RequestId = existingRequest.Id,
             ApproverId = employee.Id,
             Status = RequestStatus.Approved,
-            Comment = request.Comment
+            Comment = request.Comment ?? ""
         };
         existingRequest.ApprovalHistory.Add(history);
 
-        // 6. Advance to next step
+        // 6. Advance step
         existingRequest.CurrentStepOrder++;
 
-        // 7. Check if fully approved
+        _logger.LogInformation("[RequestApprove] Step advanced — NewStep={NewStep}, TotalSteps={Total}",
+            existingRequest.CurrentStepOrder, plannedSteps.Count);
+
+        // 7. Final approval check
         if (existingRequest.CurrentStepOrder > plannedSteps.Count)
         {
+            _logger.LogInformation("[RequestApprove] FINAL APPROVAL — RequestId={RequestId}", request.RequestId);
+
             existingRequest.Status = RequestStatus.Approved;
             existingRequest.CurrentStepOrder = 0;
             existingRequest.CurrentStepApproverIds = null;
 
-            // Execute final actions via strategy
             var strategy = _strategyFactory.GetStrategy(existingRequest.RequestType);
             if (strategy != null)
             {
-                _logger.LogInformation("Request {RequestId} ({FileType}) reached final approval. Executing strategy final actions.",
-                    existingRequest.Id, existingRequest.RequestType);
+                _logger.LogInformation("[RequestApprove] Executing OnFinalApprovalAsync — RequestId={RequestId}", existingRequest.Id);
                 await strategy.OnFinalApprovalAsync(existingRequest, cancellationToken);
             }
 
-            _logger.LogInformation("Request {RequestId} has been FULLY APPROVED.", existingRequest.Id);
-        }
-        else
-        {
-            existingRequest.Status = RequestStatus.InProgress;
-            // Update denormalized approver IDs for the new step
-            var nextStep = plannedSteps[existingRequest.CurrentStepOrder - 1];
-            existingRequest.CurrentStepApproverIds = string.Join(",", nextStep.Approvers.Select(a => a.EmployeeId));
-            _logger.LogInformation("Request {RequestId} moved to step {StepOrder} of {TotalSteps}",
-                existingRequest.Id, existingRequest.CurrentStepOrder, plannedSteps.Count);
-        }
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+            _logger.LogInformation("[RequestApprove] Request APPROVED — RequestId={RequestId}, Type={Type}",
+                existingRequest.Id, existingRequest.RequestType);
 
-        if (existingRequest.Status == RequestStatus.Approved)
-        {
             try
             {
                 await _notificationService.SendNotificationAsync(
@@ -142,8 +152,23 @@ public class ApproveRequestCommandHandler : IRequestHandler<ApproveRequestComman
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Request {RequestId} approved, but notification delivery failed.", existingRequest.Id);
+                _logger.LogWarning(ex, "[RequestApprove] Notification failed — RequestId={RequestId}", existingRequest.Id);
             }
+        }
+        else
+        {
+            _logger.LogInformation("[RequestApprove] Intermediate approval — RequestId={RequestId}, next step={Next}",
+                request.RequestId, existingRequest.CurrentStepOrder);
+
+            existingRequest.Status = RequestStatus.InProgress;
+
+            var nextStep = plannedSteps[existingRequest.CurrentStepOrder - 1];
+            existingRequest.CurrentStepApproverIds = string.Join(",", nextStep.Approvers.Select(a => a.EmployeeId));
+
+            _logger.LogInformation("[RequestApprove] Next approvers set — Node={Node}, Count={Count}",
+                nextStep.NodeName, nextStep.Approvers.Count);
+
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
         }
 
         return Result.Success(true);

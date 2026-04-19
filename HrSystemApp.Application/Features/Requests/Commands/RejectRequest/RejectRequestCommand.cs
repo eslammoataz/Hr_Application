@@ -34,53 +34,73 @@ public class RejectRequestCommandHandler : IRequestHandler<RejectRequestCommand,
 
     public async Task<Result<bool>> Handle(RejectRequestCommand request, CancellationToken cancellationToken)
     {
+        _logger.LogInformation("[RequestReject] Starting — RequestId={RequestId}", request.RequestId);
+
         var userId = _currentUserService.UserId;
         if (string.IsNullOrEmpty(userId))
+        {
+            _logger.LogWarning("[RequestReject] Unauthorized — no userId");
             return Result.Failure<bool>(DomainErrors.Auth.Unauthorized);
+        }
 
         var employee = await _unitOfWork.Employees.GetByUserIdAsync(userId, cancellationToken);
         if (employee == null)
+        {
+            _logger.LogWarning("[RequestReject] Employee not found — UserId={UserId}", userId);
             return Result.Failure<bool>(DomainErrors.Employee.NotFound);
+        }
+
+        _logger.LogInformation("[RequestReject] Rejecter resolved — Name={Name}", employee.FullName);
 
         var existingRequest = await _unitOfWork.Requests.GetByIdWithHistoryAsync(request.RequestId, cancellationToken);
         if (existingRequest == null)
+        {
+            _logger.LogWarning("[RequestReject] Request not found — RequestId={RequestId}", request.RequestId);
             return Result.Failure<bool>(DomainErrors.Requests.NotFound);
+        }
 
-        // 1. Status: Is it pending?
+        _logger.LogInformation("[RequestReject] Request loaded — Status={Status}, CurrentStep={Step}",
+            existingRequest.Status, existingRequest.CurrentStepOrder);
+
+        // 1. Status check
         if (existingRequest.Status != RequestStatus.Submitted && existingRequest.Status != RequestStatus.InProgress)
+        {
+            _logger.LogWarning("[RequestReject] Invalid status — RequestId={RequestId}, Status={Status}",
+                request.RequestId, existingRequest.Status);
             return Result.Failure<bool>(DomainErrors.Requests.Locked);
+        }
 
         // 2. Deserialize planned steps
         var plannedSteps = JsonSerializer.Deserialize<List<PlannedStepDto>>(existingRequest.PlannedStepsJson ?? "[]");
         if (plannedSteps == null || plannedSteps.Count == 0)
         {
-            _logger.LogWarning("RejectRequest failed: No planned steps found for request {RequestId}", request.RequestId);
+            _logger.LogWarning("[RequestReject] No planned steps — RequestId={RequestId}", request.RequestId);
             return Result.Failure<bool>(DomainErrors.Request.InvalidWorkflowChain);
         }
 
-        // 3. Validate current step order
+        // 3. Validate step order bounds
         if (existingRequest.CurrentStepOrder < 1 || existingRequest.CurrentStepOrder > plannedSteps.Count)
         {
-            _logger.LogWarning("RejectRequest failed: Invalid step order {StepOrder} for request {RequestId}",
-                existingRequest.CurrentStepOrder, request.RequestId);
+            _logger.LogWarning("[RequestReject] Step out of bounds — RequestId={RequestId}, Step={Step}, Total={Total}",
+                request.RequestId, existingRequest.CurrentStepOrder, plannedSteps.Count);
             return Result.Failure<bool>(DomainErrors.Request.StepOrderExceeded);
         }
 
-        // 4. Get current step and validate approver
+        // 4. Get current step and validate rejecter
         var currentStep = plannedSteps[existingRequest.CurrentStepOrder - 1];
         var approverIds = currentStep.Approvers.Select(a => a.EmployeeId).ToList();
 
+        _logger.LogInformation("[RequestReject] Current step — Order={Order}, Node={Node}, Type={Type}",
+            existingRequest.CurrentStepOrder, currentStep.NodeName, currentStep.StepType);
+
         if (!approverIds.Contains(employee.Id))
         {
-            _logger.LogWarning("Unauthorized reject attempt for request {RequestId} by {EmployeeId}.",
+            _logger.LogWarning("[RequestReject] Unauthorized — RequestId={RequestId}, RejecterId={RejecterId}",
                 request.RequestId, employee.Id);
             return Result.Failure<bool>(DomainErrors.Requests.Unauthorized);
         }
 
-        // 5. Reject the request
-        existingRequest.Status = RequestStatus.Rejected;
-        existingRequest.CurrentStepOrder = 0;
-
+        // 5. Add history record and transition
         var history = new RequestApprovalHistory
         {
             RequestId = existingRequest.Id,
@@ -90,11 +110,13 @@ public class RejectRequestCommandHandler : IRequestHandler<RejectRequestCommand,
         };
         existingRequest.ApprovalHistory.Add(history);
 
-        await _unitOfWork.Requests.UpdateAsync(existingRequest, cancellationToken);
+        existingRequest.Status = RequestStatus.Rejected;
+        existingRequest.CurrentStepOrder = 0;
+
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        _logger.LogInformation("Request {RequestId} has been REJECTED by {EmployeeId}. Reason: {Reason}",
-            existingRequest.Id, employee.Id, request.Reason);
+        _logger.LogInformation("[RequestReject] Request REJECTED — RequestId={RequestId}, RejectedBy={RejecterName}, Reason={Reason}",
+            existingRequest.Id, employee.FullName, request.Reason);
 
         try
         {
@@ -106,7 +128,7 @@ public class RejectRequestCommandHandler : IRequestHandler<RejectRequestCommand,
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Request {RequestId} rejected, but notification delivery failed.", existingRequest.Id);
+            _logger.LogWarning(ex, "[RequestReject] Notification failed — RequestId={RequestId}", existingRequest.Id);
         }
 
         return Result.Success(true);
