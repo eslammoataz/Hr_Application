@@ -10,4 +10,5 @@ public sealed record AttendanceSummaryResponse(
     string Status,
     bool IsLate,
     bool IsEarlyLeave,
-    string? Reason);
+    string? Reason,
+    IReadOnlyList<AttendanceSessionDto> Sessions);

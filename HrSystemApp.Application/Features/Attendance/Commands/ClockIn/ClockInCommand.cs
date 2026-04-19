@@ -82,11 +82,26 @@ public class ClockInCommandHandler : IRequestHandler<ClockInCommand, Result<Atte
             await _unitOfWork.AttendanceLogs.AddAsync(log, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            attendance.FirstClockInLogId = log.Id;
+            // Only point FirstClockInLogId at the very first clock-in of the day.
+            // Subsequent clock-ins (after a clock-out break) must not overwrite it.
+            if (attendance.FirstClockInUtc is null)
+            {
+                attendance.FirstClockInLogId = log.Id;
+            }
+
+            // Re-open the attendance record so GetOpenAttendanceAsync can find it again.
+            // TotalHours is intentionally kept so accumulated time from previous sessions is preserved.
+            attendance.LastClockOutUtc = null;
+            attendance.LastClockOutLogId = null;
+
             AttendanceSummaryCalculator.ApplyClockIn(attendance, clockInUtc, rules.LateThresholdUtc);
             await _unitOfWork.Attendances.UpdateAsync(attendance, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
             await _unitOfWork.CommitTransactionAsync(cancellationToken);
+
+            var logs = await _unitOfWork.AttendanceLogs
+                .GetByAttendanceIdAsync(attendance.Id, cancellationToken);
+            var sessions = AttendanceSummaryCalculator.BuildSessions(logs);
 
             return Result.Success(new AttendanceResponse(
                 attendance.Id,
@@ -98,7 +113,8 @@ public class ClockInCommandHandler : IRequestHandler<ClockInCommand, Result<Atte
                 attendance.Status.ToString(),
                 attendance.IsLate,
                 attendance.IsEarlyLeave,
-                attendance.Reason));
+                attendance.Reason,
+                sessions));
         }
         catch
         {

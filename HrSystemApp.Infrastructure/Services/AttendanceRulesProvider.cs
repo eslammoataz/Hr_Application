@@ -66,20 +66,52 @@ public class AttendanceRulesProvider : IAttendanceRulesProvider
 
     public async Task<DateOnly> ResolveBusinessDateAsync(Guid employeeId, DateTime timestampUtc, CancellationToken cancellationToken = default)
     {
-        var timeZoneId = await _context.Employees
+        var data = await _context.Employees
             .AsNoTracking()
             .Where(x => x.Id == employeeId)
-            .Select(x => x.Company.TimeZoneId)
+            .Select(x => new
+            {
+                x.Company.TimeZoneId,
+                x.Company.StartTime,
+                x.Company.EndTime
+            })
             .FirstOrDefaultAsync(cancellationToken);
 
-        if (string.IsNullOrWhiteSpace(timeZoneId))
+        if (data is null || string.IsNullOrWhiteSpace(data.TimeZoneId))
         {
             return DateOnly.FromDateTime(timestampUtc);
         }
 
-        var timeZone = ResolveTimeZone(timeZoneId);
-        var localTime = TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(timestampUtc, DateTimeKind.Utc), timeZone);
-        return DateOnly.FromDateTime(localTime);
+        var timeZone = ResolveTimeZone(data.TimeZoneId);
+        var localTime = TimeZoneInfo.ConvertTimeFromUtc(
+            DateTime.SpecifyKind(timestampUtc, DateTimeKind.Utc), timeZone);
+        var calendarDate = DateOnly.FromDateTime(localTime);
+
+        // For overnight shifts: check if this timestamp still belongs to
+        // the PREVIOUS calendar day's shift window.
+        // Example: shift is 10 pm – 1 am. Employee clocks in at 12:30 am on Day 2.
+        // localTime = 12:30 am → calendarDate = Day 2.
+        // But Day 1's shift window covers 10 pm Day 1 → 1 am Day 2, so 12:30 am is still Day 1.
+        if (data.EndTime <= data.StartTime)
+        {
+            var prevDate = calendarDate.AddDays(-1);
+
+            var prevLocalStart = prevDate.ToDateTime(
+                TimeOnly.FromTimeSpan(data.StartTime), DateTimeKind.Unspecified);
+            var prevLocalEnd = prevDate.ToDateTime(
+                TimeOnly.FromTimeSpan(data.EndTime), DateTimeKind.Unspecified)
+                .AddDays(1); // end is on the following calendar day
+
+            var prevShiftStartUtc = TimeZoneInfo.ConvertTimeToUtc(prevLocalStart, timeZone);
+            var prevShiftEndUtc   = TimeZoneInfo.ConvertTimeToUtc(prevLocalEnd,   timeZone);
+
+            if (timestampUtc >= prevShiftStartUtc && timestampUtc <= prevShiftEndUtc)
+            {
+                return prevDate;
+            }
+        }
+
+        return calendarDate;
     }
 
     private TimeZoneInfo ResolveTimeZone(string? companyTimeZoneId)

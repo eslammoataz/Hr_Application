@@ -46,6 +46,7 @@ public class AttendanceRepository : Repository<Attendance>, IAttendanceRepositor
         CancellationToken cancellationToken = default)
     {
         var query = _dbSet.AsNoTracking()
+            .Include(x => x.Logs)
             .Where(x => x.EmployeeId == employeeId && x.Date >= fromDate && x.Date <= toDate);
 
         var totalCount = await query.CountAsync(cancellationToken);
