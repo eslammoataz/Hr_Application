@@ -52,6 +52,10 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
         builder.Entity<IdentityRoleClaim<string>>().ToTable("RoleClaims");
         builder.Entity<IdentityUserToken<string>>().ToTable("UserTokens");
 
+        // RequestAttachment has no DbSet so EF Core defaults to the class name (singular).
+        // The migration created it as "RequestAttachments" (plural), so pin the name explicitly.
+        builder.Entity<RequestAttachment>().ToTable("RequestAttachments");
+
         // Apply all configurations from the current assembly
         builder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
 

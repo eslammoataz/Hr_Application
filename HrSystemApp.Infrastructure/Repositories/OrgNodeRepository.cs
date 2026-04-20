@@ -87,23 +87,27 @@ public class OrgNodeRepository : Repository<OrgNode>, IOrgNodeRepository
     public async Task<IReadOnlyList<OrgNode>> GetAncestorsAsync(Guid nodeId, CancellationToken ct)
     {
         // STEP 1: Get ancestor IDs using recursive CTE
+        // PostgreSQL requires WITH RECURSIVE for self-referencing CTEs.
+        // Table/column names are double-quoted to preserve case (EF Core creates them as "OrgNodes", "Id", etc.)
+        // "IsDeleted" must be included in the projection so EF Core's global soft-delete filter
+        // (WHERE NOT h."IsDeleted") can reference it on the outer subquery wrapper it generates.
         var ancestorIds = await _context.OrgNodes
             .FromSqlRaw(@"
-            WITH Ancestors AS (
-                SELECT Id, ParentId, 0 AS Depth
-                FROM OrgNodes
-                WHERE Id = {0}
+            WITH RECURSIVE Ancestors AS (
+                SELECT ""Id"", ""ParentId"", ""IsDeleted"", 0 AS ""Depth""
+                FROM ""OrgNodes""
+                WHERE ""Id"" = {0}
 
                 UNION ALL
 
-                SELECT p.Id, p.ParentId, a.Depth + 1
-                FROM OrgNodes p
-                INNER JOIN Ancestors a ON p.Id = a.ParentId
+                SELECT p.""Id"", p.""ParentId"", p.""IsDeleted"", a.""Depth"" + 1
+                FROM ""OrgNodes"" p
+                INNER JOIN Ancestors a ON p.""Id"" = a.""ParentId""
             )
-            SELECT Id, Depth
+            SELECT ""Id"", ""IsDeleted"", ""Depth""
             FROM Ancestors
-            WHERE Id != {0}
-            ORDER BY Depth
+            WHERE ""Id"" != {0}
+            ORDER BY ""Depth""
         ", nodeId)
             .AsNoTracking()
             .Select(x => x.Id)

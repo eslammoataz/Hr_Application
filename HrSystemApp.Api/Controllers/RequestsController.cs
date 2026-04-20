@@ -5,6 +5,7 @@ using HrSystemApp.Application.Features.Requests.Commands.CreateRequest;
 using HrSystemApp.Application.Features.Requests.Commands.DeleteRequest;
 using HrSystemApp.Application.Features.Requests.Commands.RejectRequest;
 using HrSystemApp.Application.Features.Requests.Commands.UpdateRequest;
+using HrSystemApp.Application.Features.Requests.Queries.GetMyApprovalActions;
 using HrSystemApp.Application.Features.Requests.Queries.GetPendingApprovals;
 using HrSystemApp.Application.Features.Requests.Queries.GetCompanyRequests;
 using HrSystemApp.Application.Features.Requests.Queries.GetRequestById;
@@ -84,6 +85,16 @@ public class RequestsController : BaseApiController
     /// </summary>
     [HttpGet("approvals/pending")]
     public async Task<IActionResult> GetPendingApprovals([FromQuery] GetPendingApprovalsQuery query)
+    {
+        return HandleResult(await _sender.Send(query));
+    }
+
+    /// <summary>
+    /// Get MY approval action history — all requests I have approved or rejected.
+    /// Supports optional filtering by action status (Approved/Rejected) and request type.
+    /// </summary>
+    [HttpGet("approvals/history")]
+    public async Task<IActionResult> GetMyApprovalHistory([FromQuery] GetMyApprovalActionsQuery query)
     {
         return HandleResult(await _sender.Send(query));
     }
