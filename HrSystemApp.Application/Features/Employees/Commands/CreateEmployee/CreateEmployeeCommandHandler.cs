@@ -65,7 +65,7 @@ public class CreateEmployeeCommandHandler : IRequestHandler<CreateEmployeeComman
         try
         {
             // 2. User Creation - Generate compliant temporary password
-            var tempPassword = $"{request.PhoneNumber}!Aa";
+            var tempPassword = $"{request.PhoneNumber}!Aa1";
             var created =
                 await _unitOfWork.Users.CreateUserAsync(user, tempPassword, request.Role, cancellationToken);
             if (!created)
