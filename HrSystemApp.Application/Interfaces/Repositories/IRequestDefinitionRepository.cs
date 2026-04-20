@@ -11,4 +11,6 @@ public interface IRequestDefinitionRepository : IRepository<RequestDefinition>
 
     [Obsolete("Role-based workflow is deprecated. Use OrgNode-based workflow steps.")]
     Task<bool> AnyDefinitionUsingRoleAsync(Guid companyId, UserRole role, CancellationToken ct = default);
+
+    Task<bool> IsRoleInUseAsync(Guid companyRoleId, CancellationToken ct = default);
 }

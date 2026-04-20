@@ -1,10 +1,14 @@
+using HrSystemApp.Application.Authorization;
 using HrSystemApp.Application.Interfaces;
 using HrSystemApp.Application.Interfaces.Repositories;
 using HrSystemApp.Application.Interfaces.Services;
+using HrSystemApp.Domain.Constants;
 using HrSystemApp.Domain.Models;
+using HrSystemApp.Infrastructure.Authorization;
 using HrSystemApp.Infrastructure.Data;
 using HrSystemApp.Infrastructure.Repositories;
 using HrSystemApp.Infrastructure.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -79,6 +83,8 @@ public static class DependencyInjection
         services.AddScoped<IAttendanceAdjustmentRepository, AttendanceAdjustmentRepository>();
         services.AddScoped<IOrgNodeRepository, OrgNodeRepository>();
         services.AddScoped<IOrgNodeAssignmentRepository, OrgNodeAssignmentRepository>();
+        services.AddScoped<ICompanyRoleRepository, CompanyRoleRepository>();
+        services.AddScoped<IEmployeeCompanyRoleRepository, EmployeeCompanyRoleRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         services.Configure<EmailSettings>(configuration.GetSection("EmailSettings"));
@@ -104,6 +110,16 @@ public static class DependencyInjection
                 .Build();
         });
         services.AddScoped<IMinioService, MinioService>();
+
+        services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
+        services.AddAuthorization(options =>
+        {
+            foreach (var permission in AppPermissions.All)
+            {
+                options.AddPolicy(permission, policy =>
+                    policy.AddRequirements(new PermissionRequirement(permission)));
+            }
+        });
 
         services.AddScoped<IEmailService, EmailService>();
         services.AddScoped<ISmsService, SmsService>();
@@ -137,21 +153,14 @@ public static class DependencyInjection
         {
             if (applyMigrations)
             {
-                var pendingMigrations = await context.Database.GetPendingMigrationsAsync();
-                logger.LogInformation("Pending migrations: {Count} → {Names}",
-                    pendingMigrations.Count(), string.Join(", ", pendingMigrations));
-
-                await context.Database.MigrateAsync();
-
-                logger.LogInformation("Migrations applied successfully.");
+                                await context.Database.MigrateAsync();
+                logger.LogInformation("Database migrations applied.");
             }
-
-            await SeedData.InitializeAsync(scope.ServiceProvider);
         }
         catch (Exception ex)
         {
-            // Log error (Serilog is configured in Api, so we can use static Log or just throw)
-            throw new Exception("An error occurred while migrating or seeding the database.", ex);
+            logger.LogError(ex, "An error occurred while initializing the database.");
+            throw;
         }
     }
 }

@@ -33,6 +33,8 @@ public class UnitOfWork : IUnitOfWork
     private IAttendanceAdjustmentRepository? _attendanceAdjustmentRepository;
     private IOrgNodeRepository? _orgNodeRepository;
     private IOrgNodeAssignmentRepository? _orgNodeAssignmentRepository;
+    private ICompanyRoleRepository? _companyRoleRepository;
+    private IEmployeeCompanyRoleRepository? _employeeCompanyRoleRepository;
 
 
     public UnitOfWork(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
@@ -92,6 +94,12 @@ public class UnitOfWork : IUnitOfWork
     public IOrgNodeAssignmentRepository OrgNodeAssignments =>
         _orgNodeAssignmentRepository ??= new OrgNodeAssignmentRepository(_context);
 
+    public ICompanyRoleRepository CompanyRoles =>
+        _companyRoleRepository ??= new CompanyRoleRepository(_context);
+
+    public IEmployeeCompanyRoleRepository EmployeeCompanyRoles =>
+        _employeeCompanyRoleRepository ??= new EmployeeCompanyRoleRepository(_context);
+
 
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
@@ -127,21 +135,18 @@ public class UnitOfWork : IUnitOfWork
         if (_transaction is null)
             throw new InvalidOperationException("No transaction in progress.");
 
-        try
-        {
-            await _transaction.RollbackAsync(cancellationToken);
-        }
-        finally
-        {
-            await _transaction.DisposeAsync();
-            _transaction = null;
-        }
+        await _transaction.RollbackAsync(cancellationToken);
+        await _transaction.DisposeAsync();
+        _transaction = null;
     }
 
     public async ValueTask DisposeAsync()
     {
         if (_transaction is not null)
+        {
             await _transaction.DisposeAsync();
+            _transaction = null;
+        }
 
         await _context.DisposeAsync();
     }

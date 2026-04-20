@@ -112,6 +112,7 @@ public class CreateRequestCommandHandler : IRequestHandler<CreateRequestCommand,
                 DirectEmployeeId = s.DirectEmployeeId,
                 StartFromLevel = s.StartFromLevel,
                 LevelsUp = s.LevelsUp,
+                CompanyRoleId = s.CompanyRoleId,
                 SortOrder = s.SortOrder
             })
             .ToList();
@@ -141,6 +142,18 @@ public class CreateRequestCommandHandler : IRequestHandler<CreateRequestCommand,
                 {
                     _logger.LogWarning("[RequestCreate] DirectEmployee not active — DirectEmployeeId={DirectEmployeeId}", step.DirectEmployeeId);
                     return Result.Failure<Guid>(DomainErrors.Request.DirectEmployeeNotActive);
+                }
+            }
+            else if (step.StepType == WorkflowStepType.CompanyRole)
+            {
+                if (!step.CompanyRoleId.HasValue)
+                    return Result.Failure<Guid>(DomainErrors.Request.MissingCompanyRoleId);
+
+                var role = await _unitOfWork.CompanyRoles.GetByIdAsync(step.CompanyRoleId.Value, cancellationToken);
+                if (role is null || role.IsDeleted || role.CompanyId != employee.CompanyId)
+                {
+                    _logger.LogWarning("[RequestCreate] CompanyRole validation failed — CompanyRoleId={CompanyRoleId}", step.CompanyRoleId);
+                    return Result.Failure<Guid>(DomainErrors.Request.RoleNotInCompany);
                 }
             }
         }
@@ -173,47 +186,17 @@ public class CreateRequestCommandHandler : IRequestHandler<CreateRequestCommand,
             Data = jsonData,
             Details = request.Details,
             Status = RequestStatus.Submitted,
-            CurrentStepOrder = 1,
+            CurrentStepOrder = plannedSteps.Count > 0 ? 1 : 0,
             PlannedStepsJson = JsonSerializer.Serialize(plannedSteps),
             CurrentStepApproverIds = plannedSteps.Count > 0
-                ? string.Join(",", plannedSteps[0].Approvers.Select(a => a.EmployeeId))
+                ? string.Join(",", plannedSteps[0].Approvers.Select(a => a.EmployeeId.ToString()))
                 : null
         };
 
         await _unitOfWork.Requests.AddAsync(newRequest, cancellationToken);
-
-        // 8. Auto-approve if chain is empty
-        if (plannedSteps.Count == 0)
-        {
-            _logger.LogInformation("[RequestCreate] Empty chain — AUTO-APPROVING — RequestId={RequestId}", newRequest.Id);
-
-            var history = new RequestApprovalHistory
-            {
-                RequestId = newRequest.Id,
-                ApproverId = employee.Id,
-                Status = RequestStatus.Approved,
-                Comment = "Auto accepted by system - no valid approvers in workflow chain"
-            };
-            newRequest.ApprovalHistory.Add(history);
-            newRequest.Status = RequestStatus.Approved;
-            newRequest.CurrentStepOrder = 0;
-
-            var finalApprovalStrategy = _strategyFactory.GetStrategy(request.RequestType);
-            if (finalApprovalStrategy != null)
-            {
-                await finalApprovalStrategy.OnFinalApprovalAsync(newRequest, cancellationToken);
-            }
-
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
-            _logger.LogInformation("[RequestCreate] Auto-approval complete — RequestId={RequestId}", newRequest.Id);
-            return Result.Success(newRequest.Id);
-        }
-
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        _logger.LogInformation("[RequestCreate] SUCCESS — RequestId={RequestId}, Status={Status}, Steps={Steps}",
-            newRequest.Id, newRequest.Status, plannedSteps.Count);
-
+        _logger.LogInformation("[RequestCreate] Request persisted — RequestId={RequestId}", newRequest.Id);
         return Result.Success(newRequest.Id);
     }
 }

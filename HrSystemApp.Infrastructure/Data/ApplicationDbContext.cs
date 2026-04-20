@@ -35,6 +35,9 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<Request> Requests { get; set; } = null!;
     public DbSet<OrgNode> OrgNodes { get; set; } = null!;
     public DbSet<OrgNodeAssignment> OrgNodeAssignments { get; set; } = null!;
+    public DbSet<CompanyRole> CompanyRoles { get; set; } = null!;
+    public DbSet<CompanyRolePermission> CompanyRolePermissions { get; set; } = null!;
+    public DbSet<EmployeeCompanyRole> EmployeeCompanyRoles { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -111,9 +114,9 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
                         break;
 
                     // Standard soft-delete behavior
+                    entry.Property("IsDeleted").CurrentValue = true;
+                    entry.Property("DeletedAt").CurrentValue = DateTime.UtcNow;
                     entry.State = EntityState.Modified;
-                    entry.Entity.IsDeleted = true;
-                    entry.Entity.UpdatedAt = DateTime.UtcNow;
                     break;
             }
         }
