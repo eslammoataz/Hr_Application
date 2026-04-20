@@ -70,7 +70,7 @@ public class UpdateOrgNodeCommandHandler : IRequestHandler<UpdateOrgNodeCommand,
         await _unitOfWork.OrgNodes.UpdateAsync(node, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        _logger.LogInformation("Successfully updated OrgNode {NodeId}", node.Id);
+        _logger.LogInformation("Successfully updated OrgNode {NodeId}", request.Id);
         return Result.Success(node.Id);
     }
 }

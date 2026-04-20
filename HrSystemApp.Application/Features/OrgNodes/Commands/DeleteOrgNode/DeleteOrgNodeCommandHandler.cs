@@ -92,7 +92,8 @@ public class DeleteOrgNodeCommandHandler : IRequestHandler<DeleteOrgNodeCommand,
         catch (Exception ex)
         {
             await _unitOfWork.RollbackTransactionAsync(cancellationToken);
-            _logger.LogError(ex, "Failed to delete OrgNode {NodeId}", request.Id);
+            _logger.LogError(ex, "Error deleting OrgNode {NodeId}", request.Id);
+            await _unitOfWork.RollbackTransactionAsync(cancellationToken);
             throw;
         }
     }

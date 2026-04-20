@@ -24,6 +24,6 @@ public class AssignEmployeeToNodeCommandValidator : AbstractValidator<AssignEmpl
                 var assignments = await unitOfWork.OrgNodeAssignments.GetByEmployeeAsync(employeeId, ct);
                 return assignments.Count == 0;
             })
-            .WithMessage("Employee is already assigned to a node. Each employee can belong to only one node.");
+            .WithMessage("Employee is already assigned to a node. Each employee can belong to only one node at a time.");
     }
 }

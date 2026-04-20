@@ -69,9 +69,7 @@ public class GetOrgNodeDetailsQueryHandler : IRequestHandler<GetOrgNodeDetailsQu
             parentName,
             node.Type,
             assignmentResponses,
-            childResponses
-        );
-
+            childResponses);
         return Result.Success(response);
     }
 }

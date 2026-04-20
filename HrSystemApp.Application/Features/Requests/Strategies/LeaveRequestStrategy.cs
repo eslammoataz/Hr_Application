@@ -89,87 +89,20 @@ public class LeaveRequestStrategy : IRequestBusinessStrategy
 
             _logger.LogInformation(
                 "[LeaveValidation] Balance check — Available={Available}, Pending={Pending}, Net={Net}, Requested={Requested}",
-                balance.RemainingDays, pendingDuration, balance.RemainingDays - pendingDuration, duration);
+                balance.RemainingDays, pendingDuration, balance.RemainingDays - pendingDuration, balance.RemainingDays);
 
-            if (balance.RemainingDays - pendingDuration < duration)
+            if (duration > balance.RemainingDays - pendingDuration)
             {
-                var msg = $"Insufficient leave balance. Available: {balance.RemainingDays}, Pending: {pendingDuration}. Requested: {duration}.";
-                _logger.LogWarning("[LeaveValidation] INSUFFICIENT BALANCE for EmployeeId={EmployeeId}. {Msg}", employeeId, msg);
-                return Result.Failure(new Error(DomainErrors.LeaveBalance.Insufficient.Code, msg));
+                _logger.LogWarning("[LeaveValidation] Insufficient balance — EmployeeId={EmployeeId}", employeeId);
+                return Result.Failure(DomainErrors.LeaveBalance.Insufficient);
             }
 
-            _logger.LogInformation("[LeaveValidation] Balance check PASSED for EmployeeId={EmployeeId}", employeeId);
+            return Result.Success();
         }
-        else if (!isHourly)
-        {
-            _logger.LogInformation(
-                "[LeaveValidation] Non-paid leave type {LeaveType} — skipping balance validation",
-                leaveSubType);
-        }
-        else
-        {
-            _logger.LogInformation(
-                "[LeaveValidation] Hourly leave — skipping balance validation for EmployeeId={EmployeeId}",
-                employeeId);
-        }
-
+        
         return Result.Success();
     }
 
-    public async Task OnFinalApprovalAsync(Request request, CancellationToken ct)
-    {
-        using var doc = JsonDocument.Parse(request.Data);
-        var data = doc.RootElement;
-
-        var isHourly = data.TryGetProperty("isHourly", out var ih) && ih.GetBoolean();
-        var leaveSubType = (LeaveType)data.GetProperty("leaveSubType").GetInt32();
-
-        _logger.LogInformation(
-            "[LeaveApproval] RequestId={RequestId}, EmployeeId={EmployeeId}, LeaveType={LeaveType}, IsHourly={IsHourly}",
-            request.Id, request.EmployeeId, leaveSubType, isHourly);
-
-        if (isHourly)
-        {
-            _logger.LogInformation(
-                "[LeaveApproval] RequestId={RequestId} — hourly leave, skipping balance deduction",
-                request.Id);
-            return;
-        }
-
-        if (!IsPaidLeaveType(leaveSubType))
-        {
-            _logger.LogInformation(
-                "[LeaveApproval] RequestId={RequestId} — Non-paid leave type {LeaveType}, skipping balance deduction",
-                request.Id, leaveSubType);
-            return;
-        }
-
-        var startDateTime = data.GetProperty("startDateTime").GetDateTime();
-        var duration = data.GetProperty("duration").GetDecimal();
-        var balanceKey = GetBalanceKey(leaveSubType);
-
-        _logger.LogInformation(
-            "[LeaveApproval] RequestId={RequestId} — Paid leave, deducting {Duration} days from {BalanceKey} balance",
-            request.Id, duration, balanceKey);
-
-        var balance = await _unitOfWork.LeaveBalances.GetAsync(request.EmployeeId, balanceKey, startDateTime.Year, ct);
-
-        if (balance == null)
-        {
-            _logger.LogError(
-                "[LeaveApproval] RequestId={RequestId} — BALANCE RECORD NOT FOUND. EmployeeId={EmployeeId}, BalanceKey={BalanceKey}, Year={Year}. Deduction FAILED.",
-                request.Id, request.EmployeeId, balanceKey, startDateTime.Year);
-            return;
-        }
-
-        _logger.LogInformation(
-            "[LeaveApproval] RequestId={RequestId} — Before: UsedDays={UsedDays}, TotalDays={TotalDays}",
-            request.Id, balance.UsedDays, balance.TotalDays);
-
-        balance.UsedDays += duration;
-
-        _logger.LogInformation(
-            "[LeaveApproval] RequestId={RequestId} — After: UsedDays={UsedDays}, Remaining={Remaining}",
-            request.Id, balance.UsedDays, balance.RemainingDays);
-    }
+    public Task OnFinalApprovalAsync(Request request, CancellationToken ct)
+        => Task.CompletedTask;
 }

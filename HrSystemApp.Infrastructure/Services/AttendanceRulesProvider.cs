@@ -132,7 +132,7 @@ public class AttendanceRulesProvider : IAttendanceRulesProvider
         }
         catch (InvalidTimeZoneException)
         {
-            _logger.LogWarning("Company time zone id {TimeZoneId} was invalid. Falling back to UTC.", companyTimeZoneId);
+            _logger.LogWarning("Company time invalid time zone — falling back to UTC.");
             return TimeZoneInfo.Utc;
         }
     }

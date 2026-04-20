@@ -100,7 +100,7 @@ public class RejectRequestCommandHandler : IRequestHandler<RejectRequestCommand,
             return Result.Failure<bool>(DomainErrors.Requests.Unauthorized);
         }
 
-        // 5. Add history record and transition
+        // 5. Add history record and transition to Rejected
         var history = new RequestApprovalHistory
         {
             RequestId = existingRequest.Id,
@@ -112,24 +112,11 @@ public class RejectRequestCommandHandler : IRequestHandler<RejectRequestCommand,
 
         existingRequest.Status = RequestStatus.Rejected;
         existingRequest.CurrentStepOrder = 0;
+        existingRequest.CurrentStepApproverIds = null;
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        _logger.LogInformation("[RequestReject] Request REJECTED — RequestId={RequestId}, RejectedBy={RejecterName}, Reason={Reason}",
-            existingRequest.Id, employee.FullName, request.Reason);
-
-        try
-        {
-            await _notificationService.SendNotificationAsync(
-                existingRequest.EmployeeId,
-                "Request Rejected",
-                $"Your {existingRequest.RequestType} request has been rejected. Reason: {request.Reason}",
-                NotificationType.RequestRejected);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "[RequestReject] Notification failed — RequestId={RequestId}", existingRequest.Id);
-        }
+        _logger.LogInformation("[RequestReject] Request REJECTED — RequestId={RequestId}", request.RequestId);
 
         return Result.Success(true);
     }

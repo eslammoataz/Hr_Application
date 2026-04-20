@@ -8,4 +8,4 @@ namespace HrSystemApp.Application.DTOs.Attendance;
 public sealed record AttendanceSessionDto(
     DateTime SessionStartUtc,
     DateTime? SessionEndUtc,
-    decimal? DurationHours);
+    decimal? Duration);

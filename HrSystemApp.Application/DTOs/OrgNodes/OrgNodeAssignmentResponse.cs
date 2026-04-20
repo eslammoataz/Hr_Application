@@ -8,5 +8,4 @@ public record OrgNodeAssignmentResponse(
     string EmployeeName,
     string? Email,
     OrgRole Role,
-    string RoleName
-);
+    string RoleName);

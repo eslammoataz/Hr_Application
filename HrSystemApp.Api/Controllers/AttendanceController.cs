@@ -123,4 +123,6 @@ public class AttendanceController : BaseApiController
 public sealed record ClockActionRequest(DateTime? TimestampUtc);
 public sealed record OverrideClockInRequest(Guid EmployeeId, DateOnly Date, DateTime ClockInUtc, string Reason);
 public sealed record OverrideClockOutRequest(Guid EmployeeId, DateOnly Date, DateTime ClockOutUtc, string Reason);
-public sealed record BatchOverrideClockOutRequest(IReadOnlyList<OverrideClockOutRequest> Items);
+public sealed record BatchOverrideClockOutRequest(IReadOnlyList<BatchOverrideClockOutRequestItem> Items);
+public sealed record BatchOverrideClockOutRequestItem(Guid EmployeeId, DateOnly Date, DateTime ClockOutUtc, string Reason);
+public sealed record ManualAttendanceRequest(Guid EmployeeId, DateOnly Date, DateTime? ClockInUtc, DateTime? ClockOutUtc, string Reason);

@@ -141,35 +141,19 @@ public class ApproveRequestCommandHandler : IRequestHandler<ApproveRequestComman
 
             _logger.LogInformation("[RequestApprove] Request APPROVED — RequestId={RequestId}, Type={Type}",
                 existingRequest.Id, existingRequest.RequestType);
-
-            try
-            {
-                await _notificationService.SendNotificationAsync(
-                    existingRequest.EmployeeId,
-                    "Request Approved",
-                    $"Your {existingRequest.RequestType} request has been approved.",
-                    NotificationType.RequestApproved);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "[RequestApprove] Notification failed — RequestId={RequestId}", existingRequest.Id);
-            }
+            return Result.Success(true);
         }
-        else
-        {
-            _logger.LogInformation("[RequestApprove] Intermediate approval — RequestId={RequestId}, next step={Next}",
-                request.RequestId, existingRequest.CurrentStepOrder);
 
-            existingRequest.Status = RequestStatus.InProgress;
+        // 8. Move to next step — update CurrentStepApproverIds for the new step's approvers
+        var nextStep = plannedSteps[existingRequest.CurrentStepOrder - 1];
+        existingRequest.Status = RequestStatus.InProgress;
+        existingRequest.CurrentStepApproverIds = string.Join(",",
+            nextStep.Approvers.Select(a => a.EmployeeId.ToString()));
 
-            var nextStep = plannedSteps[existingRequest.CurrentStepOrder - 1];
-            existingRequest.CurrentStepApproverIds = string.Join(",", nextStep.Approvers.Select(a => a.EmployeeId));
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            _logger.LogInformation("[RequestApprove] Next approvers set — Node={Node}, Count={Count}",
-                nextStep.NodeName, nextStep.Approvers.Count);
-
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
-        }
+        _logger.LogInformation("[RequestApprove] Advanced to step {Step} — RequestId={RequestId}",
+            existingRequest.CurrentStepOrder, request.RequestId);
 
         return Result.Success(true);
     }

@@ -7,5 +7,4 @@ public record OrgNodeDetailsResponse(
     string? ParentName,
     string? Type,
     List<OrgNodeAssignmentResponse> Assignments,
-    List<OrgNodeChildResponse> Children
-);
+    List<OrgNodeChildResponse> Children);

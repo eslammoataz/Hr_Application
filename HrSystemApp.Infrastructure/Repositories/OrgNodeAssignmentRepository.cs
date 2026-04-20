@@ -48,6 +48,5 @@ public class OrgNodeAssignmentRepository : Repository<OrgNodeAssignment>, IOrgNo
         => await _context.OrgNodeAssignments
             .AnyAsync(a => a.EmployeeId == employeeId
                         && a.OrgNodeId == orgNodeId
-                        && a.Role == OrgRole.Manager
-                        && !a.IsDeleted, ct);
+                        && a.Role == OrgRole.Manager, ct);
 }

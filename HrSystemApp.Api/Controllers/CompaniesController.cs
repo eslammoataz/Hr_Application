@@ -219,10 +219,8 @@ public class CompaniesController : BaseApiController
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteLocation(
         Guid id,
-        CancellationToken cancellationToken)
+       CancellationToken cancellationToken)
     {
-        var command = new DeleteCompanyLocationCommand(id);
-        var result = await _sender.Send(command, cancellationToken);
-        return HandleResult(result);
+        return HandleResult(await _sender.Send(new DeleteCompanyLocationCommand(id), cancellationToken));
     }
 }

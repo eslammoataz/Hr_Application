@@ -11,5 +11,6 @@ public class BulkNodeResultDto
     public string TempId { get; set; } = string.Empty;
     public Guid RealId { get; set; }
     public string Name { get; set; } = string.Empty;
-    public int Depth { get; set; }
+    public int Depth {  get; set; }
+    public string? Type { get; set; }
 }

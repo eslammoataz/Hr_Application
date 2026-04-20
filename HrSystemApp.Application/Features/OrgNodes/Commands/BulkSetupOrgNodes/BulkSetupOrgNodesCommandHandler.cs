@@ -159,7 +159,7 @@ public class BulkSetupOrgNodesCommandHandler : IRequestHandler<BulkSetupOrgNodes
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "BulkSetup failed with exception");
+            _logger.LogError(ex, "Unexpected error during BulkSetupOrgNodes.");
             await _unitOfWork.RollbackTransactionAsync(cancellationToken);
             throw;
         }
