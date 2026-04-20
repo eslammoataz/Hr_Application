@@ -253,6 +253,10 @@ public class WorkflowResolutionService : IWorkflowResolutionService
             }
         }
 
+        // Renumber SortOrder to 1..N contiguous on the resolved chain.
+        for (int i = 0; i < plannedSteps.Count; i++)
+            plannedSteps[i].SortOrder = i + 1;
+
         return Result.Success(plannedSteps);
     }
 
