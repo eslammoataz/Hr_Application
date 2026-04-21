@@ -45,11 +45,13 @@ public static class LogAction
 
     public static class Attendance
     {
-        public const string ClockIn           = "ClockIn";
-        public const string ClockOut          = "ClockOut";
-        public const string OverrideClockIn   = "OverrideClockIn";
-        public const string OverrideClockOut  = "OverrideClockOut";
-        public const string AttendanceReminder = "AttendanceReminder";
-        public const string AutoClockOut       = "AutoClockOut";
+        public const string ClockIn              = "ClockIn";
+        public const string ClockOut             = "ClockOut";
+        public const string OverrideClockIn      = "OverrideClockIn";
+        public const string OverrideClockOut     = "OverrideClockOut";
+        public const string AttendanceReminder   = "AttendanceReminder";
+        public const string AutoClockOut         = "AutoClockOut";
+        public const string SendEmail            = "SendEmail";
+        public const string SendSms              = "SendSms";
     }
 }

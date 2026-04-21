@@ -8,6 +8,8 @@ using HrSystemApp.Api.Middleware;
 using HrSystemApp.Infrastructure;
 using Hangfire;
 using Hangfire.PostgreSql;
+using Elastic.Serilog.Sinks;
+using Elastic.Ingest.Elasticsearch;
 using HrSystemApp.Infrastructure.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -43,6 +45,22 @@ builder.Host.UseSerilog((ctx, services, config) =>
     else
     {
         Log.Warning("⚠️ Seq Logging is DISABLED.");
+    }
+
+    var elasticEnabled = ctx.Configuration.GetValue<bool>("ElasticSettings:Enabled");
+    if (elasticEnabled)
+    {
+        var nodeUri = ctx.Configuration["ElasticSettings:NodeUri"] ?? "http://localhost:9200";
+        var prefix = ctx.Configuration["ElasticSettings:IndexPrefix"] ?? "hrsystemapp";
+        var env = ctx.Configuration["ElasticSettings:Environment"] ?? "production";
+        var indexFormat = $"{prefix}-{env}-{{0:yyyy.MM.dd}}";
+
+        config.WriteTo.Elasticsearch(new[] { new Uri(nodeUri) }, opts =>
+        {
+            opts.DataStream = new Elastic.Ingest.Elasticsearch.DataStreams.DataStreamName("logs", prefix, env);
+        });
+
+        Log.Information("🚀 ElasticSearch Logging is ENABLED at {NodeUri}", nodeUri);
     }
 });
 

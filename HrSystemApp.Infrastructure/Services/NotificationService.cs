@@ -1,9 +1,13 @@
+using System.Diagnostics;
 using HrSystemApp.Application.Errors;
 using HrSystemApp.Application.Interfaces.Services;
 using HrSystemApp.Domain.Enums;
+using HrSystemApp.Domain.Models;
 using HrSystemApp.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using HrSystemApp.Application.Common.Logging;
 using DomainNotification = HrSystemApp.Domain.Models.Notification;
 
 namespace HrSystemApp.Infrastructure.Services;
@@ -13,24 +17,24 @@ public class NotificationService : INotificationService
     private readonly ApplicationDbContext _context;
     private readonly ILogger<NotificationService> _logger;
     private readonly FcmSender _fcmSender;
+    private readonly LoggingOptions _loggingOptions;
 
     public NotificationService(
         ApplicationDbContext context,
         ILogger<NotificationService> logger,
-        FcmSender fcmSender)
+        FcmSender fcmSender,
+        IOptions<LoggingOptions> loggingOptions)
     {
         _context = context;
         _logger = logger;
         _fcmSender = fcmSender;
+        _loggingOptions = loggingOptions.Value;
     }
 
     public async Task SendNotificationAsync(Guid employeeId, string title, string message, NotificationType type, CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation(
-            "Processing notification request for employee {EmployeeId}, type {Type}, title '{Title}'",
-            employeeId,
-            type,
-            title);
+        var sw = Stopwatch.StartNew();
+        _logger.LogActionStart(_loggingOptions, LogAction.Attendance.AttendanceReminder);
 
         var employee = await _context.Employees
             .AsNoTracking()
@@ -39,7 +43,9 @@ public class NotificationService : INotificationService
 
         if (employee is null)
         {
-            _logger.LogWarning("Notification send failed. Employee {EmployeeId} not found", employeeId);
+            _logger.LogDecision(_loggingOptions, LogAction.Attendance.AttendanceReminder, LogStage.Processing,
+                "EmployeeNotFound", new { EmployeeId = employeeId });
+            sw.Stop();
             throw new KeyNotFoundException(DomainErrors.Employee.NotFound.Message);
         }
 
@@ -55,33 +61,22 @@ public class NotificationService : INotificationService
         await _context.Notifications.AddAsync(notification, cancellationToken);
         await _context.SaveChangesAsync(cancellationToken);
 
-        _logger.LogInformation(
-            "Notification {NotificationId} saved to database for employee {EmployeeId}.",
-            notification.Id,
-            employeeId);
-
         if (employee.User is not null && !string.IsNullOrWhiteSpace(employee.User.FcmToken))
         {
-            _logger.LogInformation(
-                "Scheduling Firebase push delivery for notification {NotificationId} to employee {EmployeeId}.",
-                notification.Id,
-                employeeId);
             _ = _fcmSender.SendAsync(employee.User.FcmToken, notification, type, cancellationToken);
+            sw.Stop();
+            _logger.LogActionSuccess(_loggingOptions, LogAction.Attendance.AttendanceReminder, sw.ElapsedMilliseconds);
             return;
         }
 
-        _logger.LogInformation(
-            "Notification {NotificationId} stored without Firebase delivery because employee {EmployeeId} has no FCM token.",
-            notification.Id,
-            employeeId);
+        sw.Stop();
+        _logger.LogActionSuccess(_loggingOptions, LogAction.Attendance.AttendanceReminder, sw.ElapsedMilliseconds);
     }
 
     public async Task SendBroadcastAsync(string title, string message, NotificationType type, CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation(
-            "Initiating broadcast notification '{Title}' with type {Type}.",
-            title,
-            type);
+        var sw = Stopwatch.StartNew();
+        _logger.LogActionStart(_loggingOptions, LogAction.Attendance.AttendanceReminder);
 
         var activeEmployees = await _context.Employees
             .AsNoTracking()
@@ -91,9 +86,10 @@ public class NotificationService : INotificationService
 
         if (!activeEmployees.Any())
         {
-            _logger.LogInformation(
-                "Broadcast notification '{Title}' skipped because no active employees with FCM tokens were found.",
-                title);
+            _logger.LogDecision(_loggingOptions, LogAction.Attendance.AttendanceReminder, LogStage.Processing,
+                "NoActiveRecipients", new { });
+            sw.Stop();
+            _logger.LogActionSuccess(_loggingOptions, LogAction.Attendance.AttendanceReminder, sw.ElapsedMilliseconds);
             return;
         }
 
@@ -109,12 +105,6 @@ public class NotificationService : INotificationService
         await _context.Notifications.AddRangeAsync(notifications, cancellationToken);
         await _context.SaveChangesAsync(cancellationToken);
 
-        _logger.LogInformation(
-            "Broadcast notification '{Title}' saved to database for {Count} employees.",
-            title,
-            notifications.Count);
-
-        // created for O(1) lookups
         var notificationByEmployeeId = notifications.ToDictionary(n => n.EmployeeId);
 
         var batch = activeEmployees
@@ -126,14 +116,10 @@ public class NotificationService : INotificationService
             ))
             .ToList();
 
-        _logger.LogInformation(
-            "Scheduling Firebase broadcast delivery for {Count} notifications.",
-            batch.Count);
-
         await _fcmSender.SendBatchAsync(batch, cancellationToken);
 
-        _logger.LogInformation("Broadcast notification {Title} added for {Count} employees", title,
-            activeEmployees.Count);
+        sw.Stop();
+        _logger.LogActionSuccess(_loggingOptions, LogAction.Attendance.AttendanceReminder, sw.ElapsedMilliseconds);
     }
 
     public async Task<IEnumerable<DomainNotification>> GetUserNotifications(Guid employeeId, CancellationToken cancellationToken = default)
@@ -150,11 +136,6 @@ public class NotificationService : INotificationService
         var rowsAffected = await _context.Notifications
             .Where(n => n.Id == notificationId && n.EmployeeId == employeeId && !n.IsRead)
             .ExecuteUpdateAsync(s => s.SetProperty(n => n.IsRead, true), cancellationToken);
-
-        if (rowsAffected > 0)
-        {
-            _logger.LogInformation("Notification {NotificationId} marked as read", notificationId);
-        }
 
         return rowsAffected;
     }
