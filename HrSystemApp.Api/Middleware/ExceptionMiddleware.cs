@@ -3,6 +3,9 @@ using System.Text.Json;
 using FluentValidation;
 using HrSystemApp.Application.Common;
 using HrSystemApp.Application.Errors;
+using HrSystemApp.Application.Common.Logging;
+using Microsoft.Extensions.Options;
+using System.Security.Claims;
 
 namespace HrSystemApp.Api.Middleware;
 
@@ -13,6 +16,7 @@ public class ExceptionMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly ILogger<ExceptionMiddleware> _logger;
+    private readonly LoggingOptions _loggingOptions;
     private readonly IHostEnvironment _env;
 
     private static readonly JsonSerializerOptions JsonOptions = new()
@@ -20,11 +24,12 @@ public class ExceptionMiddleware
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase
     };
 
-    public ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddleware> logger, IHostEnvironment env)
+    public ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddleware> logger, IHostEnvironment env, IOptions<LoggingOptions> loggingOptions)
     {
         _next = next;
         _logger = logger;
         _env = env;
+        _loggingOptions = loggingOptions.Value;
     }
 
     public async Task InvokeAsync(HttpContext context)
@@ -35,15 +40,16 @@ public class ExceptionMiddleware
         }
         catch (Exception ex)
         {
-            var userId = context.User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "Anonymous";
+            var userId = context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "Anonymous";
             var correlationId = context.Response.Headers["X-Correlation-ID"].ToString();
+            var lastKnownState = new { Path = context.Request.Path.Value, Method = context.Request.Method };
 
-            _logger.LogError(ex, 
-                "Unhandled exception: {Message}. User: {UserId}, CorrelationId: {CorrelationId}, Path: {Path}", 
-                ex.Message, 
-                userId, 
-                correlationId, 
-                context.Request.Path);
+            _logger.LogActionFailure(
+                _loggingOptions,
+                "UnhandledException",
+                LogStage.Processing,
+                ex,
+                lastKnownState);
 
             await HandleExceptionAsync(context, ex);
         }
@@ -94,12 +100,8 @@ public class ExceptionMiddleware
     {
         var messages = validationEx.Errors
             .Select(e => e.ErrorMessage)
-            .Where(m => !string.IsNullOrWhiteSpace(m))
-            .Distinct();
+            .ToList();
 
-        return messages.Any()
-            ? string.Join(" ", messages)
-            : DomainErrors.General.ValidationError.Message;
+        return string.Join("; ", messages);
     }
-
-}
+}

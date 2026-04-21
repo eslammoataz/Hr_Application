@@ -1,4 +1,6 @@
 using FluentValidation;
+using HrSystemApp.Application.Behaviors;
+using HrSystemApp.Application.Common.Logging;
 using Mapster;
 using MapsterMapper;
 using MediatR;
@@ -31,6 +33,7 @@ public static class DependencyInjection
         services.AddValidatorsFromAssembly(assembly);
 
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
+        services.AddTransient(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>));
 
         // Request Strategies
         services.AddScoped<IRequestStrategyFactory, RequestStrategyFactory>();

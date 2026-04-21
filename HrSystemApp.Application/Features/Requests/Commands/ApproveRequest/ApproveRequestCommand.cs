@@ -1,5 +1,7 @@
+using System.Diagnostics;
 using System.Text.Json;
 using HrSystemApp.Application.Common;
+using HrSystemApp.Application.Common.Logging;
 using HrSystemApp.Application.DTOs.Requests;
 using HrSystemApp.Application.Errors;
 using HrSystemApp.Application.Features.Requests.Strategies;
@@ -9,10 +11,14 @@ using HrSystemApp.Domain.Enums;
 using HrSystemApp.Domain.Models;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace HrSystemApp.Application.Features.Requests.Commands.ApproveRequest;
 
-public record ApproveRequestCommand(Guid RequestId, string? Comment) : IRequest<Result<bool>>;
+public record ApproveRequestCommand(Guid RequestId, string? Comment) : IRequest<Result<bool>>, IHaveRequestId
+{
+    Guid IHaveRequestId.RequestId => RequestId;
+}
 
 public class ApproveRequestCommandHandler : IRequestHandler<ApproveRequestCommand, Result<bool>>
 {
@@ -21,91 +27,89 @@ public class ApproveRequestCommandHandler : IRequestHandler<ApproveRequestComman
     private readonly IRequestStrategyFactory _strategyFactory;
     private readonly INotificationService _notificationService;
     private readonly ILogger<ApproveRequestCommandHandler> _logger;
+    private readonly LoggingOptions _loggingOptions;
 
     public ApproveRequestCommandHandler(
         IUnitOfWork unitOfWork,
         ICurrentUserService currentUserService,
         IRequestStrategyFactory strategyFactory,
         INotificationService notificationService,
-        ILogger<ApproveRequestCommandHandler> logger)
+        ILogger<ApproveRequestCommandHandler> logger,
+        IOptions<LoggingOptions> loggingOptions)
     {
         _unitOfWork = unitOfWork;
         _currentUserService = currentUserService;
         _strategyFactory = strategyFactory;
         _notificationService = notificationService;
         _logger = logger;
+        _loggingOptions = loggingOptions.Value;
     }
 
     public async Task<Result<bool>> Handle(ApproveRequestCommand request, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("[RequestApprove] Starting — RequestId={RequestId}", request.RequestId);
+        var sw = Stopwatch.StartNew();
+
+        _logger.LogActionStart(_loggingOptions, LogAction.Workflow.ApproveRequest, request.RequestId);
 
         var userId = _currentUserService.UserId;
         if (string.IsNullOrEmpty(userId))
         {
-            _logger.LogWarning("[RequestApprove] Unauthorized — no userId");
+            _logger.LogWarningUnauthorized(_loggingOptions, LogAction.Workflow.ApproveRequest, request.RequestId);
             return Result.Failure<bool>(DomainErrors.Auth.Unauthorized);
         }
 
         var employee = await _unitOfWork.Employees.GetByUserIdAsync(userId, cancellationToken);
         if (employee == null)
         {
-            _logger.LogWarning("[RequestApprove] Approver not found — UserId={UserId}", userId);
+            _logger.LogWarningUnauthorized(_loggingOptions, LogAction.Workflow.ApproveRequest, request.RequestId);
             return Result.Failure<bool>(DomainErrors.Employee.NotFound);
         }
 
-        _logger.LogInformation("[RequestApprove] Approver resolved — EmployeeId={EmployeeId}, Name={Name}",
-            employee.Id, employee.FullName);
+        _logger.LogBusinessFlow(_loggingOptions, LogAction.Workflow.ApproveRequest, LogStage.Authorization,
+            "ApproverResolved", new { EmployeeId = employee.Id });
 
         var existingRequest = await _unitOfWork.Requests.GetByIdWithHistoryAsync(request.RequestId, cancellationToken);
         if (existingRequest == null)
         {
-            _logger.LogWarning("[RequestApprove] Request not found — RequestId={RequestId}", request.RequestId);
+            _logger.LogDecision(_loggingOptions, LogAction.Workflow.ApproveRequest, LogStage.Authorization,
+                "RequestNotFound", new { RequestId = request.RequestId });
             return Result.Failure<bool>(DomainErrors.Requests.NotFound);
         }
 
-        _logger.LogInformation("[RequestApprove] Request loaded — Status={Status}, CurrentStep={Step}",
-            existingRequest.Status, existingRequest.CurrentStepOrder);
-
-        // 1. Status check
         if (existingRequest.Status != RequestStatus.Submitted && existingRequest.Status != RequestStatus.InProgress)
         {
-            _logger.LogWarning("[RequestApprove] Invalid status — RequestId={RequestId}, Status={Status}",
-                request.RequestId, existingRequest.Status);
+            _logger.LogDecision(_loggingOptions, LogAction.Workflow.ApproveRequest, LogStage.Authorization,
+                "InvalidStatus", new { RequestId = request.RequestId, Status = existingRequest.Status.ToString() });
             return Result.Failure<bool>(DomainErrors.Requests.Locked);
         }
 
-        // 2. Deserialize planned steps
         var plannedSteps = JsonSerializer.Deserialize<List<PlannedStepDto>>(existingRequest.PlannedStepsJson ?? "[]");
         if (plannedSteps == null || plannedSteps.Count == 0)
         {
-            _logger.LogWarning("[RequestApprove] No planned steps — RequestId={RequestId}", request.RequestId);
+            _logger.LogDecision(_loggingOptions, LogAction.Workflow.ApproveRequest, LogStage.Authorization,
+                "NoPlannedSteps", new { RequestId = request.RequestId });
             return Result.Failure<bool>(DomainErrors.Request.InvalidWorkflowChain);
         }
 
-        // 3. Validate step order bounds
         if (existingRequest.CurrentStepOrder < 1 || existingRequest.CurrentStepOrder > plannedSteps.Count)
         {
-            _logger.LogWarning("[RequestApprove] Step out of bounds — RequestId={RequestId}, Step={Step}, Total={Total}",
-                request.RequestId, existingRequest.CurrentStepOrder, plannedSteps.Count);
+            _logger.LogDecision(_loggingOptions, LogAction.Workflow.ApproveRequest, LogStage.Authorization,
+                "StepOutOfBounds", new { RequestId = request.RequestId, CurrentStep = existingRequest.CurrentStepOrder, TotalSteps = plannedSteps.Count });
             return Result.Failure<bool>(DomainErrors.Request.StepOrderExceeded);
         }
 
-        // 4. Get current step and validate approver
         var currentStep = plannedSteps[existingRequest.CurrentStepOrder - 1];
         var approverIds = currentStep.Approvers.Select(a => a.EmployeeId).ToList();
 
-        _logger.LogInformation("[RequestApprove] Current step — Order={Order}, Node={Node}, Type={Type}, Approvers={Approvers}",
-            existingRequest.CurrentStepOrder, currentStep.NodeName, currentStep.StepType, approverIds.Count);
-
         if (!approverIds.Contains(employee.Id))
         {
-            _logger.LogWarning("[RequestApprove] Unauthorized — RequestId={RequestId}, EmployeeId={EmployeeId}",
-                request.RequestId, employee.Id);
+            _logger.LogWarningUnauthorized(_loggingOptions, LogAction.Workflow.ApproveRequest, request.RequestId);
             return Result.Failure<bool>(DomainErrors.Requests.Unauthorized);
         }
 
-        // 5. Add history record
+        _logger.LogBusinessFlow(_loggingOptions, LogAction.Workflow.ApproveRequest, LogStage.Authorization,
+            "ApproverAuthorized", new { EmployeeId = employee.Id, StepOrder = existingRequest.CurrentStepOrder });
+
         var history = new RequestApprovalHistory
         {
             RequestId = existingRequest.Id,
@@ -115,17 +119,16 @@ public class ApproveRequestCommandHandler : IRequestHandler<ApproveRequestComman
         };
         existingRequest.ApprovalHistory.Add(history);
 
-        // 6. Advance step
         existingRequest.CurrentStepOrder++;
 
-        _logger.LogInformation("[RequestApprove] Step advanced — NewStep={NewStep}, TotalSteps={Total}",
-            existingRequest.CurrentStepOrder, plannedSteps.Count);
+        var isFullyApproved = existingRequest.CurrentStepOrder > plannedSteps.Count;
 
-        // 7. Final approval check
-        if (existingRequest.CurrentStepOrder > plannedSteps.Count)
+        _logger.LogBusinessFlow(_loggingOptions, LogAction.Workflow.ApproveRequest, LogStage.Processing,
+            isFullyApproved ? "FullyApproved" : "StepAdvanced",
+            new { NewStepOrder = existingRequest.CurrentStepOrder, TotalSteps = plannedSteps.Count });
+
+        if (isFullyApproved)
         {
-            _logger.LogInformation("[RequestApprove] FINAL APPROVAL — RequestId={RequestId}", request.RequestId);
-
             existingRequest.Status = RequestStatus.Approved;
             existingRequest.CurrentStepOrder = 0;
             existingRequest.CurrentStepApproverIds = null;
@@ -133,27 +136,21 @@ public class ApproveRequestCommandHandler : IRequestHandler<ApproveRequestComman
             var strategy = _strategyFactory.GetStrategy(existingRequest.RequestType);
             if (strategy != null)
             {
-                _logger.LogInformation("[RequestApprove] Executing OnFinalApprovalAsync — RequestId={RequestId}", existingRequest.Id);
                 await strategy.OnFinalApprovalAsync(existingRequest, cancellationToken);
             }
-
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-            _logger.LogInformation("[RequestApprove] Request APPROVED — RequestId={RequestId}, Type={Type}",
-                existingRequest.Id, existingRequest.RequestType);
-            return Result.Success(true);
         }
-
-        // 8. Move to next step — update CurrentStepApproverIds for the new step's approvers
-        var nextStep = plannedSteps[existingRequest.CurrentStepOrder - 1];
-        existingRequest.Status = RequestStatus.InProgress;
-        existingRequest.CurrentStepApproverIds = string.Join(",",
-            nextStep.Approvers.Select(a => a.EmployeeId.ToString()));
+        else
+        {
+            var nextStep = plannedSteps[existingRequest.CurrentStepOrder - 1];
+            existingRequest.Status = RequestStatus.InProgress;
+            existingRequest.CurrentStepApproverIds = string.Join(",",
+                nextStep.Approvers.Select(a => a.EmployeeId.ToString()));
+        }
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        _logger.LogInformation("[RequestApprove] Advanced to step {Step} — RequestId={RequestId}",
-            existingRequest.CurrentStepOrder, request.RequestId);
+        sw.Stop();
+        _logger.LogActionSuccess(_loggingOptions, LogAction.Workflow.ApproveRequest, sw.ElapsedMilliseconds, request.RequestId);
 
         return Result.Success(true);
     }

@@ -1,3 +1,5 @@
+using HrSystemApp.Application.Common.Logging;
+using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 using HrSystemApp.Api;
 using HrSystemApp.Application;
@@ -12,7 +14,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Configure Serilog
 var loggerConfiguration = new LoggerConfiguration()
-    .ReadFrom.Configuration(builder.Configuration);
+    .ReadFrom.Configuration(builder.Configuration)
+    .Enrich.FromLogContext()
+    .Enrich.WithProperty("Application", "HrSystemApp");
 
 // Add Seq if enabled in settings
 var seqEnabled = builder.Configuration.GetValue<bool>("SeqSettings:Enabled");
@@ -43,8 +47,9 @@ builder.Host.UseSerilog();
 // Add Api layer services 
 builder.Services.AddApi(builder.Configuration);
 
-// Add Application layer services 
+// Add Application layer services
 builder.Services.AddApplication();
+builder.Services.Configure<LoggingOptions>(builder.Configuration.GetSection("LoggingOptions"));
 
 // Add Infrastructure layer services
 builder.Services.AddInfrastructure(builder.Configuration);
@@ -161,6 +166,9 @@ if (!app.Environment.IsDevelopment())
 app.UseAuthentication();
 app.UseAuthorization();
 
+// LoggingScopeMiddleware must run AFTER authentication so UserId/Email are available
+app.UseMiddleware<LoggingScopeMiddleware>();
+
 // Map controllers
 app.MapControllers();
 app.UseHangfireDashboard("/hangfire");
@@ -168,12 +176,11 @@ app.UseHangfireDashboard("/hangfire");
 RecurringJob.AddOrUpdate<AttendanceRecurringJobs>(
     "attendance-reminder-job",
     job => job.RunReminderJob(),
-    "*/15 * * * *");
+    Cron.Daily);
 
 RecurringJob.AddOrUpdate<AttendanceRecurringJobs>(
-    "attendance-auto-clock-out-job",
+    "attendance-auto-clockout-job",
     job => job.RunAutoClockOutJob(),
-    "0 * * * *");
+    Cron.Daily);
 
-// Run the application
 app.Run();
