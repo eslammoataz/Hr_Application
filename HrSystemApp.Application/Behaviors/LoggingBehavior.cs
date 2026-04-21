@@ -1,7 +1,6 @@
 using System.Diagnostics;
 using HrSystemApp.Application.Common;
 using HrSystemApp.Application.Common.Logging;
-using HrSystemApp.Application.Interfaces;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -31,10 +30,9 @@ public class LoggingBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, 
             return await next();
 
         var actionName = typeof(TRequest).Name;
-        var requestId = ExtractRequestId(request);
         var sw = Stopwatch.StartNew();
 
-        _logger.LogActionStart(_loggingOptions, actionName, requestId);
+        _logger.LogActionStart(_loggingOptions, actionName);
 
         // Await the handler — never wrap in try/catch/rethrow here.
         // Domain errors are captured as Result.Failure by handlers.
@@ -50,27 +48,14 @@ public class LoggingBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, 
         if (isFailure)
         {
             var lastKnownState = new { RequestType = actionName };
-            _logger.LogActionFailure(_loggingOptions, actionName, LogStage.Processing, lastKnownState, requestId);
+            _logger.LogActionFailure(_loggingOptions, actionName, LogStage.Processing, lastKnownState);
         }
         else
         {
-            _logger.LogActionSuccess(_loggingOptions, actionName, sw.ElapsedMilliseconds, requestId);
-            _logger.LogSlowOperation(_loggingOptions, actionName, sw.ElapsedMilliseconds, requestId);
+            _logger.LogActionSuccess(_loggingOptions, actionName, sw.ElapsedMilliseconds);
+            _logger.LogSlowOperation(_loggingOptions, actionName, sw.ElapsedMilliseconds);
         }
 
         return response;
-    }
-
-    private static Guid? ExtractRequestId(TRequest request)
-    {
-        if (request is IHaveRequestId haveRequestId)
-            return haveRequestId.RequestId;
-
-        // Fallback: attempt property lookup by name (no reflection in hot path for IHaveRequestId types)
-        var property = typeof(TRequest).GetProperty("RequestId");
-        if (property != null && property.CanRead && property.GetValue(request) is Guid guid)
-            return guid;
-
-        return null;
     }
 }

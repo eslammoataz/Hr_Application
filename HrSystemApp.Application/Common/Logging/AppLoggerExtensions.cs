@@ -13,31 +13,31 @@ public static class AppLoggerExtensions
     // ── Failures → Error / Warning
 
     public static void LogActionStart(
-        this ILogger logger, LoggingOptions opts, string action, Guid? requestId = null)
+        this ILogger logger, LoggingOptions opts, string action)
     {
         if (!IsEnabled(opts, action)) return;
         logger.LogInformation(
-            "Action={Action} Stage={Stage} RequestId={RequestId}",
-            action, LogStage.Start, requestId);
+            "Action={Action} Stage={Stage}",
+            action, LogStage.Start);
     }
 
     public static void LogActionSuccess(
-        this ILogger logger, LoggingOptions opts, string action, long elapsedMs, Guid? requestId = null)
+        this ILogger logger, LoggingOptions opts, string action, long elapsedMs)
     {
         if (!IsEnabled(opts, action)) return;
         logger.LogInformation(
-            "Action={Action} Stage={Stage} RequestId={RequestId} ElapsedMs={ElapsedMs}",
-            action, LogStage.Finalization, requestId, elapsedMs);
+            "Action={Action} Stage={Stage} ElapsedMs={ElapsedMs}",
+            action, LogStage.Finalization, elapsedMs);
     }
 
     public static void LogActionFailure(
         this ILogger logger, LoggingOptions opts, string action, LogStage stage,
-        Exception ex, object lastKnownState, Guid? requestId = null)
+        Exception ex, object lastKnownState)
     {
         if (!IsEnabled(opts, action)) return;
         logger.LogError(ex,
-            "Action={Action} Stage={Stage} RequestId={RequestId} LastKnownState={@LastKnownState}",
-            action, stage, requestId, lastKnownState);
+            "Action={Action} Stage={Stage} LastKnownState={@LastKnownState}",
+            action, stage, lastKnownState);
     }
 
     /// <summary>
@@ -46,12 +46,12 @@ public static class AppLoggerExtensions
     /// </summary>
     public static void LogActionFailure(
         this ILogger logger, LoggingOptions opts, string action, LogStage stage,
-        object lastKnownState, Guid? requestId = null)
+        object lastKnownState)
     {
         if (!IsEnabled(opts, action)) return;
         logger.LogWarning(
-            "Action={Action} Stage={Stage} RequestId={RequestId} LastKnownState={@LastKnownState} — Result failure",
-            action, stage, requestId, lastKnownState);
+            "Action={Action} Stage={Stage} LastKnownState={@LastKnownState} — Result failure",
+            action, stage, lastKnownState);
     }
 
     /// <summary>
@@ -83,12 +83,12 @@ public static class AppLoggerExtensions
     }
 
     public static void LogWarningUnauthorized(
-        this ILogger logger, LoggingOptions opts, string action, Guid? requestId = null)
+        this ILogger logger, LoggingOptions opts, string action)
     {
         if (!IsEnabled(opts, action)) return;
         logger.LogWarning(
-            "Action={Action} Stage={Stage} RequestId={RequestId} — Unauthorized attempt",
-            action, LogStage.Authorization, requestId);
+            "Action={Action} Stage={Stage} — Unauthorized attempt",
+            action, LogStage.Authorization);
     }
 
     /// <summary>
@@ -107,13 +107,13 @@ public static class AppLoggerExtensions
 
     public static void LogSlowOperation(
         this ILogger logger, LoggingOptions opts, string action,
-        long elapsedMs, Guid? requestId = null)
+        long elapsedMs)
     {
         if (!IsEnabled(opts, action)) return;
         if (elapsedMs < opts.SlowOperationThresholdMs) return;
         logger.LogWarning(
-            "Action={Action} Stage={Stage} RequestId={RequestId} ElapsedMs={ElapsedMs} — Slow operation detected",
-            action, LogStage.Finalization, requestId, elapsedMs);
+            "Action={Action} Stage={Stage} ElapsedMs={ElapsedMs} — Slow operation detected",
+            action, LogStage.Finalization, elapsedMs);
     }
 
     private static bool IsEnabled(LoggingOptions opts, string action)

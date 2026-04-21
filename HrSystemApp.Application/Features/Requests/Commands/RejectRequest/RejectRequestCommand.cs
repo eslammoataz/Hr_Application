@@ -51,14 +51,14 @@ public class RejectRequestCommandHandler : IRequestHandler<RejectRequestCommand,
         var userId = _currentUserService.UserId;
         if (string.IsNullOrEmpty(userId))
         {
-            _logger.LogWarningUnauthorized(_loggingOptions, LogAction.Workflow.RejectRequest, request.RequestId);
+            _logger.LogWarningUnauthorized(_loggingOptions, LogAction.Workflow.RejectRequest);
             return Result.Failure<bool>(DomainErrors.Auth.Unauthorized);
         }
 
         var employee = await _unitOfWork.Employees.GetByUserIdAsync(userId, cancellationToken);
         if (employee == null)
         {
-            _logger.LogWarningUnauthorized(_loggingOptions, LogAction.Workflow.RejectRequest, request.RequestId);
+            _logger.LogWarningUnauthorized(_loggingOptions, LogAction.Workflow.RejectRequest);
             return Result.Failure<bool>(DomainErrors.Employee.NotFound);
         }
 
@@ -100,7 +100,7 @@ public class RejectRequestCommandHandler : IRequestHandler<RejectRequestCommand,
 
         if (!approverIds.Contains(employee.Id))
         {
-            _logger.LogWarningUnauthorized(_loggingOptions, LogAction.Workflow.RejectRequest, request.RequestId);
+            _logger.LogWarningUnauthorized(_loggingOptions, LogAction.Workflow.RejectRequest);
             return Result.Failure<bool>(DomainErrors.Requests.Unauthorized);
         }
 
@@ -127,7 +127,7 @@ public class RejectRequestCommandHandler : IRequestHandler<RejectRequestCommand,
         _logger.LogDecision(_loggingOptions, LogAction.Workflow.RejectRequest, LogStage.Finalization,
             "RequestRejected", new { RequestId = request.RequestId, EmployeeId = employee.Id });
 
-        _logger.LogActionSuccess(_loggingOptions, LogAction.Workflow.RejectRequest, sw.ElapsedMilliseconds, request.RequestId);
+        _logger.LogActionSuccess(_loggingOptions, LogAction.Workflow.RejectRequest, sw.ElapsedMilliseconds);
 
         return Result.Success(true);
     }

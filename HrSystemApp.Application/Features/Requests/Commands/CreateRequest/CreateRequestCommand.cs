@@ -49,7 +49,7 @@ public class CreateRequestCommandHandler : IRequestHandler<CreateRequestCommand,
     {
         var sw = Stopwatch.StartNew();
 
-        _logger.LogActionStart(_loggingOptions, LogAction.Workflow.CreateRequest, null);
+        _logger.LogActionStart(_loggingOptions, LogAction.Workflow.CreateRequest);
 
         var userId = _currentUserService.UserId;
         if (string.IsNullOrEmpty(userId))
@@ -211,7 +211,7 @@ public class CreateRequestCommandHandler : IRequestHandler<CreateRequestCommand,
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         sw.Stop();
-        _logger.LogActionSuccess(_loggingOptions, LogAction.Workflow.CreateRequest, sw.ElapsedMilliseconds, newRequest.Id);
+        _logger.LogActionSuccess(_loggingOptions, LogAction.Workflow.CreateRequest, sw.ElapsedMilliseconds);
 
         return Result.Success(newRequest.Id);
     }

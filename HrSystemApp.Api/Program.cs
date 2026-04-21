@@ -12,39 +12,41 @@ using HrSystemApp.Infrastructure.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configure Serilog
-var loggerConfiguration = new LoggerConfiguration()
-    .ReadFrom.Configuration(builder.Configuration)
-    .Enrich.FromLogContext()
-    .Enrich.WithProperty("Application", "HrSystemApp");
+// ── Bootstrap logger ──────────────────────────────────────────────────────────
+// Minimal console sink for startup/host errors emitted before the DI container
+// is available. Replaced by the full logger once the host is built.
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.Console()
+    .CreateBootstrapLogger();
 
-// Add Seq if enabled in settings
-var seqEnabled = builder.Configuration.GetValue<bool>("SeqSettings:Enabled");
-var seqUrl = builder.Configuration.GetValue<string>("SeqSettings:ServerUrl") ?? "http://localhost:5341";
-
-if (seqEnabled)
-{
-    loggerConfiguration.WriteTo.Seq(seqUrl);
-}
-
-Log.Logger = loggerConfiguration.CreateLogger();
-
-// Verify Seq logging at startup
-if (seqEnabled)
-{
-    Log.Information("🚀 Seq Logging is ENABLED at {SeqUrl}", seqUrl);
-}
-else
-{
-    Log.Warning("⚠️ Seq Logging is DISABLED.");
-}
-
-// Enable Serilog SelfLog to output sink errors to the console
+// Enable Serilog SelfLog so sink errors appear in the console.
 Serilog.Debugging.SelfLog.Enable(msg => Console.WriteLine($"Serilog Error: {msg}"));
 
-builder.Host.UseSerilog();
+// ── Full logger ───────────────────────────────────────────────────────────────
+// UseSerilog callback runs after the DI container is built, so services
+// (including RequestContextEnricher) are available via ReadFrom.Services(services).
+builder.Host.UseSerilog((ctx, services, config) =>
+{
+    config
+        .ReadFrom.Configuration(ctx.Configuration)
+        .ReadFrom.Services(services)   // picks up ILogEventEnricher (RequestContextEnricher) from DI
+        .Enrich.FromLogContext()
+        .Enrich.WithProperty("Application", "HrSystemApp");
 
-// Add Api layer services 
+    var seqEnabled = ctx.Configuration.GetValue<bool>("SeqSettings:Enabled");
+    if (seqEnabled)
+    {
+        var seqUrl = ctx.Configuration.GetValue<string>("SeqSettings:ServerUrl") ?? "http://localhost:5341";
+        config.WriteTo.Seq(seqUrl);
+        Log.Information("🚀 Seq Logging is ENABLED at {SeqUrl}", seqUrl);
+    }
+    else
+    {
+        Log.Warning("⚠️ Seq Logging is DISABLED.");
+    }
+});
+
+// Add Api layer services
 builder.Services.AddApi(builder.Configuration);
 
 // Add Application layer services
@@ -133,7 +135,7 @@ try
 catch (Exception ex)
 {
     Log.Fatal(ex, "❌ Database initialization failed.");
-    throw; 
+    throw;
 }
 
 // Swagger UI (available in all environments for now)
@@ -144,17 +146,21 @@ app.UseSwaggerUI(options =>
     options.RoutePrefix = "swagger";
 });
 
-// Custom Logging Middlewares
+// ── Middleware pipeline ───────────────────────────────────────────────────────
+
+// CorrelationId: assigns/propagates X-Correlation-ID and pushes it to LogContext.
 app.UseMiddleware<CorrelationIdMiddleware>();
+
+// Request/response logging (skips /health and /swagger paths).
 app.UseMiddleware<RequestResponseLoggingMiddleware>();
 
-// Global exception handling (early in pipeline to catch all downstream errors)
+// Global exception handler — wraps all downstream middleware.
 app.UseMiddleware<ExceptionMiddleware>();
 
 // CORS
 app.UseCors("AllowAll");
 
-// Routing must run before CORS, Auth, and endpoints
+// Routing must run before auth and endpoint mapping.
 app.UseRouting();
 
 if (!app.Environment.IsDevelopment())
@@ -166,8 +172,10 @@ if (!app.Environment.IsDevelopment())
 app.UseAuthentication();
 app.UseAuthorization();
 
-// LoggingScopeMiddleware must run AFTER authentication so UserId/Email are available
-app.UseMiddleware<LoggingScopeMiddleware>();
+// NOTE: LoggingScopeMiddleware has been removed.
+// User context (UserId, Email, AppEnvironment) is now enriched by RequestContextEnricher,
+// a Serilog ILogEventEnricher that reads IHttpContextAccessor lazily at log-emit time.
+// This correctly handles logs emitted before, during, and after the middleware pipeline.
 
 // Map controllers
 app.MapControllers();

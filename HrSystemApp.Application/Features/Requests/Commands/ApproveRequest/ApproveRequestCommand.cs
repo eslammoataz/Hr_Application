@@ -49,19 +49,19 @@ public class ApproveRequestCommandHandler : IRequestHandler<ApproveRequestComman
     {
         var sw = Stopwatch.StartNew();
 
-        _logger.LogActionStart(_loggingOptions, LogAction.Workflow.ApproveRequest, request.RequestId);
+        _logger.LogActionStart(_loggingOptions, LogAction.Workflow.ApproveRequest);
 
         var userId = _currentUserService.UserId;
         if (string.IsNullOrEmpty(userId))
         {
-            _logger.LogWarningUnauthorized(_loggingOptions, LogAction.Workflow.ApproveRequest, request.RequestId);
+            _logger.LogWarningUnauthorized(_loggingOptions, LogAction.Workflow.ApproveRequest);
             return Result.Failure<bool>(DomainErrors.Auth.Unauthorized);
         }
 
         var employee = await _unitOfWork.Employees.GetByUserIdAsync(userId, cancellationToken);
         if (employee == null)
         {
-            _logger.LogWarningUnauthorized(_loggingOptions, LogAction.Workflow.ApproveRequest, request.RequestId);
+            _logger.LogWarningUnauthorized(_loggingOptions, LogAction.Workflow.ApproveRequest);
             return Result.Failure<bool>(DomainErrors.Employee.NotFound);
         }
 
@@ -103,7 +103,7 @@ public class ApproveRequestCommandHandler : IRequestHandler<ApproveRequestComman
 
         if (!approverIds.Contains(employee.Id))
         {
-            _logger.LogWarningUnauthorized(_loggingOptions, LogAction.Workflow.ApproveRequest, request.RequestId);
+            _logger.LogWarningUnauthorized(_loggingOptions, LogAction.Workflow.ApproveRequest);
             return Result.Failure<bool>(DomainErrors.Requests.Unauthorized);
         }
 
@@ -150,7 +150,7 @@ public class ApproveRequestCommandHandler : IRequestHandler<ApproveRequestComman
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         sw.Stop();
-        _logger.LogActionSuccess(_loggingOptions, LogAction.Workflow.ApproveRequest, sw.ElapsedMilliseconds, request.RequestId);
+        _logger.LogActionSuccess(_loggingOptions, LogAction.Workflow.ApproveRequest, sw.ElapsedMilliseconds);
 
         return Result.Success(true);
     }

@@ -30,7 +30,6 @@ public class ValidationBehavior<TRequest, TResponse> : IPipelineBehavior<TReques
         CancellationToken cancellationToken)
     {
         var actionName = typeof(TRequest).Name;
-        var requestId = request is IHaveRequestId hri ? hri.RequestId : (Guid?)null;
 
         if (!_validators.Any())
             return await next();
@@ -53,7 +52,7 @@ public class ValidationBehavior<TRequest, TResponse> : IPipelineBehavior<TReques
             // Log FIELD NAMES only — never log error messages, they may contain user-supplied input (plan rule).
             var invalidFields = failures.Select(e => e.PropertyName).Distinct().ToList();
             _logger.LogDecision(_loggingOptions, actionName, LogStage.Validation,
-                "ValidationFailed", new { InvalidFields = invalidFields, RequestId = requestId });
+                "ValidationFailed", new { InvalidFields = invalidFields });
 
             // ValidationException is caught and mapped to 400 by ExceptionMiddleware —
             // this is intentional control flow, not an unhandled error.
@@ -61,7 +60,7 @@ public class ValidationBehavior<TRequest, TResponse> : IPipelineBehavior<TReques
         }
 
         _logger.LogDecision(_loggingOptions, actionName, LogStage.Validation,
-            "ValidationPassed", new { RequestId = requestId });
+            "ValidationPassed", new { });
 
         return await next();
     }
