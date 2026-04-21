@@ -26,7 +26,8 @@ public static class LogAction
         public const string RefreshToken          = "RefreshToken";
         public const string LogoutUser            = "LogoutUser";
         public const string RevokeToken           = "RevokeToken";
-        public const string RevokeAllTokens        = "RevokeAllTokens";
+        public const string RevokeAllTokens       = "RevokeAllTokens";
+        public const string UpdateFcmToken        = "UpdateFcmToken";
     }
 
     public static class OrgNode

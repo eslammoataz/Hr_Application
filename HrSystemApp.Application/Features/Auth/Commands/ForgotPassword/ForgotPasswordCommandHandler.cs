@@ -1,13 +1,15 @@
+using System.Diagnostics;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using HrSystemApp.Application.Common;
 using HrSystemApp.Application.Errors;
-using HrSystemApp.Domain.Enums;
 using HrSystemApp.Application.Common.Events;
 using HrSystemApp.Application.Interfaces;
 using HrSystemApp.Application.Interfaces.Repositories;
 using HrSystemApp.Domain.Models;
+using HrSystemApp.Application.Common.Logging;
 
 namespace HrSystemApp.Application.Features.Auth.Commands.ForgotPassword;
 
@@ -17,65 +19,55 @@ public class ForgotPasswordCommandHandler : IRequestHandler<ForgotPasswordComman
     private readonly IUnitOfWork _unitOfWork;
     private readonly IPublisher _publisher;
     private readonly ILogger<ForgotPasswordCommandHandler> _logger;
+    private readonly LoggingOptions _loggingOptions;
 
     public ForgotPasswordCommandHandler(
         IUserRepository userRepository,
         IUnitOfWork unitOfWork,
         IPublisher publisher,
-        ILogger<ForgotPasswordCommandHandler> logger)
+        ILogger<ForgotPasswordCommandHandler> logger,
+        IOptions<LoggingOptions> loggingOptions)
     {
         _userRepository = userRepository;
         _unitOfWork = unitOfWork;
         _publisher = publisher;
         _logger = logger;
+        _loggingOptions = loggingOptions.Value;
     }
 
     public async Task<Result> Handle(ForgotPasswordCommand request, CancellationToken cancellationToken)
     {
-        const string otpPurpose = "PasswordReset";
-        var provider = TokenOptions.DefaultPhoneProvider;
+        var sw = Stopwatch.StartNew();
+        _logger.LogActionStart(_loggingOptions, LogAction.Auth.ForgotPassword);
 
-        _logger.LogInformation(
-            "Forgot password requested. Email: {Email}, Channel: {Channel}, Provider: {Provider}, Purpose: {Purpose}.",
-            request.Email,
-            request.Channel,
-            provider,
-            otpPurpose);
+        var emailDomain = request.Email.Split('@').Last();
 
         var user = await _userRepository.GetByEmailAsync(request.Email, cancellationToken);
 
         if (user == null)
         {
-            _logger.LogWarning("Forgot password requested for non-existent email: {Email}", request.Email);
+            _logger.LogDecision(_loggingOptions, LogAction.Auth.ForgotPassword, LogStage.Authorization,
+                "UserNotFound", new { EmailDomain = emailDomain });
+            sw.Stop();
             return Result.Failure(DomainErrors.Auth.UserNotFound);
         }
 
-        var otp = await _userRepository.GenerateUserTokenAsync(user, provider, otpPurpose);
-        // Reset attempts
+        const string otpPurpose = "PasswordReset";
+        var otpProvider = TokenOptions.DefaultPhoneProvider;
+
+        var otp = await _userRepository.GenerateUserTokenAsync(user, otpProvider, otpPurpose);
         user.OtpAttempts = 0;
         await _userRepository.UpdateAsync(user, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        _logger.LogInformation(
-            "Generated OTP for user {Email}. UserId: {UserId}, Otp: {Otp}, Provider: {Provider}, Purpose: {Purpose}.",
-            request.Email,
-            user.Id,
-            otp,
-            provider,
-            otpPurpose);
-
-        // Publish event for delivery
         await _publisher.Publish(new OtpGeneratedEvent(
             user.Email!,
             user.PhoneNumber,
             otp,
             request.Channel), cancellationToken);
 
-        _logger.LogInformation(
-            "OTP publish completed for user {Email}. UserId: {UserId}, Channel: {Channel}.",
-            request.Email,
-            user.Id,
-            request.Channel);
+        sw.Stop();
+        _logger.LogActionSuccess(_loggingOptions, LogAction.Auth.ForgotPassword, sw.ElapsedMilliseconds);
 
         return Result.Success();
     }

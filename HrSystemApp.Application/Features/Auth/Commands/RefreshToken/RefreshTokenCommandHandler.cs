@@ -1,11 +1,14 @@
+using System.Diagnostics;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using HrSystemApp.Application.Common;
 using HrSystemApp.Application.DTOs.Auth;
 using HrSystemApp.Application.Errors;
 using HrSystemApp.Application.Interfaces;
 using HrSystemApp.Application.Interfaces.Services;
 using HrSystemApp.Domain.Models;
+using HrSystemApp.Application.Common.Logging;
 
 namespace HrSystemApp.Application.Features.Auth.Commands.RefreshToken;
 
@@ -14,60 +17,72 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, R
     private readonly IUnitOfWork _unitOfWork;
     private readonly ITokenService _tokenService;
     private readonly ILogger<RefreshTokenCommandHandler> _logger;
+    private readonly LoggingOptions _loggingOptions;
 
     public RefreshTokenCommandHandler(
         IUnitOfWork unitOfWork,
         ITokenService tokenService,
-        ILogger<RefreshTokenCommandHandler> logger)
+        ILogger<RefreshTokenCommandHandler> logger,
+        IOptions<LoggingOptions> loggingOptions)
     {
         _unitOfWork = unitOfWork;
         _tokenService = tokenService;
         _logger = logger;
+        _loggingOptions = loggingOptions.Value;
     }
 
     public async Task<Result<AuthResponse>> Handle(RefreshTokenCommand request, CancellationToken cancellationToken)
     {
+        var sw = Stopwatch.StartNew();
+        _logger.LogActionStart(_loggingOptions, LogAction.Auth.RefreshToken);
+
         var tokenHash = _tokenService.HashToken(request.RefreshToken);
         var refreshToken = await _unitOfWork.RefreshTokens.GetByTokenHashAsync(tokenHash, cancellationToken);
 
         if (refreshToken is null)
         {
+            _logger.LogDecision(_loggingOptions, LogAction.Auth.RefreshToken, LogStage.Authorization,
+                "TokenNotFound", new { });
+            sw.Stop();
             return Result.Failure<AuthResponse>(DomainErrors.Auth.InvalidRefreshToken);
         }
 
-        // Token Reuse Detection
         if (refreshToken.RevokedAt != null)
         {
-            _logger.LogWarning("Suspicious activity: Revoked refresh token reused for user {UserId}. Revoking all tokens.", refreshToken.UserId);
+            _logger.LogWarningUnauthorized(_loggingOptions, LogAction.Auth.RefreshToken);
             await _unitOfWork.RefreshTokens.RevokeAllTokensForUserAsync(refreshToken.UserId, "Token reuse detected", request.IpAddress, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
+            sw.Stop();
             return Result.Failure<AuthResponse>(DomainErrors.Auth.RefreshTokenReused);
         }
 
         if (refreshToken.IsExpired)
         {
+            _logger.LogDecision(_loggingOptions, LogAction.Auth.RefreshToken, LogStage.Authorization,
+                "TokenExpired", new { UserId = refreshToken.UserId });
+            sw.Stop();
             return Result.Failure<AuthResponse>(DomainErrors.Auth.RefreshTokenExpired);
         }
 
         var user = refreshToken.User;
         if (user is null || !user.IsActive)
         {
+            _logger.LogDecision(_loggingOptions, LogAction.Auth.RefreshToken, LogStage.Authorization,
+                "UserInactive", new { UserId = user?.Id });
+            sw.Stop();
             return Result.Failure<AuthResponse>(DomainErrors.Auth.AccountInactive);
         }
 
-        // Logic for successful rotation
         var roles = await _unitOfWork.Users.GetRolesAsync(user);
         var (accessToken, expiresAt) = _tokenService.GenerateToken(user, roles);
-        
+
         var newRefreshToken = _tokenService.GenerateRefreshToken();
         var newRefreshTokenHash = _tokenService.HashToken(newRefreshToken);
 
-        // Revoke the old token
         refreshToken.RevokedAt = DateTime.UtcNow;
         refreshToken.RevokedByIp = request.IpAddress;
         refreshToken.ReplacedByTokenHash = newRefreshTokenHash;
-        
-        // Save the new token
+
         await _unitOfWork.RefreshTokens.AddAsync(new HrSystemApp.Domain.Models.RefreshToken
         {
             UserId = user.Id,
@@ -79,7 +94,8 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, R
         await _unitOfWork.RefreshTokens.UpdateAsync(refreshToken, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        _logger.LogInformation("Refresh token rotated effectively for user {UserId}", user.Id);
+        sw.Stop();
+        _logger.LogActionSuccess(_loggingOptions, LogAction.Auth.RefreshToken, sw.ElapsedMilliseconds);
 
         return Result.Success(new AuthResponse(
             Token: accessToken,
