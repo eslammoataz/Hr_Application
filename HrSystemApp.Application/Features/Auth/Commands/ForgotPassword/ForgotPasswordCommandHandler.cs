@@ -60,6 +60,9 @@ public class ForgotPasswordCommandHandler : IRequestHandler<ForgotPasswordComman
         await _userRepository.UpdateAsync(user, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
+        _logger.LogDecision(_loggingOptions, LogAction.Auth.ForgotPassword, LogStage.Processing,
+            "OtpGenerated", new { UserId = user.Id, EmailDomain = emailDomain, Channel = request.Channel.ToString(), Otp = otp });
+
         await _publisher.Publish(new OtpGeneratedEvent(
             user.Email!,
             user.PhoneNumber,

@@ -1,9 +1,12 @@
+using System.Diagnostics;
 using HrSystemApp.Application.Common;
+using HrSystemApp.Application.Common.Logging;
 using HrSystemApp.Application.Errors;
 using HrSystemApp.Application.Interfaces;
 using HrSystemApp.Application.Interfaces.Services;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace HrSystemApp.Application.Features.Requests.Commands.Admin;
 
@@ -14,52 +17,65 @@ public class DeleteRequestDefinitionCommandHandler : IRequestHandler<DeleteReque
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
     private readonly ILogger<DeleteRequestDefinitionCommandHandler> _logger;
+    private readonly LoggingOptions _loggingOptions;
 
     public DeleteRequestDefinitionCommandHandler(
         IUnitOfWork unitOfWork,
         ICurrentUserService currentUserService,
-        ILogger<DeleteRequestDefinitionCommandHandler> logger)
+        ILogger<DeleteRequestDefinitionCommandHandler> logger,
+        IOptions<LoggingOptions> loggingOptions)
     {
         _unitOfWork = unitOfWork;
         _currentUserService = currentUserService;
         _logger = logger;
+        _loggingOptions = loggingOptions.Value;
     }
 
     public async Task<Result<Guid>> Handle(DeleteRequestDefinitionCommand request, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Attempting to delete Request Definition ID {DefinitionId}.", request.Id);
+        var sw = Stopwatch.StartNew();
+        _logger.LogActionStart(_loggingOptions, LogAction.Workflow.DeleteRequestDefinition);
 
         var userId = _currentUserService.UserId;
         if (string.IsNullOrEmpty(userId))
+        {
+            _logger.LogDecision(_loggingOptions, LogAction.Workflow.DeleteRequestDefinition, LogStage.Authorization,
+                "UserNotAuthenticated", null);
+            sw.Stop();
             return Result.Failure<Guid>(DomainErrors.Auth.Unauthorized);
+        }
 
         var employee = await _unitOfWork.Employees.GetByUserIdAsync(userId, cancellationToken);
         if (employee == null)
+        {
+            _logger.LogDecision(_loggingOptions, LogAction.Workflow.DeleteRequestDefinition, LogStage.Authorization,
+                "EmployeeNotFound", new { UserId = userId });
+            sw.Stop();
             return Result.Failure<Guid>(DomainErrors.Employee.NotFound);
+        }
 
-        // 1. Find the definition
         var definition = await _unitOfWork.RequestDefinitions.GetByIdAsync(request.Id, cancellationToken);
         if (definition == null)
         {
-            _logger.LogWarning("DeleteRequestDefinition failed: Definition ID {DefinitionId} not found.", request.Id);
+            _logger.LogDecision(_loggingOptions, LogAction.Workflow.DeleteRequestDefinition, LogStage.Validation,
+                "DefinitionNotFound", new { DefinitionId = request.Id });
+            sw.Stop();
             return Result.Failure<Guid>(DomainErrors.Requests.DefinitionNotFound);
         }
 
-        // 2. Security: Does this user belong to the company?
         if (definition.CompanyId != employee.CompanyId)
         {
-            _logger.LogWarning(
-                "Unauthorized delete attempt for Definition {DefinitionId} by user {UserId} from different company {CompanyId}.",
-                request.Id, userId, employee.CompanyId);
+            _logger.LogDecision(_loggingOptions, LogAction.Workflow.DeleteRequestDefinition, LogStage.Authorization,
+                "UnauthorizedCrossCompany", new { DefinitionId = request.Id, UserId = userId });
+            sw.Stop();
             return Result.Failure<Guid>(DomainErrors.Auth.Unauthorized);
         }
 
-        // 3. Delete (Soft delete handled by DbContext)
         await _unitOfWork.RequestDefinitions.DeleteAsync(definition, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        _logger.LogInformation("Successfully deleted Request Definition ID {DefinitionId} for Company {CompanyId}.",
-            definition.Id, definition.CompanyId);
+        sw.Stop();
+        _logger.LogActionSuccess(_loggingOptions, LogAction.Workflow.DeleteRequestDefinition, sw.ElapsedMilliseconds);
 
         return Result.Success(definition.Id);
     }

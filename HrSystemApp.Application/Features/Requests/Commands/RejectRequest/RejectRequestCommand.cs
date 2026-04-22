@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Text.Json;
 using HrSystemApp.Application.Common;
 using HrSystemApp.Application.Common.Logging;
@@ -43,10 +42,6 @@ public class RejectRequestCommandHandler : IRequestHandler<RejectRequestCommand,
 
     public async Task<Result<bool>> Handle(RejectRequestCommand request, CancellationToken cancellationToken)
     {
-        var sw = Stopwatch.StartNew();
-
-        _logger.LogDecision(_loggingOptions, LogAction.Workflow.RejectRequest, LogStage.Start,
-            "RejectStarted", new { RequestId = request.RequestId });
 
         var userId = _currentUserService.UserId;
         if (string.IsNullOrEmpty(userId))
@@ -122,12 +117,8 @@ public class RejectRequestCommandHandler : IRequestHandler<RejectRequestCommand,
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        sw.Stop();
-
         _logger.LogDecision(_loggingOptions, LogAction.Workflow.RejectRequest, LogStage.Finalization,
             "RequestRejected", new { RequestId = request.RequestId, EmployeeId = employee.Id });
-
-        _logger.LogActionSuccess(_loggingOptions, LogAction.Workflow.RejectRequest, sw.ElapsedMilliseconds);
 
         return Result.Success(true);
     }

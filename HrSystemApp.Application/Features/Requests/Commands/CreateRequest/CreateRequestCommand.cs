@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Text.Json;
 using HrSystemApp.Application.Common;
 using HrSystemApp.Application.Common.Logging;
@@ -47,10 +46,6 @@ public class CreateRequestCommandHandler : IRequestHandler<CreateRequestCommand,
 
     public async Task<Result<Guid>> Handle(CreateRequestCommand request, CancellationToken cancellationToken)
     {
-        var sw = Stopwatch.StartNew();
-
-        _logger.LogActionStart(_loggingOptions, LogAction.Workflow.CreateRequest);
-
         var userId = _currentUserService.UserId;
         if (string.IsNullOrEmpty(userId))
         {
@@ -209,9 +204,6 @@ public class CreateRequestCommandHandler : IRequestHandler<CreateRequestCommand,
 
         await _unitOfWork.Requests.AddAsync(newRequest, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-        sw.Stop();
-        _logger.LogActionSuccess(_loggingOptions, LogAction.Workflow.CreateRequest, sw.ElapsedMilliseconds);
 
         return Result.Success(newRequest.Id);
     }

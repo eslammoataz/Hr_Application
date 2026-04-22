@@ -1,5 +1,6 @@
 using FluentAssertions;
 using HrSystemApp.Application.Common;
+using HrSystemApp.Application.Common.Logging;
 using HrSystemApp.Application.DTOs.Requests;
 using HrSystemApp.Application.Errors;
 using HrSystemApp.Application.Features.Requests.Commands.Admin;
@@ -9,6 +10,7 @@ using HrSystemApp.Application.Interfaces.Services;
 using HrSystemApp.Domain.Enums;
 using HrSystemApp.Domain.Models;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Moq;
 using Xunit;
 
@@ -41,7 +43,9 @@ public class CreateRequestDefinitionValidationTests
     private CreateRequestDefinitionCommandHandler CreateHandler()
     {
         var loggerMock = new Mock<Microsoft.Extensions.Logging.ILogger<CreateRequestDefinitionCommandHandler>>();
-        return new CreateRequestDefinitionCommandHandler(_unitOfWorkMock.Object, _currentUserServiceMock.Object, loggerMock.Object);
+        var loggingOptionsMock = new Mock<IOptions<LoggingOptions>>();
+        loggingOptionsMock.Setup(x => x.Value).Returns(new LoggingOptions());
+        return new CreateRequestDefinitionCommandHandler(_unitOfWorkMock.Object, _currentUserServiceMock.Object, loggerMock.Object, loggingOptionsMock.Object);
     }
 
     private void SetupUser(Guid employeeId, Guid companyId, string role = nameof(UserRole.CompanyAdmin))

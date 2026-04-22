@@ -1,10 +1,13 @@
+using System.Diagnostics;
 using HrSystemApp.Application.Common;
+using HrSystemApp.Application.Common.Logging;
 using HrSystemApp.Application.DTOs.OrgNodes;
 using HrSystemApp.Application.Errors;
 using HrSystemApp.Application.Interfaces;
 using HrSystemApp.Application.Interfaces.Services;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace HrSystemApp.Application.Features.OrgNodes.Queries.GetOrgNodeDetails;
 
@@ -13,25 +16,31 @@ public class GetOrgNodeDetailsQueryHandler : IRequestHandler<GetOrgNodeDetailsQu
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
     private readonly ILogger<GetOrgNodeDetailsQueryHandler> _logger;
+    private readonly LoggingOptions _loggingOptions;
 
     public GetOrgNodeDetailsQueryHandler(
         IUnitOfWork unitOfWork,
         ICurrentUserService currentUserService,
-        ILogger<GetOrgNodeDetailsQueryHandler> logger)
+        ILogger<GetOrgNodeDetailsQueryHandler> logger,
+        IOptions<LoggingOptions> loggingOptions)
     {
         _unitOfWork = unitOfWork;
         _currentUserService = currentUserService;
         _logger = logger;
+        _loggingOptions = loggingOptions.Value;
     }
 
     public async Task<Result<OrgNodeDetailsResponse>> Handle(GetOrgNodeDetailsQuery request, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Getting OrgNode details for {NodeId}", request.Id);
+        var sw = Stopwatch.StartNew();
+        _logger.LogActionStart(_loggingOptions, LogAction.OrgNode.GetOrgNodeDetails);
 
         var node = await _unitOfWork.OrgNodes.GetByIdWithChildrenAsync(request.Id, cancellationToken);
         if (node == null)
         {
-            _logger.LogWarning("GetOrgNodeDetails failed: Node {NodeId} not found.", request.Id);
+            _logger.LogDecision(_loggingOptions, LogAction.OrgNode.GetOrgNodeDetails, LogStage.Validation,
+                "NodeNotFound", new { NodeId = request.Id });
+            sw.Stop();
             return Result.Failure<OrgNodeDetailsResponse>(DomainErrors.OrgNode.NotFound);
         }
 
@@ -70,6 +79,10 @@ public class GetOrgNodeDetailsQueryHandler : IRequestHandler<GetOrgNodeDetailsQu
             node.Type,
             assignmentResponses,
             childResponses);
+
+        sw.Stop();
+        _logger.LogActionSuccess(_loggingOptions, LogAction.OrgNode.GetOrgNodeDetails, sw.ElapsedMilliseconds);
+
         return Result.Success(response);
     }
 }

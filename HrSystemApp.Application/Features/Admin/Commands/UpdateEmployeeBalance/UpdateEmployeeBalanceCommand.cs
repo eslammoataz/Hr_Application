@@ -1,10 +1,13 @@
+using System.Diagnostics;
 using HrSystemApp.Application.Common;
+using HrSystemApp.Application.Common.Logging;
 using HrSystemApp.Application.Errors;
 using HrSystemApp.Application.Interfaces;
 using HrSystemApp.Application.Interfaces.Services;
 using HrSystemApp.Domain.Enums;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace HrSystemApp.Application.Features.Admin.Commands.UpdateEmployeeBalance;
 
@@ -19,46 +22,59 @@ public class UpdateEmployeeBalanceCommandHandler : IRequestHandler<UpdateEmploye
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
     private readonly ILogger<UpdateEmployeeBalanceCommandHandler> _logger;
+    private readonly LoggingOptions _loggingOptions;
 
     public UpdateEmployeeBalanceCommandHandler(
-        IUnitOfWork unitOfWork, 
-        ICurrentUserService currentUserService, 
-        ILogger<UpdateEmployeeBalanceCommandHandler> logger)
+        IUnitOfWork unitOfWork,
+        ICurrentUserService currentUserService,
+        ILogger<UpdateEmployeeBalanceCommandHandler> logger,
+        IOptions<LoggingOptions> loggingOptions)
     {
         _unitOfWork = unitOfWork;
         _currentUserService = currentUserService;
         _logger = logger;
+        _loggingOptions = loggingOptions.Value;
     }
 
     public async Task<Result<bool>> Handle(UpdateEmployeeBalanceCommand request, CancellationToken cancellationToken)
     {
+        var sw = Stopwatch.StartNew();
+        _logger.LogActionStart(_loggingOptions, LogAction.Workflow.UpdateEmployeeBalance);
+
         var adminUserId = _currentUserService.UserId;
         if (string.IsNullOrEmpty(adminUserId))
+        {
+            _logger.LogDecision(_loggingOptions, LogAction.Workflow.UpdateEmployeeBalance, LogStage.Authorization,
+                "AdminNotAuthenticated", null);
+            sw.Stop();
             return Result.Failure<bool>(DomainErrors.Auth.Unauthorized);
+        }
 
         var admin = await _unitOfWork.Employees.GetByUserIdAsync(adminUserId, cancellationToken);
         if (admin == null)
+        {
+            _logger.LogDecision(_loggingOptions, LogAction.Workflow.UpdateEmployeeBalance, LogStage.Authorization,
+                "AdminNotFound", new { AdminUserId = adminUserId });
+            sw.Stop();
             return Result.Failure<bool>(DomainErrors.Employee.NotFound);
+        }
 
-        // 1. Security check: Only CompanyAdmin or HR
-        // Note: For simplicity here we check CompanyId match. Role check is handled at Controller layer via [Authorize]
         var targetEmployee = await _unitOfWork.Employees.GetByIdAsync(request.EmployeeId, cancellationToken);
         if (targetEmployee == null || targetEmployee.CompanyId != admin.CompanyId)
         {
-            _logger.LogWarning("Admin {AdminId} attempted to update balance for employee {EmployeeId} in a different company.", 
-                admin.Id, request.EmployeeId);
+            _logger.LogDecision(_loggingOptions, LogAction.Workflow.UpdateEmployeeBalance, LogStage.Authorization,
+                "UnauthorizedCrossCompanyAccess", new { AdminId = admin.Id, EmployeeId = request.EmployeeId });
+            sw.Stop();
             return Result.Failure<bool>(DomainErrors.Requests.Unauthorized);
         }
 
-        // 2. Fetch/Update Balance
         var balance = await _unitOfWork.LeaveBalances.GetAsync(request.EmployeeId, request.LeaveType, request.Year, cancellationToken);
-        
+
         if (balance == null)
         {
-            // Initializing new balance record if it doesn't exist
-            _logger.LogInformation("Creating new leave balance for Employee {EmployeeId}, Type {Type}, Year {Year}", 
-                request.EmployeeId, request.LeaveType, request.Year);
-                
+            _logger.LogDecision(_loggingOptions, LogAction.Workflow.UpdateEmployeeBalance, LogStage.Processing,
+                "CreatingNewBalance", new { EmployeeId = request.EmployeeId, LeaveType = request.LeaveType.ToString(), Year = request.Year });
+
             balance = new Domain.Models.LeaveBalance
             {
                 EmployeeId = request.EmployeeId,
@@ -71,15 +87,17 @@ public class UpdateEmployeeBalanceCommandHandler : IRequestHandler<UpdateEmploye
         }
         else
         {
-            _logger.LogInformation("Updating leave balance for Employee {EmployeeId}, Type {Type}, Year {Year}. New Total: {Total}", 
-                request.EmployeeId, request.LeaveType, request.Year, request.TotalDays);
-                
+            _logger.LogDecision(_loggingOptions, LogAction.Workflow.UpdateEmployeeBalance, LogStage.Processing,
+                "UpdatingExistingBalance", new { EmployeeId = request.EmployeeId, LeaveType = request.LeaveType.ToString(), Year = request.Year, NewTotal = request.TotalDays });
+
             balance.TotalDays = request.TotalDays;
-            // Note: We don't change UsedDays unless explicitly asked in a separate command, 
-            // as it should be driven by approved requests.
         }
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        sw.Stop();
+        _logger.LogActionSuccess(_loggingOptions, LogAction.Workflow.UpdateEmployeeBalance, sw.ElapsedMilliseconds);
+
         return Result.Success(true);
     }
 }

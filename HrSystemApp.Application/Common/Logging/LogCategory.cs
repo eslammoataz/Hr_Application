@@ -6,5 +6,6 @@ public enum LogCategory
     Auth,
     OrgNode,
     Attendance,
+    Notifications,
     Default
 }

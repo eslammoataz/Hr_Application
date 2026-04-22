@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Text.Json;
 using HrSystemApp.Application.Common;
 using HrSystemApp.Application.Common.Logging;
@@ -47,10 +46,6 @@ public class ApproveRequestCommandHandler : IRequestHandler<ApproveRequestComman
 
     public async Task<Result<bool>> Handle(ApproveRequestCommand request, CancellationToken cancellationToken)
     {
-        var sw = Stopwatch.StartNew();
-
-        _logger.LogActionStart(_loggingOptions, LogAction.Workflow.ApproveRequest);
-
         var userId = _currentUserService.UserId;
         if (string.IsNullOrEmpty(userId))
         {
@@ -148,9 +143,6 @@ public class ApproveRequestCommandHandler : IRequestHandler<ApproveRequestComman
         }
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-        sw.Stop();
-        _logger.LogActionSuccess(_loggingOptions, LogAction.Workflow.ApproveRequest, sw.ElapsedMilliseconds);
 
         return Result.Success(true);
     }

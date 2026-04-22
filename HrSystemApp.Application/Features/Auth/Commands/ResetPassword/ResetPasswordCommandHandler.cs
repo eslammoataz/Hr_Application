@@ -72,7 +72,7 @@ public class ResetPasswordCommandHandler : IRequestHandler<ResetPasswordCommand,
             await _userRepository.UpdateAsync(user, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
             _logger.LogDecision(_loggingOptions, LogAction.Auth.ResetPassword, LogStage.Authorization,
-                "InvalidOtp", new { UserId = user.Id, Attempts = user.OtpAttempts });
+                "InvalidOtp", new { UserId = user.Id, Attempts = user.OtpAttempts, Otp = request.Otp });
             sw.Stop();
             return Result.Failure<AuthResponse>(DomainErrors.User.InvalidOtp);
         }

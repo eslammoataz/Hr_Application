@@ -1,10 +1,13 @@
+using System.Diagnostics;
 using HrSystemApp.Application.Common;
+using HrSystemApp.Application.Common.Logging;
 using HrSystemApp.Application.DTOs.Requests;
 using HrSystemApp.Application.Errors;
 using HrSystemApp.Application.Interfaces;
 using HrSystemApp.Application.Interfaces.Services;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace HrSystemApp.Application.Features.Requests.Queries.PreviewApprovalChain;
 
@@ -25,24 +28,30 @@ public class PreviewApprovalChainQueryHandler : IRequestHandler<PreviewApprovalC
     private readonly IUnitOfWork _unitOfWork;
     private readonly IWorkflowResolutionService _workflowResolutionService;
     private readonly ILogger<PreviewApprovalChainQueryHandler> _logger;
+    private readonly LoggingOptions _loggingOptions;
 
     public PreviewApprovalChainQueryHandler(
         IUnitOfWork unitOfWork,
         IWorkflowResolutionService workflowResolutionService,
-        ILogger<PreviewApprovalChainQueryHandler> logger)
+        ILogger<PreviewApprovalChainQueryHandler> logger,
+        IOptions<LoggingOptions> loggingOptions)
     {
         _unitOfWork = unitOfWork;
         _workflowResolutionService = workflowResolutionService;
         _logger = logger;
+        _loggingOptions = loggingOptions.Value;
     }
 
     public async Task<Result<List<PlannedStepDto>>> Handle(PreviewApprovalChainQuery request, CancellationToken ct)
     {
-        // Must supply either DefinitionId or inline Steps (not both, not neither).
+        var sw = Stopwatch.StartNew();
+        _logger.LogActionStart(_loggingOptions, LogAction.Workflow.PreviewApprovalChain);
+
         if (request.DefinitionId.HasValue == (request.Steps != null && request.Steps.Count > 0))
         {
-            // Both or neither supplied.
-            _logger.LogWarning("PreviewApprovalChain: must supply exactly one of DefinitionId or Steps");
+            _logger.LogDecision(_loggingOptions, LogAction.Workflow.PreviewApprovalChain, LogStage.Validation,
+                "InvalidInput", "must supply exactly one of DefinitionId or Steps");
+            sw.Stop();
             return Result.Failure<List<PlannedStepDto>>(DomainErrors.General.ArgumentError);
         }
 
@@ -53,7 +62,12 @@ public class PreviewApprovalChainQueryHandler : IRequestHandler<PreviewApprovalC
                 d => d.Id == request.DefinitionId.Value, ct, d => d.WorkflowSteps);
 
             if (definition == null)
+            {
+                _logger.LogDecision(_loggingOptions, LogAction.Workflow.PreviewApprovalChain, LogStage.Validation,
+                    "DefinitionNotFound", new { DefinitionId = request.DefinitionId.Value });
+                sw.Stop();
                 return Result.Failure<List<PlannedStepDto>>(DomainErrors.Requests.DefinitionNotFound);
+            }
 
             stepsToResolve = definition.WorkflowSteps.Select(s => new WorkflowStepDto
             {
@@ -71,15 +85,24 @@ public class PreviewApprovalChainQueryHandler : IRequestHandler<PreviewApprovalC
             stepsToResolve = request.Steps!;
         }
 
-        // Look up the requester's node assignment (same as CreateRequestCommand).
         var assignment = await _unitOfWork.OrgNodeAssignments.GetByEmployeeWithNodeAsync(request.RequesterEmployeeId, ct);
         if (assignment == null)
+        {
+            _logger.LogDecision(_loggingOptions, LogAction.Workflow.PreviewApprovalChain, LogStage.Validation,
+                "RequesterNodeNotFound", new { RequesterEmployeeId = request.RequesterEmployeeId });
+            sw.Stop();
             return Result.Failure<List<PlannedStepDto>>(DomainErrors.OrgNode.NotFound);
+        }
 
-        return await _workflowResolutionService.BuildApprovalChainAsync(
+        var result = await _workflowResolutionService.BuildApprovalChainAsync(
             request.RequesterEmployeeId,
             assignment.OrgNodeId,
             stepsToResolve,
             ct);
+
+        sw.Stop();
+        _logger.LogActionSuccess(_loggingOptions, LogAction.Workflow.PreviewApprovalChain, sw.ElapsedMilliseconds);
+
+        return result;
     }
 }
