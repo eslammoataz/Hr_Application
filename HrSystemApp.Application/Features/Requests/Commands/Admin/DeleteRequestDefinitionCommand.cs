@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using HrSystemApp.Application.Common;
 using HrSystemApp.Application.Common.Logging;
 using HrSystemApp.Application.Errors;
@@ -33,15 +32,12 @@ public class DeleteRequestDefinitionCommandHandler : IRequestHandler<DeleteReque
 
     public async Task<Result<Guid>> Handle(DeleteRequestDefinitionCommand request, CancellationToken cancellationToken)
     {
-        var sw = Stopwatch.StartNew();
-        _logger.LogActionStart(_loggingOptions, LogAction.Workflow.DeleteRequestDefinition);
 
         var userId = _currentUserService.UserId;
         if (string.IsNullOrEmpty(userId))
         {
             _logger.LogDecision(_loggingOptions, LogAction.Workflow.DeleteRequestDefinition, LogStage.Authorization,
                 "UserNotAuthenticated", null);
-            sw.Stop();
             return Result.Failure<Guid>(DomainErrors.Auth.Unauthorized);
         }
 
@@ -50,7 +46,6 @@ public class DeleteRequestDefinitionCommandHandler : IRequestHandler<DeleteReque
         {
             _logger.LogDecision(_loggingOptions, LogAction.Workflow.DeleteRequestDefinition, LogStage.Authorization,
                 "EmployeeNotFound", new { UserId = userId });
-            sw.Stop();
             return Result.Failure<Guid>(DomainErrors.Employee.NotFound);
         }
 
@@ -59,7 +54,6 @@ public class DeleteRequestDefinitionCommandHandler : IRequestHandler<DeleteReque
         {
             _logger.LogDecision(_loggingOptions, LogAction.Workflow.DeleteRequestDefinition, LogStage.Validation,
                 "DefinitionNotFound", new { DefinitionId = request.Id });
-            sw.Stop();
             return Result.Failure<Guid>(DomainErrors.Requests.DefinitionNotFound);
         }
 
@@ -67,15 +61,11 @@ public class DeleteRequestDefinitionCommandHandler : IRequestHandler<DeleteReque
         {
             _logger.LogDecision(_loggingOptions, LogAction.Workflow.DeleteRequestDefinition, LogStage.Authorization,
                 "UnauthorizedCrossCompany", new { DefinitionId = request.Id, UserId = userId });
-            sw.Stop();
             return Result.Failure<Guid>(DomainErrors.Auth.Unauthorized);
         }
 
         await _unitOfWork.RequestDefinitions.DeleteAsync(definition, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-        sw.Stop();
-        _logger.LogActionSuccess(_loggingOptions, LogAction.Workflow.DeleteRequestDefinition, sw.ElapsedMilliseconds);
 
         return Result.Success(definition.Id);
     }

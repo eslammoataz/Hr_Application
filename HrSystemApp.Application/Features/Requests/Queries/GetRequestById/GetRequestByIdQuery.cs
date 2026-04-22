@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Text.Json;
 using HrSystemApp.Application.Common;
 using HrSystemApp.Application.Common.Logging;
@@ -57,15 +56,12 @@ public class GetRequestByIdQueryHandler : IRequestHandler<GetRequestByIdQuery, R
 
     public async Task<Result<RequestDetailDto>> Handle(GetRequestByIdQuery request, CancellationToken cancellationToken)
     {
-        var sw = Stopwatch.StartNew();
-        _logger.LogActionStart(_loggingOptions, LogAction.Workflow.CreateRequest);
 
         var existingRequest = await _unitOfWork.Requests.GetByIdWithHistoryAsync(request.Id, cancellationToken);
         if (existingRequest == null)
         {
             _logger.LogDecision(_loggingOptions, LogAction.Workflow.CreateRequest, LogStage.Validation,
                 "RequestNotFound", new { RequestId = request.Id });
-            sw.Stop();
             return Result.Failure<RequestDetailDto>(DomainErrors.Requests.NotFound);
         }
 
@@ -90,9 +86,6 @@ public class GetRequestByIdQueryHandler : IRequestHandler<GetRequestByIdQuery, R
             Data = JsonSerializer.Deserialize<object>(existingRequest.Data) ?? new { },
             PlannedSteps = JsonSerializer.Deserialize<List<PlannedStepDto>>(existingRequest.PlannedStepsJson ?? "[]") ?? new List<PlannedStepDto>()
         };
-
-        sw.Stop();
-        _logger.LogActionSuccess(_loggingOptions, LogAction.Workflow.CreateRequest, sw.ElapsedMilliseconds);
 
         return Result.Success(dto);
     }

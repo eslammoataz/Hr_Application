@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using HrSystemApp.Application.Common;
 using HrSystemApp.Application.Errors;
 using HrSystemApp.Application.Interfaces;
@@ -32,15 +31,12 @@ public class AssignEmployeeToNodeCommandHandler : IRequestHandler<AssignEmployee
 
     public async Task<Result<Guid>> Handle(AssignEmployeeToNodeCommand request, CancellationToken cancellationToken)
     {
-        var sw = Stopwatch.StartNew();
-        _logger.LogActionStart(_loggingOptions, LogAction.OrgNode.AssignEmployeeToNode);
 
         var node = await _unitOfWork.OrgNodes.GetByIdAsync(request.OrgNodeId, cancellationToken);
         if (node == null)
         {
             _logger.LogDecision(_loggingOptions, LogAction.OrgNode.AssignEmployeeToNode, LogStage.Processing,
                 "NodeNotFound", new { NodeId = request.OrgNodeId });
-            sw.Stop();
             return Result.Failure<Guid>(DomainErrors.OrgNode.NotFound);
         }
 
@@ -49,7 +45,6 @@ public class AssignEmployeeToNodeCommandHandler : IRequestHandler<AssignEmployee
         {
             _logger.LogDecision(_loggingOptions, LogAction.OrgNode.AssignEmployeeToNode, LogStage.Processing,
                 "EmployeeNotFound", new { EmployeeId = request.EmployeeId });
-            sw.Stop();
             return Result.Failure<Guid>(DomainErrors.Employee.NotFound);
         }
 
@@ -58,7 +53,6 @@ public class AssignEmployeeToNodeCommandHandler : IRequestHandler<AssignEmployee
         {
             _logger.LogDecision(_loggingOptions, LogAction.OrgNode.AssignEmployeeToNode, LogStage.Processing,
                 "DuplicateAssignment", new { EmployeeId = request.EmployeeId, NodeId = request.OrgNodeId });
-            sw.Stop();
             return Result.Failure<Guid>(DomainErrors.OrgNode.DuplicateAssignment);
         }
 
@@ -71,9 +65,6 @@ public class AssignEmployeeToNodeCommandHandler : IRequestHandler<AssignEmployee
 
         await _unitOfWork.OrgNodeAssignments.AddAsync(assignment, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-        sw.Stop();
-        _logger.LogActionSuccess(_loggingOptions, LogAction.OrgNode.AssignEmployeeToNode, sw.ElapsedMilliseconds);
 
         return Result.Success(assignment.Id);
     }

@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using HrSystemApp.Application.Interfaces;
 using HrSystemApp.Application.Common;
 using HrSystemApp.Application.Common.Logging;
@@ -34,15 +33,12 @@ public class DeleteRequestCommandHandler : IRequestHandler<DeleteRequestCommand,
 
     public async Task<Result<bool>> Handle(DeleteRequestCommand request, CancellationToken cancellationToken)
     {
-        var sw = Stopwatch.StartNew();
-        _logger.LogActionStart(_loggingOptions, LogAction.Workflow.DeleteRequest);
 
         var userId = _currentUserService.UserId;
         if (string.IsNullOrEmpty(userId))
         {
             _logger.LogDecision(_loggingOptions, LogAction.Workflow.DeleteRequest, LogStage.Authorization,
                 "UserNotAuthenticated", null);
-            sw.Stop();
             return Result.Failure<bool>(DomainErrors.Auth.Unauthorized);
         }
 
@@ -51,7 +47,6 @@ public class DeleteRequestCommandHandler : IRequestHandler<DeleteRequestCommand,
         {
             _logger.LogDecision(_loggingOptions, LogAction.Workflow.DeleteRequest, LogStage.Authorization,
                 "EmployeeNotFound", new { UserId = userId });
-            sw.Stop();
             return Result.Failure<bool>(DomainErrors.Employee.NotFound);
         }
 
@@ -60,7 +55,6 @@ public class DeleteRequestCommandHandler : IRequestHandler<DeleteRequestCommand,
         {
             _logger.LogDecision(_loggingOptions, LogAction.Workflow.DeleteRequest, LogStage.Validation,
                 "RequestNotFound", new { RequestId = request.Id });
-            sw.Stop();
             return Result.Failure<bool>(DomainErrors.Requests.NotFound);
         }
 
@@ -68,7 +62,6 @@ public class DeleteRequestCommandHandler : IRequestHandler<DeleteRequestCommand,
         {
             _logger.LogDecision(_loggingOptions, LogAction.Workflow.DeleteRequest, LogStage.Authorization,
                 "UnauthorizedDelete", new { RequestId = request.Id, EmployeeId = employee.Id });
-            sw.Stop();
             return Result.Failure<bool>(DomainErrors.Auth.Unauthorized);
         }
 
@@ -76,7 +69,6 @@ public class DeleteRequestCommandHandler : IRequestHandler<DeleteRequestCommand,
         {
             _logger.LogDecision(_loggingOptions, LogAction.Workflow.DeleteRequest, LogStage.Validation,
                 "RequestAlreadyApproved", new { RequestId = request.Id });
-            sw.Stop();
             return Result.Failure<bool>(DomainErrors.Requests.ModificationLocked);
         }
 
@@ -84,15 +76,11 @@ public class DeleteRequestCommandHandler : IRequestHandler<DeleteRequestCommand,
         {
             _logger.LogDecision(_loggingOptions, LogAction.Workflow.DeleteRequest, LogStage.Validation,
                 "RequestHasHistory", new { RequestId = request.Id });
-            sw.Stop();
             return Result.Failure<bool>(DomainErrors.Requests.ModificationLocked);
         }
 
         await _unitOfWork.Requests.DeleteAsync(existingRequest, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-        sw.Stop();
-        _logger.LogActionSuccess(_loggingOptions, LogAction.Workflow.DeleteRequest, sw.ElapsedMilliseconds);
 
         return Result.Success(true);
     }

@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
@@ -37,8 +36,6 @@ public class ResetPasswordCommandHandler : IRequestHandler<ResetPasswordCommand,
 
     public async Task<Result<AuthResponse>> Handle(ResetPasswordCommand request, CancellationToken cancellationToken)
     {
-        var sw = Stopwatch.StartNew();
-        _logger.LogActionStart(_loggingOptions, LogAction.Auth.ResetPassword);
 
         const string otpPurpose = "PasswordReset";
         var otpProvider = TokenOptions.DefaultPhoneProvider;
@@ -49,7 +46,6 @@ public class ResetPasswordCommandHandler : IRequestHandler<ResetPasswordCommand,
         {
             _logger.LogDecision(_loggingOptions, LogAction.Auth.ResetPassword, LogStage.Authorization,
                 "UserNotFound", new { EmailDomain = request.Email.Split('@').Last() });
-            sw.Stop();
             return Result.Failure<AuthResponse>(DomainErrors.User.NotFound);
         }
 
@@ -60,7 +56,6 @@ public class ResetPasswordCommandHandler : IRequestHandler<ResetPasswordCommand,
             user.OtpAttempts = 0;
             await _userRepository.UpdateAsync(user, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
-            sw.Stop();
             return Result.Failure<AuthResponse>(DomainErrors.User.OtpMaxAttemptsReached);
         }
 
@@ -73,7 +68,6 @@ public class ResetPasswordCommandHandler : IRequestHandler<ResetPasswordCommand,
             await _unitOfWork.SaveChangesAsync(cancellationToken);
             _logger.LogDecision(_loggingOptions, LogAction.Auth.ResetPassword, LogStage.Authorization,
                 "InvalidOtp", new { UserId = user.Id, Attempts = user.OtpAttempts, Otp = request.Otp });
-            sw.Stop();
             return Result.Failure<AuthResponse>(DomainErrors.User.InvalidOtp);
         }
 
@@ -86,7 +80,6 @@ public class ResetPasswordCommandHandler : IRequestHandler<ResetPasswordCommand,
             var passwordErrors = passwordChangeResult.Errors.ToArray();
             _logger.LogDecision(_loggingOptions, LogAction.Auth.ResetPassword, LogStage.Processing,
                 "PasswordChangeFailed", new { UserId = user.Id, ErrorCount = passwordErrors.Length });
-            sw.Stop();
             return Result.Failure<AuthResponse>(new Error(DomainErrors.Auth.ResetFailed.Code,
                 string.Join(", ", passwordErrors)));
         }
@@ -97,9 +90,6 @@ public class ResetPasswordCommandHandler : IRequestHandler<ResetPasswordCommand,
 
         var roles = await _userRepository.GetRolesAsync(user);
         var (token, expiresAt) = _tokenService.GenerateToken(user, roles);
-
-        sw.Stop();
-        _logger.LogActionSuccess(_loggingOptions, LogAction.Auth.ResetPassword, sw.ElapsedMilliseconds);
 
         return Result.Success(new AuthResponse(
             Token: token,

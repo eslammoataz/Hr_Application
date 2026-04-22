@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -32,15 +31,12 @@ public class ForceChangePasswordCommandHandler : IRequestHandler<ForceChangePass
 
     public async Task<Result<AuthResponse>> Handle(ForceChangePasswordCommand request, CancellationToken cancellationToken)
     {
-        var sw = Stopwatch.StartNew();
-        _logger.LogActionStart(_loggingOptions, LogAction.Auth.ForceChangePassword);
 
         var user = await _unitOfWork.Users.GetByIdAsync(request.UserId, cancellationToken);
 
         if (user is null)
         {
             _logger.LogWarningUnauthorized(_loggingOptions, LogAction.Auth.ForceChangePassword);
-            sw.Stop();
             return Result.Failure<AuthResponse>(DomainErrors.User.NotFound);
         }
 
@@ -48,7 +44,6 @@ public class ForceChangePasswordCommandHandler : IRequestHandler<ForceChangePass
         {
             _logger.LogDecision(_loggingOptions, LogAction.Auth.ForceChangePassword, LogStage.Authorization,
                 "ForcedChangeNotRequired", new { UserId = user.Id });
-            sw.Stop();
             return Result.Failure<AuthResponse>(DomainErrors.Auth.ForcedChangeNotRequired);
         }
 
@@ -59,7 +54,6 @@ public class ForceChangePasswordCommandHandler : IRequestHandler<ForceChangePass
         {
             _logger.LogDecision(_loggingOptions, LogAction.Auth.ForceChangePassword, LogStage.Processing,
                 "PasswordChangeFailed", new { UserId = user.Id, ErrorCount = errors.Count() });
-            sw.Stop();
             return Result.Failure<AuthResponse>(new Error(DomainErrors.Auth.PasswordChangeFailed.Code,
                 string.Join(". ", errors)));
         }
@@ -72,9 +66,6 @@ public class ForceChangePasswordCommandHandler : IRequestHandler<ForceChangePass
 
         var roles = await _unitOfWork.Users.GetRolesAsync(user);
         var (token, expiresAt) = _tokenService.GenerateToken(user, roles);
-
-        sw.Stop();
-        _logger.LogActionSuccess(_loggingOptions, LogAction.Auth.ForceChangePassword, sw.ElapsedMilliseconds);
 
         return Result.Success(new AuthResponse(
             Token: token,

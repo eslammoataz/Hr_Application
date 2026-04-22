@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -33,15 +32,12 @@ public class RegisterUserCommandHandler : IRequestHandler<RegisterUserCommand, R
 
     public async Task<Result<AuthResponse>> Handle(RegisterUserCommand request, CancellationToken cancellationToken)
     {
-        var sw = Stopwatch.StartNew();
-        _logger.LogActionStart(_loggingOptions, LogAction.Auth.RegisterUser);
 
         var existingUser = await _unitOfWork.Users.GetByEmailAsync(request.Email, cancellationToken);
         if (existingUser != null)
         {
             _logger.LogDecision(_loggingOptions, LogAction.Auth.RegisterUser, LogStage.Validation,
                 "UserAlreadyExists", new { EmailDomain = request.Email.Split('@').Last() });
-            sw.Stop();
             return Result.Failure<AuthResponse>(DomainErrors.User.AlreadyExists);
         }
 
@@ -62,16 +58,12 @@ public class RegisterUserCommandHandler : IRequestHandler<RegisterUserCommand, R
         {
             _logger.LogDecision(_loggingOptions, LogAction.Auth.RegisterUser, LogStage.Processing,
                 "UserCreationFailed", new { EmailDomain = request.Email.Split('@').Last() });
-            sw.Stop();
             return Result.Failure<AuthResponse>(DomainErrors.General.ServerError);
         }
 
         var roles = await _unitOfWork.Users.GetRolesAsync(user);
         var (token, expiresAt) = _tokenService.GenerateToken(user, roles);
         await _unitOfWork.Users.SaveTokenAsync(user.Id, token, cancellationToken);
-
-        sw.Stop();
-        _logger.LogActionSuccess(_loggingOptions, LogAction.Auth.RegisterUser, sw.ElapsedMilliseconds);
 
         return Result.Success(new AuthResponse(
             Token: token,

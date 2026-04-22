@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using HrSystemApp.Application.Common;
 using HrSystemApp.Application.Common.Logging;
 using HrSystemApp.Application.DTOs.OrgNodes;
@@ -33,15 +32,12 @@ public class GetMyCompanyHierarchyQueryHandler : IRequestHandler<GetMyCompanyHie
 
     public async Task<Result<List<OrgNodeTreeResponse>>> Handle(GetMyCompanyHierarchyQuery request, CancellationToken cancellationToken)
     {
-        var sw = Stopwatch.StartNew();
-        _logger.LogActionStart(_loggingOptions, LogAction.OrgNode.GetMyCompanyHierarchy);
 
         var userId = _currentUserService.UserId;
         if (string.IsNullOrEmpty(userId))
         {
             _logger.LogDecision(_loggingOptions, LogAction.OrgNode.GetMyCompanyHierarchy, LogStage.Authorization,
                 "UserNotAuthenticated", null);
-            sw.Stop();
             return Result.Failure<List<OrgNodeTreeResponse>>(DomainErrors.Auth.Unauthorized);
         }
 
@@ -50,7 +46,6 @@ public class GetMyCompanyHierarchyQueryHandler : IRequestHandler<GetMyCompanyHie
         {
             _logger.LogDecision(_loggingOptions, LogAction.OrgNode.GetMyCompanyHierarchy, LogStage.Authorization,
                 "EmployeeNotFound", new { UserId = userId });
-            sw.Stop();
             return Result.Failure<List<OrgNodeTreeResponse>>(DomainErrors.Employee.NotFound);
         }
 
@@ -59,8 +54,6 @@ public class GetMyCompanyHierarchyQueryHandler : IRequestHandler<GetMyCompanyHie
         {
             _logger.LogDecision(_loggingOptions, LogAction.OrgNode.GetMyCompanyHierarchy, LogStage.Authorization,
                 "EmployeeNotAssignedToNode", new { EmployeeId = employee.Id });
-            sw.Stop();
-            _logger.LogActionSuccess(_loggingOptions, LogAction.OrgNode.GetMyCompanyHierarchy, sw.ElapsedMilliseconds);
             return Result.Success(new List<OrgNodeTreeResponse>());
         }
 
@@ -74,9 +67,6 @@ public class GetMyCompanyHierarchyQueryHandler : IRequestHandler<GetMyCompanyHie
 
         var result = new List<OrgNodeTreeResponse>();
         await BuildTreeAsync(rootNode, depth - 1, result, cancellationToken);
-
-        sw.Stop();
-        _logger.LogActionSuccess(_loggingOptions, LogAction.OrgNode.GetMyCompanyHierarchy, sw.ElapsedMilliseconds);
 
         return Result.Success(result);
     }

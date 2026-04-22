@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using HrSystemApp.Application.Common;
 using HrSystemApp.Application.Common.Logging;
 using HrSystemApp.Application.Interfaces.Services;
@@ -33,8 +32,6 @@ public class SendNotificationToEmployeeCommandHandler : IRequestHandler<SendNoti
 
     public async Task<Result> Handle(SendNotificationToEmployeeCommand request, CancellationToken cancellationToken)
     {
-        var sw = Stopwatch.StartNew();
-        _logger.LogActionStart(_loggingOptions, LogAction.Notifications.SendToEmployee);
 
         try
         {
@@ -45,16 +42,12 @@ public class SendNotificationToEmployeeCommandHandler : IRequestHandler<SendNoti
                 request.Type,
                 cancellationToken);
 
-            sw.Stop();
-            _logger.LogActionSuccess(_loggingOptions, LogAction.Notifications.SendToEmployee, sw.ElapsedMilliseconds);
-
             return Result.Success();
         }
         catch (Exception ex)
         {
             _logger.LogActionFailure(_loggingOptions, LogAction.Notifications.SendToEmployee, LogStage.Processing, ex,
                 new { EmployeeId = request.EmployeeId, NotificationType = request.Type.ToString() });
-            sw.Stop();
             return Result.Failure(Errors.DomainErrors.Notification.SendFailed);
         }
     }

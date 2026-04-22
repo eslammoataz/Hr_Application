@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
@@ -28,15 +27,12 @@ public class VerifyOtpCommandHandler : IRequestHandler<VerifyOtpCommand, Result<
 
     public async Task<Result<bool>> Handle(VerifyOtpCommand request, CancellationToken cancellationToken)
     {
-        var sw = Stopwatch.StartNew();
-        _logger.LogActionStart(_loggingOptions, LogAction.Auth.VerifyOtp);
 
         var user = await _userRepository.GetByEmailAsync(request.Email, cancellationToken);
         if (user == null)
         {
             _logger.LogDecision(_loggingOptions, LogAction.Auth.VerifyOtp, LogStage.Authorization,
                 "UserNotFound", new { EmailDomain = request.Email.Split('@').Last() });
-            sw.Stop();
             return Result.Failure<bool>(DomainErrors.User.NotFound);
         }
 
@@ -47,12 +43,8 @@ public class VerifyOtpCommandHandler : IRequestHandler<VerifyOtpCommand, Result<
         {
             _logger.LogDecision(_loggingOptions, LogAction.Auth.VerifyOtp, LogStage.Authorization,
                 "InvalidOtp", new { UserId = user.Id });
-            sw.Stop();
             return Result.Failure<bool>(DomainErrors.User.InvalidOtp);
         }
-
-        sw.Stop();
-        _logger.LogActionSuccess(_loggingOptions, LogAction.Auth.VerifyOtp, sw.ElapsedMilliseconds);
 
         return Result.Success(true);
     }

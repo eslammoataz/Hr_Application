@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -31,8 +30,6 @@ public class RevokeTokenCommandHandler : IRequestHandler<RevokeTokenCommand, Res
 
     public async Task<Result> Handle(RevokeTokenCommand request, CancellationToken cancellationToken)
     {
-        var sw = Stopwatch.StartNew();
-        _logger.LogActionStart(_loggingOptions, LogAction.Auth.RevokeToken);
 
         var tokenHash = _tokenService.HashToken(request.RefreshToken);
         var refreshToken = await _unitOfWork.RefreshTokens.GetByTokenHashAsync(tokenHash, cancellationToken);
@@ -41,7 +38,6 @@ public class RevokeTokenCommandHandler : IRequestHandler<RevokeTokenCommand, Res
         {
             _logger.LogDecision(_loggingOptions, LogAction.Auth.RevokeToken, LogStage.Authorization,
                 "TokenNotFound", new { });
-            sw.Stop();
             return Result.Failure(DomainErrors.Auth.InvalidRefreshToken);
         }
 
@@ -49,7 +45,6 @@ public class RevokeTokenCommandHandler : IRequestHandler<RevokeTokenCommand, Res
         {
             _logger.LogDecision(_loggingOptions, LogAction.Auth.RevokeToken, LogStage.Processing,
                 "AlreadyRevoked", new { UserId = refreshToken.UserId });
-            sw.Stop();
             return Result.Success();
         }
 
@@ -58,9 +53,6 @@ public class RevokeTokenCommandHandler : IRequestHandler<RevokeTokenCommand, Res
 
         await _unitOfWork.RefreshTokens.UpdateAsync(refreshToken, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-        sw.Stop();
-        _logger.LogActionSuccess(_loggingOptions, LogAction.Auth.RevokeToken, sw.ElapsedMilliseconds);
 
         return Result.Success();
     }

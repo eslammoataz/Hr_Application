@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using HrSystemApp.Application.Common;
 using HrSystemApp.Application.Common.Logging;
 using HrSystemApp.Application.DTOs.OrgNodes;
@@ -32,15 +31,12 @@ public class GetOrgNodeDetailsQueryHandler : IRequestHandler<GetOrgNodeDetailsQu
 
     public async Task<Result<OrgNodeDetailsResponse>> Handle(GetOrgNodeDetailsQuery request, CancellationToken cancellationToken)
     {
-        var sw = Stopwatch.StartNew();
-        _logger.LogActionStart(_loggingOptions, LogAction.OrgNode.GetOrgNodeDetails);
 
         var node = await _unitOfWork.OrgNodes.GetByIdWithChildrenAsync(request.Id, cancellationToken);
         if (node == null)
         {
             _logger.LogDecision(_loggingOptions, LogAction.OrgNode.GetOrgNodeDetails, LogStage.Validation,
                 "NodeNotFound", new { NodeId = request.Id });
-            sw.Stop();
             return Result.Failure<OrgNodeDetailsResponse>(DomainErrors.OrgNode.NotFound);
         }
 
@@ -79,9 +75,6 @@ public class GetOrgNodeDetailsQueryHandler : IRequestHandler<GetOrgNodeDetailsQu
             node.Type,
             assignmentResponses,
             childResponses);
-
-        sw.Stop();
-        _logger.LogActionSuccess(_loggingOptions, LogAction.OrgNode.GetOrgNodeDetails, sw.ElapsedMilliseconds);
 
         return Result.Success(response);
     }

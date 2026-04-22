@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -27,8 +26,6 @@ public class UpdateLanguageCommandHandler : IRequestHandler<UpdateLanguageComman
 
     public async Task<Result> Handle(UpdateLanguageCommand request, CancellationToken cancellationToken)
     {
-        var sw = Stopwatch.StartNew();
-        _logger.LogActionStart(_loggingOptions, LogAction.Auth.UpdateLanguage);
 
         var user = await _unitOfWork.Users.GetByIdAsync(request.UserId, cancellationToken);
 
@@ -36,7 +33,6 @@ public class UpdateLanguageCommandHandler : IRequestHandler<UpdateLanguageComman
         {
             _logger.LogDecision(_loggingOptions, LogAction.Auth.UpdateLanguage, LogStage.Authorization,
                 "UserNotFound", new { UserId = request.UserId });
-            sw.Stop();
             return Result.Failure(DomainErrors.User.NotFound);
         }
 
@@ -44,9 +40,6 @@ public class UpdateLanguageCommandHandler : IRequestHandler<UpdateLanguageComman
 
         await _unitOfWork.Users.UpdateAsync(user, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-        sw.Stop();
-        _logger.LogActionSuccess(_loggingOptions, LogAction.Auth.UpdateLanguage, sw.ElapsedMilliseconds);
 
         return Result.Success();
     }

@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using HrSystemApp.Application.Common;
 using HrSystemApp.Application.Common.Logging;
 using HrSystemApp.Application.DTOs.Auth;
@@ -34,15 +33,12 @@ public class LoginUserCommandHandler : IRequestHandler<LoginUserCommand, Result<
 
     public async Task<Result<AuthResponse>> Handle(LoginUserCommand request, CancellationToken cancellationToken)
     {
-        var sw = Stopwatch.StartNew();
-        _logger.LogActionStart(_loggingOptions, LogAction.Auth.LoginUser);
 
         var user = await _unitOfWork.Users.GetByEmailWithDetailsAsync(request.Email, cancellationToken);
 
         if (user is null)
         {
             _logger.LogWarningUnauthorized(_loggingOptions, LogAction.Auth.LoginUser);
-            sw.Stop();
             return Result.Failure<AuthResponse>(DomainErrors.Auth.InvalidCredentials);
         }
 
@@ -51,7 +47,6 @@ public class LoginUserCommandHandler : IRequestHandler<LoginUserCommand, Result<
         {
             _logger.LogDecision(_loggingOptions, LogAction.Auth.LoginUser, LogStage.Authorization,
                 "InvalidPassword", new { EmailDomain = user.Email?.Split('@').Last() });
-            sw.Stop();
             return Result.Failure<AuthResponse>(DomainErrors.Auth.InvalidCredentials);
         }
 
@@ -59,7 +54,6 @@ public class LoginUserCommandHandler : IRequestHandler<LoginUserCommand, Result<
         {
             _logger.LogDecision(_loggingOptions, LogAction.Auth.LoginUser, LogStage.Authorization,
                 "AccountInactive", new { EmailDomain = user.Email?.Split('@').Last() });
-            sw.Stop();
             return Result.Failure<AuthResponse>(DomainErrors.Auth.AccountInactive);
         }
 
@@ -67,7 +61,6 @@ public class LoginUserCommandHandler : IRequestHandler<LoginUserCommand, Result<
         {
             _logger.LogDecision(_loggingOptions, LogAction.Auth.LoginUser, LogStage.Authorization,
                 "CompanyInactive", new { CompanyId = user.Employee.Company.Id });
-            sw.Stop();
             return Result.Failure<AuthResponse>(DomainErrors.Auth.CompanyInactive);
         }
 
@@ -84,7 +77,6 @@ public class LoginUserCommandHandler : IRequestHandler<LoginUserCommand, Result<
             {
                 _logger.LogDecision(_loggingOptions, LogAction.Auth.LoginUser, LogStage.Authorization,
                     "EmployeeBlockedStatus", new { EmployeeId = user.Employee.Id, Status = user.Employee.EmploymentStatus.ToString() });
-                sw.Stop();
                 return Result.Failure<AuthResponse>(DomainErrors.Auth.EmployeeBlockedStatus);
             }
         }
@@ -95,8 +87,6 @@ public class LoginUserCommandHandler : IRequestHandler<LoginUserCommand, Result<
         {
             _logger.LogDecision(_loggingOptions, LogAction.Auth.LoginUser, LogStage.Authorization,
                 "MustChangePassword", new { UserId = user.Id });
-            sw.Stop();
-            _logger.LogActionSuccess(_loggingOptions, LogAction.Auth.LoginUser, sw.ElapsedMilliseconds);
             return Result.Success(new AuthResponse(
                 Token: null,
                 RefreshToken: null,
@@ -131,9 +121,6 @@ public class LoginUserCommandHandler : IRequestHandler<LoginUserCommand, Result<
 
         await _unitOfWork.Users.UpdateAsync(user, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-        sw.Stop();
-        _logger.LogActionSuccess(_loggingOptions, LogAction.Auth.LoginUser, sw.ElapsedMilliseconds);
 
         return Result.Success(new AuthResponse(
             Token: token,

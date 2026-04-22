@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using HrSystemApp.Application.Common;
 using HrSystemApp.Application.Errors;
 using HrSystemApp.Application.Interfaces;
@@ -32,15 +31,12 @@ public class DeleteOrgNodeCommandHandler : IRequestHandler<DeleteOrgNodeCommand,
 
     public async Task<Result<Guid>> Handle(DeleteOrgNodeCommand request, CancellationToken cancellationToken)
     {
-        var sw = Stopwatch.StartNew();
-        _logger.LogActionStart(_loggingOptions, LogAction.OrgNode.DeleteOrgNode);
 
         var node = await _unitOfWork.OrgNodes.GetByIdAsync(request.Id, cancellationToken);
         if (node == null)
         {
             _logger.LogDecision(_loggingOptions, LogAction.OrgNode.DeleteOrgNode, LogStage.Processing,
                 "NodeNotFound", new { NodeId = request.Id });
-            sw.Stop();
             return Result.Failure<Guid>(DomainErrors.OrgNode.NotFound);
         }
 
@@ -53,8 +49,6 @@ public class DeleteOrgNodeCommandHandler : IRequestHandler<DeleteOrgNodeCommand,
         {
             await _unitOfWork.OrgNodes.DeleteAsync(node, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
-            sw.Stop();
-            _logger.LogActionSuccess(_loggingOptions, LogAction.OrgNode.DeleteOrgNode, sw.ElapsedMilliseconds);
             return Result.Success(request.Id);
         }
 
@@ -81,8 +75,6 @@ public class DeleteOrgNodeCommandHandler : IRequestHandler<DeleteOrgNodeCommand,
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             await _unitOfWork.CommitTransactionAsync(cancellationToken);
-            sw.Stop();
-            _logger.LogActionSuccess(_loggingOptions, LogAction.OrgNode.DeleteOrgNode, sw.ElapsedMilliseconds);
             return Result.Success(request.Id);
         }
         catch (Exception ex)

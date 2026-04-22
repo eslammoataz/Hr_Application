@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using HrSystemApp.Application.Common;
 using HrSystemApp.Application.Errors;
 using HrSystemApp.Application.Interfaces;
@@ -31,8 +30,6 @@ public class UnassignEmployeeFromNodeCommandHandler : IRequestHandler<UnassignEm
 
     public async Task<Result<Guid>> Handle(UnassignEmployeeFromNodeCommand request, CancellationToken cancellationToken)
     {
-        var sw = Stopwatch.StartNew();
-        _logger.LogActionStart(_loggingOptions, LogAction.OrgNode.UnassignEmployeeFromNode);
 
         var assignment = await _unitOfWork.OrgNodeAssignments.GetByNodeAndEmployeeAsync(
             request.OrgNodeId, request.EmployeeId, cancellationToken);
@@ -41,15 +38,11 @@ public class UnassignEmployeeFromNodeCommandHandler : IRequestHandler<UnassignEm
         {
             _logger.LogDecision(_loggingOptions, LogAction.OrgNode.UnassignEmployeeFromNode, LogStage.Processing,
                 "AssignmentNotFound", new { NodeId = request.OrgNodeId, EmployeeId = request.EmployeeId });
-            sw.Stop();
             return Result.Failure<Guid>(DomainErrors.OrgNode.AssignmentNotFound);
         }
 
         await _unitOfWork.OrgNodeAssignments.DeleteAsync(assignment, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-        sw.Stop();
-        _logger.LogActionSuccess(_loggingOptions, LogAction.OrgNode.UnassignEmployeeFromNode, sw.ElapsedMilliseconds);
 
         return Result.Success(assignment.Id);
     }
