@@ -8,10 +8,10 @@ public class ForgotPasswordCommandValidator : AbstractValidator<ForgotPasswordCo
     public ForgotPasswordCommandValidator()
     {
         RuleFor(x => x.Email)
-            .NotEmpty().WithMessage(Messages.Validation.EmailRequired)
-            .EmailAddress().WithMessage(Messages.Validation.ValidEmailRequired);
+            .NotEmpty().WithErrorCode(ErrorCodes.EmailRequired).WithMessage(Messages.Validation.EmailRequired)
+            .EmailAddress().WithErrorCode(ErrorCodes.ValidEmailRequired).WithMessage(Messages.Validation.ValidEmailRequired);
 
         RuleFor(x => x.Channel)
-            .IsInEnum().WithMessage(Messages.Validation.InvalidDeliveryChannel);
+            .IsInEnum().WithErrorCode(ErrorCodes.InvalidDeliveryChannel).WithMessage(Messages.Validation.InvalidDeliveryChannel);
     }
 }

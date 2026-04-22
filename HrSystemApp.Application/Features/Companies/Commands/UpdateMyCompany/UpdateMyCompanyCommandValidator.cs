@@ -1,4 +1,5 @@
 using FluentValidation;
+using HrSystemApp.Application.Resources;
 
 namespace HrSystemApp.Application.Features.Companies.Commands.UpdateMyCompany;
 
@@ -7,23 +8,23 @@ public class UpdateMyCompanyCommandValidator : AbstractValidator<UpdateMyCompany
     public UpdateMyCompanyCommandValidator()
     {
         RuleFor(x => x.CompanyName)
-            .NotEmpty().WithMessage("Company name is required.")
-            .MaximumLength(300).WithMessage("Company name must not exceed 300 characters.");
+            .NotEmpty().WithErrorCode(ErrorCodes.UpdateMyCompanyNameRequired).WithMessage(Messages.Validation.FieldRequired)
+            .MaximumLength(300).WithErrorCode(ErrorCodes.UpdateMyCompanyNameMaxLength).WithMessage(Messages.Validation.CompanyNameMaxLengthForCompany);
 
         RuleFor(x => x.GraceMinutes)
-            .GreaterThanOrEqualTo(0).WithMessage("Grace minutes cannot be negative.")
-            .LessThanOrEqualTo(120).WithMessage("Grace minutes cannot exceed 120.");
+            .GreaterThanOrEqualTo(0).WithErrorCode(ErrorCodes.UpdateMyCompanyGraceMinutesNegative).WithMessage(Messages.Validation.UpdateCompanyGraceMinutesNegative)
+            .LessThanOrEqualTo(120).WithErrorCode(ErrorCodes.UpdateMyCompanyGraceMinutesExceed).WithMessage(Messages.Validation.UpdateCompanyGraceMinutesExceed);
 
         RuleFor(x => x.YearlyVacationDays)
-            .GreaterThan(0).WithMessage("Yearly vacation days must be greater than 0.")
-            .LessThanOrEqualTo(365).WithMessage("Yearly vacation days cannot exceed 365.");
+            .GreaterThan(0).WithErrorCode(ErrorCodes.UpdateMyCompanyVacationDaysPositive).WithMessage(Messages.Validation.UpdateCompanyVacationDaysPositive)
+            .LessThanOrEqualTo(365).WithErrorCode(ErrorCodes.UpdateMyCompanyVacationDaysExceed).WithMessage(Messages.Validation.UpdateCompanyVacationDaysExceed);
 
         RuleFor(x => x.TimeZoneId)
-            .NotEmpty().WithMessage("Time zone is required.")
-            .MaximumLength(100);
+            .NotEmpty().WithErrorCode(ErrorCodes.UpdateMyCompanyTimeZoneRequired).WithMessage(Messages.Validation.FieldRequired)
+            .MaximumLength(100).WithErrorCode(ErrorCodes.UpdateMyCompanyTimeZoneMaxLength).WithMessage(Messages.Validation.UpdateCompanyTimeZoneMaxLength);
 
         RuleFor(x => x)
             .Must(x => x.StartTime < x.EndTime)
-            .WithMessage("Start time must be before end time.");
+            .WithErrorCode(ErrorCodes.UpdateMyCompanyStartBeforeEnd).WithMessage(Messages.Validation.UpdateCompanyStartBeforeEnd);
     }
 }

@@ -8,20 +8,20 @@ public class CreateContactAdminRequestCommandValidator : AbstractValidator<Creat
     public CreateContactAdminRequestCommandValidator()
     {
         RuleFor(v => v.Name)
-            .NotEmpty().WithMessage(Messages.Validation.NameRequired)
-            .MaximumLength(200).WithMessage(Messages.Validation.NameMaxLength);
+            .NotEmpty().WithErrorCode(ErrorCodes.NameRequired).WithMessage(Messages.Validation.NameRequired)
+            .MaximumLength(200).WithErrorCode(ErrorCodes.NameMaxLength).WithMessage(Messages.Validation.NameMaxLength);
 
         RuleFor(v => v.Email)
-            .NotEmpty().WithMessage(Messages.Validation.EmailRequired)
-            .EmailAddress().WithMessage(Messages.Validation.EmailNotValid)
-            .MaximumLength(255).WithMessage(Messages.Validation.EmailMaxLength);
+            .NotEmpty().WithErrorCode(ErrorCodes.EmailRequired).WithMessage(Messages.Validation.EmailRequired)
+            .EmailAddress().WithErrorCode(ErrorCodes.EmailNotValid).WithMessage(Messages.Validation.EmailNotValid)
+            .MaximumLength(255).WithErrorCode(ErrorCodes.EmailMaxLength).WithMessage(Messages.Validation.EmailMaxLength);
 
         RuleFor(v => v.CompanyName)
-            .NotEmpty().WithMessage(Messages.Validation.CompanyNameRequired)
-            .MaximumLength(200).WithMessage(Messages.Validation.CompanyNameMaxLength);
+            .NotEmpty().WithErrorCode(ErrorCodes.CompanyNameRequired).WithMessage(Messages.Validation.CompanyNameRequired)
+            .MaximumLength(200).WithErrorCode(ErrorCodes.CompanyNameMaxLength).WithMessage(Messages.Validation.CompanyNameMaxLength);
 
         RuleFor(v => v.PhoneNumber)
-            .NotEmpty().WithMessage(Messages.Validation.PhoneNumberRequired)
-            .MaximumLength(50).WithMessage(Messages.Validation.PhoneNumberMaxLength);
+            .NotEmpty().WithErrorCode(ErrorCodes.PhoneNumberRequired).WithMessage(Messages.Validation.PhoneNumberRequired)
+            .MaximumLength(50).WithErrorCode(ErrorCodes.PhoneNumberMaxLength).WithMessage(Messages.Validation.PhoneNumberMaxLength);
     }
 }

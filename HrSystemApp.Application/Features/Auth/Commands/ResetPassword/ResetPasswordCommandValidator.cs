@@ -8,16 +8,16 @@ public class ResetPasswordCommandValidator : AbstractValidator<ResetPasswordComm
     public ResetPasswordCommandValidator()
     {
         RuleFor(x => x.Email)
-            .NotEmpty().WithMessage(Messages.Validation.EmailRequired)
-            .EmailAddress().WithMessage(Messages.Validation.ValidEmailRequired);
+            .NotEmpty().WithErrorCode(ErrorCodes.EmailRequired).WithMessage(Messages.Validation.EmailRequired)
+            .EmailAddress().WithErrorCode(ErrorCodes.ValidEmailRequired).WithMessage(Messages.Validation.ValidEmailRequired);
 
         RuleFor(x => x.Otp)
-            .NotEmpty().WithMessage(Messages.Validation.OtpRequired)
-            .Length(6).WithMessage(Messages.Validation.OtpMustBe6Chars)
-            .Matches("^[0-9]{6}$").WithMessage(Messages.Validation.OtpMustBeNumeric);
+            .NotEmpty().WithErrorCode(ErrorCodes.OtpRequired).WithMessage(Messages.Validation.OtpRequired)
+            .Length(6).WithErrorCode(ErrorCodes.OtpMustBe6Chars).WithMessage(Messages.Validation.OtpMustBe6Chars)
+            .Matches("^[0-9]{6}$").WithErrorCode(ErrorCodes.OtpMustBeNumeric).WithMessage(Messages.Validation.OtpMustBeNumeric);
 
         RuleFor(x => x.NewPassword)
-            .NotEmpty().WithMessage(Messages.Validation.PasswordRequired)
-            .MinimumLength(8).WithMessage(Messages.Validation.PasswordMinLength8);
+            .NotEmpty().WithErrorCode(ErrorCodes.PasswordRequired).WithMessage(Messages.Validation.PasswordRequired)
+            .MinimumLength(8).WithErrorCode(ErrorCodes.PasswordMinLength8).WithMessage(Messages.Validation.PasswordMinLength8);
     }
 }

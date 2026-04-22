@@ -1,4 +1,5 @@
 using FluentValidation;
+using HrSystemApp.Application.Resources;
 
 namespace HrSystemApp.Application.Features.Employees.Commands.ChangeEmployeeStatus;
 
@@ -7,9 +8,9 @@ public class ChangeEmployeeStatusCommandValidator : AbstractValidator<ChangeEmpl
     public ChangeEmployeeStatusCommandValidator()
     {
         RuleFor(x => x.Id)
-            .NotEmpty().WithMessage("Employee ID is required.");
+            .NotEmpty().WithErrorCode(ErrorCodes.FieldRequired).WithMessage(Messages.Validation.FieldRequired);
 
         RuleFor(x => x.Status)
-            .IsInEnum().WithMessage("Invalid employment status value.");
+            .IsInEnum().WithErrorCode(ErrorCodes.ChangeEmployeeStatusInvalid).WithMessage(Messages.Validation.InvalidEmploymentStatus);
     }
 }

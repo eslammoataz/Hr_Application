@@ -8,14 +8,14 @@ public class ForceChangePasswordCommandValidator : AbstractValidator<ForceChange
     public ForceChangePasswordCommandValidator()
     {
         RuleFor(x => x.UserId)
-            .NotEmpty().WithMessage(Messages.Validation.FieldRequired);
+            .NotEmpty().WithErrorCode(ErrorCodes.FieldRequired).WithMessage(Messages.Validation.FieldRequired);
 
         RuleFor(x => x.CurrentPassword)
-            .NotEmpty().WithMessage(Messages.Validation.CurrentPasswordRequired);
+            .NotEmpty().WithErrorCode(ErrorCodes.CurrentPasswordRequired).WithMessage(Messages.Validation.CurrentPasswordRequired);
 
         RuleFor(x => x.NewPassword)
-            .NotEmpty().WithMessage(Messages.Validation.PasswordRequired)
-            .MinimumLength(6).WithMessage(Messages.Validation.PasswordMinLength)
-            .NotEqual(x => x.CurrentPassword).WithMessage(Messages.Validation.NewPasswordDifferent);
+            .NotEmpty().WithErrorCode(ErrorCodes.PasswordRequired).WithMessage(Messages.Validation.PasswordRequired)
+            .MinimumLength(6).WithErrorCode(ErrorCodes.PasswordMinLength).WithMessage(Messages.Validation.PasswordMinLength)
+            .NotEqual(x => x.CurrentPassword).WithErrorCode(ErrorCodes.NewPasswordDifferent).WithMessage(Messages.Validation.NewPasswordDifferent);
     }
 }

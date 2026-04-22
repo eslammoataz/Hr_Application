@@ -8,12 +8,12 @@ public class UpdateFcmTokenCommandValidator : AbstractValidator<UpdateFcmTokenCo
     public UpdateFcmTokenCommandValidator()
     {
         RuleFor(x => x.UserId)
-            .NotEmpty().WithMessage(Messages.Validation.FieldRequired);
+            .NotEmpty().WithErrorCode(ErrorCodes.FieldRequired).WithMessage(Messages.Validation.FieldRequired);
 
         RuleFor(x => x.FcmToken)
-            .NotEmpty().WithMessage(Messages.Validation.FieldRequired);
+            .NotEmpty().WithErrorCode(ErrorCodes.FieldRequired).WithMessage(Messages.Validation.FieldRequired);
 
         RuleFor(x => x.DeviceType)
-            .IsInEnum().WithMessage(Messages.Validation.InvalidDeviceType);
+            .IsInEnum().WithErrorCode(ErrorCodes.InvalidDeviceType).WithMessage(Messages.Validation.InvalidDeviceType);
     }
 }

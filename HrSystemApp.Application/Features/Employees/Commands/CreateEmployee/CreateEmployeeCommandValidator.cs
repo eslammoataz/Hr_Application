@@ -9,22 +9,22 @@ public class CreateEmployeeCommandValidator : AbstractValidator<CreateEmployeeCo
     public CreateEmployeeCommandValidator()
     {
         RuleFor(x => x.FullName)
-            .NotEmpty().WithMessage(Messages.Validation.FullNameRequired)
-            .MaximumLength(200).WithMessage(Messages.Validation.FullNameMaxLength);
+            .NotEmpty().WithErrorCode(ErrorCodes.FullNameRequired).WithMessage(Messages.Validation.FullNameRequired)
+            .MaximumLength(200).WithErrorCode(ErrorCodes.FullNameMaxLength).WithMessage(Messages.Validation.FullNameMaxLength);
 
         RuleFor(x => x.Email)
-            .NotEmpty().WithMessage(Messages.Validation.EmailRequired)
-            .EmailAddress().WithMessage(Messages.Validation.ValidEmailRequired);
+            .NotEmpty().WithErrorCode(ErrorCodes.EmailRequired).WithMessage(Messages.Validation.EmailRequired)
+            .EmailAddress().WithErrorCode(ErrorCodes.ValidEmailRequired).WithMessage(Messages.Validation.ValidEmailRequired);
 
         RuleFor(x => x.PhoneNumber)
-            .NotEmpty().WithMessage(Messages.Validation.PhoneRequired)
-            .Matches(@"^\+?[0-9]{7,15}$").WithMessage(Messages.Validation.PhoneMustBeDigits);
+            .NotEmpty().WithErrorCode(ErrorCodes.PhoneRequired).WithMessage(Messages.Validation.PhoneRequired)
+            .Matches(@"^\+?[0-9]{7,15}$").WithErrorCode(ErrorCodes.PhoneMustBeDigits).WithMessage(Messages.Validation.PhoneMustBeDigits);
 
         RuleFor(x => x.CompanyId)
-            .NotEmpty().WithMessage(Messages.Validation.CompanyIdRequired);
+            .NotEmpty().WithErrorCode(ErrorCodes.CompanyIdRequired).WithMessage(Messages.Validation.CompanyIdRequired);
 
         RuleFor(x => x.Role)
-            .IsInEnum().WithMessage(Messages.Validation.InvalidRole)
-            .NotEqual(UserRole.SuperAdmin).WithMessage(Messages.Validation.CannotAssignSuperAdmin);
+            .IsInEnum().WithErrorCode(ErrorCodes.InvalidRole).WithMessage(Messages.Validation.InvalidRole)
+            .NotEqual(UserRole.SuperAdmin).WithErrorCode(ErrorCodes.CannotAssignSuperAdmin).WithMessage(Messages.Validation.CannotAssignSuperAdmin);
     }
 }

@@ -8,10 +8,10 @@ public class UpdateLanguageCommandValidator : AbstractValidator<UpdateLanguageCo
     public UpdateLanguageCommandValidator()
     {
         RuleFor(x => x.UserId)
-            .NotEmpty().WithMessage(Messages.Validation.FieldRequired);
+            .NotEmpty().WithErrorCode(ErrorCodes.FieldRequired).WithMessage(Messages.Validation.FieldRequired);
 
         RuleFor(x => x.Language)
-            .NotEmpty().WithMessage(Messages.Validation.LanguageNotEmpty)
-            .MaximumLength(10).WithMessage(Messages.Validation.LanguageMaxLength);
+            .NotEmpty().WithErrorCode(ErrorCodes.LanguageNotEmpty).WithMessage(Messages.Validation.LanguageNotEmpty)
+            .MaximumLength(10).WithErrorCode(ErrorCodes.LanguageMaxLength).WithMessage(Messages.Validation.LanguageMaxLength);
     }
 }

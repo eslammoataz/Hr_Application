@@ -10,13 +10,13 @@ public class AssignEmployeeToNodeCommandValidator : AbstractValidator<AssignEmpl
     public AssignEmployeeToNodeCommandValidator(IUnitOfWork unitOfWork)
     {
         RuleFor(x => x.OrgNodeId)
-            .NotEmpty().WithMessage(Messages.Validation.FieldRequired);
+            .NotEmpty().WithErrorCode(ErrorCodes.FieldRequired).WithMessage(Messages.Validation.FieldRequired);
 
         RuleFor(x => x.EmployeeId)
-            .NotEmpty().WithMessage(Messages.Validation.FieldRequired);
+            .NotEmpty().WithErrorCode(ErrorCodes.FieldRequired).WithMessage(Messages.Validation.FieldRequired);
 
         RuleFor(x => x.Role)
-            .IsInEnum().WithMessage("Invalid role specified.");
+            .IsInEnum().WithErrorCode(ErrorCodes.InvalidRole).WithMessage(Messages.Validation.InvalidRole);
 
         RuleFor(x => x.EmployeeId)
             .MustAsync(async (employeeId, ct) =>
@@ -24,6 +24,6 @@ public class AssignEmployeeToNodeCommandValidator : AbstractValidator<AssignEmpl
                 var assignments = await unitOfWork.OrgNodeAssignments.GetByEmployeeAsync(employeeId, ct);
                 return assignments.Count == 0;
             })
-            .WithMessage("Employee is already assigned to a node. Each employee can belong to only one node at a time.");
+            .WithErrorCode(ErrorCodes.AssignEmployeeAlreadyAssigned).WithMessage(Messages.Validation.AssignEmployeeAlreadyAssigned);
     }
 }

@@ -1,6 +1,7 @@
 using FluentValidation;
 using HrSystemApp.Application.Behaviors;
 using HrSystemApp.Application.Common.Logging;
+using HrSystemApp.Application.Resources;
 using Mapster;
 using MapsterMapper;
 using MediatR;
@@ -38,6 +39,9 @@ public static class DependencyInjection
         // Request Strategies
         services.AddScoped<IRequestStrategyFactory, RequestStrategyFactory>();
         services.AddScoped<IRequestBusinessStrategy, LeaveRequestStrategy>();
+
+        // Localization
+        services.AddScoped<IErrorLocalizer, ErrorLocalizer>();
 
         return services;
     }

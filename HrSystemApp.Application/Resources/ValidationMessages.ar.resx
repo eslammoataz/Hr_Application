@@ -1,0 +1,297 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+    xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter</value></resheader>
+
+  <!-- General -->
+  <data name="Val.FieldRequired" xml:space="preserve">
+    <value>حقل مطلوب مفقود.</value>
+  </data>
+  <data name="Val.InvalidType" xml:space="preserve">
+    <value>نوع البيانات غير صالح.</value>
+  </data>
+  <data name="Val.ValidationError" xml:space="preserve">
+    <value>حدث خطأ أثناء التحقق.</value>
+  </data>
+
+  <!-- Auth -->
+  <data name="Val.EmailRequired" xml:space="preserve">
+    <value>البريد الإلكتروني مطلوب.</value>
+  </data>
+  <data name="Val.ValidEmailRequired" xml:space="preserve">
+    <value>البريد الإلكتروني غير صالح.</value>
+  </data>
+  <data name="Val.PasswordRequired" xml:space="preserve">
+    <value>كلمة المرور مطلوبة.</value>
+  </data>
+  <data name="Val.PasswordMinLength" xml:space="preserve">
+    <value>كلمة المرور يجب أن تكون 6 أحرف على الأقل.</value>
+  </data>
+  <data name="Val.PasswordMinLength8" xml:space="preserve">
+    <value>كلمة المرور الجديدة يجب أن تكون 8 أحرف على الأقل.</value>
+  </data>
+  <data name="Val.NewPasswordDifferent" xml:space="preserve">
+    <value>كلمة المرور الجديدة يجب أن تختلف عن كلمة المرور الحالية.</value>
+  </data>
+  <data name="Val.CurrentPasswordRequired" xml:space="preserve">
+    <value>كلمة المرور الحالية مطلوبة.</value>
+  </data>
+  <data name="Val.FcmTokenNotEmpty" xml:space="preserve">
+    <value>لا يمكن أن يكون رمز FCM فارغاً إذا تم توفيره.</value>
+  </data>
+  <data name="Val.InvalidDeviceType" xml:space="preserve">
+    <value>نوع الجهاز غير صالح.</value>
+  </data>
+  <data name="Val.LanguageNotEmpty" xml:space="preserve">
+    <value>اللغة لا يمكن أن تكون فارغة إذا تم توفيرها.</value>
+  </data>
+  <data name="Val.LanguageMaxLength" xml:space="preserve">
+    <value>رمز اللغة يجب ألا يتجاوز 10 أحرف.</value>
+  </data>
+  <data name="Val.InvalidRole" xml:space="preserve">
+    <value>الدور غير صالح.</value>
+  </data>
+  <data name="Val.CannotAssignSuperAdmin" xml:space="preserve">
+    <value>لا يمكن تعيين دور SuperAdmin عبر هذه النقطة.</value>
+  </data>
+  <data name="Val.CannotAssignSuperAdminRegistration" xml:space="preserve">
+    <value>لا يمكن تعيين دور SuperAdmin عبر نقطة التسجيل.</value>
+  </data>
+  <data name="Val.InvalidDeliveryChannel" xml:space="preserve">
+    <value>قناة التسليم غير صالحة.</value>
+  </data>
+
+  <!-- OTP -->
+  <data name="Val.OtpRequired" xml:space="preserve">
+    <value>رمز التحقق مطلوب.</value>
+  </data>
+  <data name="Val.OtpMustBe6Chars" xml:space="preserve">
+    <value>رمز التحقق يجب أن يكون 6 أحرف بالضبط.</value>
+  </data>
+  <data name="Val.OtpMustBeNumeric" xml:space="preserve">
+    <value>رمز التحقق يجب أن يكون رقماً.</value>
+  </data>
+
+  <!-- Employee -->
+  <data name="Val.FullNameRequired" xml:space="preserve">
+    <value>الاسم الكامل مطلوب.</value>
+  </data>
+  <data name="Val.FullNameMaxLength" xml:space="preserve">
+    <value>الاسم الكامل لا يمكن أن يتجاوز 200 حرف.</value>
+  </data>
+  <data name="Val.PhoneRequired" xml:space="preserve">
+    <value>رقم الهاتف مطلوب.</value>
+  </data>
+  <data name="Val.PhoneMustBeDigits" xml:space="preserve">
+    <value>رقم الهاتف يجب أن يكون 7-15 رقماً.</value>
+  </data>
+  <data name="Val.CompanyIdRequired" xml:space="preserve">
+    <value>معرف الشركة مطلوب.</value>
+  </data>
+  <data name="Val.TeamIdRequiredForTeamLeader" xml:space="preserve">
+    <value>معرف الفريق مطلوب لقائد الفريق.</value>
+  </data>
+  <data name="Val.UnitIdRequiredForUnitLeader" xml:space="preserve">
+    <value>معرف الوحدة مطلوب لقائد الوحدة.</value>
+  </data>
+  <data name="Val.DepartmentIdRequired" xml:space="preserve">
+    <value>معرف القسم مطلوب لهذا الدور.</value>
+  </data>
+
+  <!-- Name -->
+  <data name="Val.NameRequired" xml:space="preserve">
+    <value>الاسم مطلوب.</value>
+  </data>
+  <data name="Val.NameMaxLength" xml:space="preserve">
+    <value>الاسم لا يمكن أن يتجاوز 100 حرف.</value>
+  </data>
+
+  <!-- Notification -->
+  <data name="Val.EmployeeIdRequired" xml:space="preserve">
+    <value>EmployeeId مطلوب.</value>
+  </data>
+  <data name="Val.TitleRequired" xml:space="preserve">
+    <value>العنوان مطلوب.</value>
+  </data>
+  <data name="Val.TitleMaxLength" xml:space="preserve">
+    <value>العنوان لا يمكن أن يتجاوز 200 حرف.</value>
+  </data>
+  <data name="Val.MessageRequired" xml:space="preserve">
+    <value>الرسالة مطلوبة.</value>
+  </data>
+  <data name="Val.MessageMaxLength" xml:space="preserve">
+    <value>الرسالة لا يمكن أن تتجاوز 2000 حرف.</value>
+  </data>
+  <data name="Val.InvalidNotificationType" xml:space="preserve">
+    <value>نوع الإشعار غير صالح.</value>
+  </data>
+
+  <!-- Department -->
+  <data name="Val.CompanyIdRequiredForDepartment" xml:space="preserve">
+    <value>CompanyId مطلوب.</value>
+  </data>
+  <data name="Val.DepartmentNameRequired" xml:space="preserve">
+    <value>اسم القسم مطلوب ولا يمكن أن يتجاوز 200 حرف.</value>
+  </data>
+
+  <!-- Contact Admin -->
+  <data name="Val.EmailNotValid" xml:space="preserve">
+    <value>البريد الإلكتروني غير صالح.</value>
+  </data>
+  <data name="Val.EmailMaxLength" xml:space="preserve">
+    <value>البريد الإلكتروني لا يمكن أن يتجاوز 255 حرف.</value>
+  </data>
+  <data name="Val.CompanyNameRequired" xml:space="preserve">
+    <value>اسم الشركة مطلوب.</value>
+  </data>
+  <data name="Val.CompanyNameMaxLength" xml:space="preserve">
+    <value>اسم الشركة لا يمكن أن يتجاوز 200 حرف.</value>
+  </data>
+  <data name="Val.PhoneNumberRequired" xml:space="preserve">
+    <value>رقم الهاتف مطلوب.</value>
+  </data>
+  <data name="Val.PhoneNumberMaxLength" xml:space="preserve">
+    <value>رقم الهاتف لا يمكن أن يتجاوز 50 حرف.</value>
+  </data>
+
+  <!-- Company Location -->
+  <data name="Val.LocationNameRequired" xml:space="preserve">
+    <value>اسم الموقع مطلوب.</value>
+  </data>
+  <data name="Val.LocationNameMaxLength" xml:space="preserve">
+    <value>اسم الموقع لا يمكن أن يتجاوز 100 حرف.</value>
+  </data>
+
+  <!-- Company -->
+  <data name="Val.CompanyNameRequiredForCompany" xml:space="preserve">
+    <value>اسم الشركة مطلوب.</value>
+  </data>
+  <data name="Val.CompanyNameMaxLengthForCompany" xml:space="preserve">
+    <value>اسم الشركة لا يمكن أن يتجاوز 200 حرف.</value>
+  </data>
+  <data name="Val.YearlyVacationDaysRequired" xml:space="preserve">
+    <value>أيام الإجازة السنوية مطلوبة.</value>
+  </data>
+  <data name="Val.GraceMinutesMustBeNonNegative" xml:space="preserve">
+    <value>الدقائق التسامح يجب أن تكون صفراً أو موجبة.</value>
+  </data>
+  <data name="Val.TimeZoneIdRequired" xml:space="preserve">
+    <value>معرف المنطقة الزمنية مطلوب.</value>
+  </data>
+  <data name="Val.TimeZoneIdMaxLength" xml:space="preserve">
+    <value>معرف المنطقة الزمنية لا يمكن أن يتجاوز 100 حرف.</value>
+  </data>
+
+  <!-- Employee Update -->
+  <data name="Val.EmployeeFullNameMaxLength" xml:space="preserve">
+    <value>الاسم الكامل لا يمكن أن يتجاوز 200 حرف.</value>
+  </data>
+  <data name="Val.EmployeePhoneMaxLength" xml:space="preserve">
+    <value>رقم الهاتف لا يمكن أن يتجاوز 20 حرف.</value>
+  </data>
+  <data name="Val.EmployeeAddressMaxLength" xml:space="preserve">
+    <value>العنوان لا يمكن أن يتجاوز 500 حرف.</value>
+  </data>
+
+  <!-- Attendance -->
+  <data name="Val.ClockInFutureTimestamp" xml:space="preserve">
+    <value>لا يمكن أن يكون وقت تسجيل الحضور في المستقبل.</value>
+  </data>
+  <data name="Val.ClockOutFutureTimestamp" xml:space="preserve">
+    <value>لا يمكن أن يكون وقت تسجيل الانصراف في المستقبل.</value>
+  </data>
+
+  <!-- Change Employee Status -->
+  <data name="Val.ChangeEmployeeStatusIdRequired" xml:space="preserve">
+    <value>معرف الموظف مطلوب.</value>
+  </data>
+  <data name="Val.ChangeEmployeeStatusInvalid" xml:space="preserve">
+    <value>قيمة حالة التوظيف غير صالحة.</value>
+  </data>
+
+  <!-- Update Company -->
+  <data name="Val.UpdateCompanyIdRequired" xml:space="preserve">
+    <value>معرف الشركة مطلوب.</value>
+  </data>
+  <data name="Val.UpdateCompanyNameRequired" xml:space="preserve">
+    <value>اسم الشركة مطلوب.</value>
+  </data>
+  <data name="Val.UpdateCompanyNameMaxLength" xml:space="preserve">
+    <value>اسم الشركة لا يمكن أن يتجاوز 300 حرف.</value>
+  </data>
+  <data name="Val.UpdateCompanyGraceMinutesNegative" xml:space="preserve">
+    <value>الدقائق التسامح لا يمكن أن تكون سالبة.</value>
+  </data>
+  <data name="Val.UpdateCompanyGraceMinutesExceed" xml:space="preserve">
+    <value>الدقائق التسامح لا يمكن أن تتجاوز 120.</value>
+  </data>
+  <data name="Val.UpdateCompanyVacationDaysPositive" xml:space="preserve">
+    <value>أيام الإجازة السنوية يجب أن تكون أكبر من 0.</value>
+  </data>
+  <data name="Val.UpdateCompanyVacationDaysExceed" xml:space="preserve">
+    <value>أيام الإجازة السنوية لا يمكن أن تتجاوز 365.</value>
+  </data>
+  <data name="Val.UpdateCompanyTimeZoneRequired" xml:space="preserve">
+    <value>المنطقة الزمنية مطلوبة.</value>
+  </data>
+  <data name="Val.UpdateCompanyTimeZoneMaxLength" xml:space="preserve">
+    <value>المنطقة الزمنية لا يمكن أن تتجاوز 100 حرف.</value>
+  </data>
+  <data name="Val.UpdateCompanyStartBeforeEnd" xml:space="preserve">
+    <value>وقت البدء يجب أن يكون قبل وقت الانتهاء.</value>
+  </data>
+
+  <!-- OrgNode / BulkSetup -->
+  <data name="Val.OrgNodeNameMaxLength" xml:space="preserve">
+    <value>الاسم لا يمكن أن يتجاوز 200 حرف.</value>
+  </data>
+  <data name="Val.BulkSetupRequestCannotBeNull" xml:space="preserve">
+    <value>لا يمكن أن يكون الطلب فارغاً.</value>
+  </data>
+  <data name="Val.BulkSetupAtLeastOneNode" xml:space="preserve">
+    <value>يجب أن يحتوي على عقدة واحدة على الأقل.</value>
+  </data>
+  <data name="Val.BulkSetupTempIdsUnique" xml:space="preserve">
+    <value>يجب أن تكون جميع tempIds فريدة.</value>
+  </data>
+  <data name="Val.BulkSetupParentTempIdInvalid" xml:space="preserve">
+    <value>يجب أن يشير ParentTempId إلى TempId صالح في الطلب.</value>
+  </data>
+
+  <!-- Assign Employee -->
+  <data name="Val.AssignEmployeeAlreadyAssigned" xml:space="preserve">
+    <value>الموظف معين بالفعل لعقدة. يمكن لكل موظف أن ينتمي إلى عقدة واحدة فقط في كل مرة.</value>
+  </data>
+</root>
