@@ -6,10 +6,11 @@ using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using HrSystemApp.Api.Authorization;
 
 namespace HrSystemApp.Api.Controllers;
 
-[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "CompanyAdmin,HR")]
+[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = Roles.ExecutiveOrAbove)]
 [Route("api/admin")]
 public class AdminManagementController : BaseApiController
 {
@@ -27,11 +28,11 @@ public class AdminManagementController : BaseApiController
     public async Task<IActionResult> UpdateBalance(Guid employeeId, [FromBody] UpdateBalanceRequest request)
     {
         var command = new UpdateEmployeeBalanceCommand(
-            employeeId, 
-            request.LeaveType, 
-            request.Year, 
+            employeeId,
+            request.LeaveType,
+            request.Year,
             request.TotalDays);
-            
+
         return HandleResult(await _sender.Send(command));
     }
 
