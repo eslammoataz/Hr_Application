@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using HrSystemApp.Application.Interfaces;
 using HrSystemApp.Application.Common;
 using HrSystemApp.Application.Common.Logging;
@@ -35,15 +34,12 @@ public class UpdateRequestCommandHandler : IRequestHandler<UpdateRequestCommand,
 
     public async Task<Result<Guid>> Handle(UpdateRequestCommand request, CancellationToken cancellationToken)
     {
-        var sw = Stopwatch.StartNew();
-        _logger.LogActionStart(_loggingOptions, LogAction.Workflow.UpdateRequest);
 
         var userId = _currentUserService.UserId;
         if (string.IsNullOrEmpty(userId))
         {
             _logger.LogDecision(_loggingOptions, LogAction.Workflow.UpdateRequest, LogStage.Authorization,
                 "UserNotAuthenticated", null);
-            sw.Stop();
             return Result.Failure<Guid>(DomainErrors.Auth.Unauthorized);
         }
 
@@ -52,7 +48,6 @@ public class UpdateRequestCommandHandler : IRequestHandler<UpdateRequestCommand,
         {
             _logger.LogDecision(_loggingOptions, LogAction.Workflow.UpdateRequest, LogStage.Authorization,
                 "EmployeeNotFound", new { UserId = userId });
-            sw.Stop();
             return Result.Failure<Guid>(DomainErrors.Employee.NotFound);
         }
 
@@ -61,7 +56,6 @@ public class UpdateRequestCommandHandler : IRequestHandler<UpdateRequestCommand,
         {
             _logger.LogDecision(_loggingOptions, LogAction.Workflow.UpdateRequest, LogStage.Validation,
                 "RequestNotFound", new { RequestId = request.Id });
-            sw.Stop();
             return Result.Failure<Guid>(DomainErrors.Requests.NotFound);
         }
 
@@ -69,7 +63,6 @@ public class UpdateRequestCommandHandler : IRequestHandler<UpdateRequestCommand,
         {
             _logger.LogDecision(_loggingOptions, LogAction.Workflow.UpdateRequest, LogStage.Authorization,
                 "UnauthorizedEdit", new { RequestId = request.Id, UserId = userId });
-            sw.Stop();
             return Result.Failure<Guid>(DomainErrors.Auth.Unauthorized);
         }
 
@@ -77,7 +70,6 @@ public class UpdateRequestCommandHandler : IRequestHandler<UpdateRequestCommand,
         {
             _logger.LogDecision(_loggingOptions, LogAction.Workflow.UpdateRequest, LogStage.Validation,
                 "RequestLockedDueToHistory", new { RequestId = request.Id });
-            sw.Stop();
             return Result.Failure<Guid>(DomainErrors.Requests.ModificationLocked);
         }
 
@@ -85,7 +77,6 @@ public class UpdateRequestCommandHandler : IRequestHandler<UpdateRequestCommand,
         {
             _logger.LogDecision(_loggingOptions, LogAction.Workflow.UpdateRequest, LogStage.Validation,
                 "RequestNotPending", new { RequestId = request.Id, Status = existingRequest.Status.ToString() });
-            sw.Stop();
             return Result.Failure<Guid>(DomainErrors.Requests.NotPending);
         }
 
@@ -95,9 +86,6 @@ public class UpdateRequestCommandHandler : IRequestHandler<UpdateRequestCommand,
         existingRequest.UpdatedAt = DateTime.UtcNow;
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-        sw.Stop();
-        _logger.LogActionSuccess(_loggingOptions, LogAction.Workflow.UpdateRequest, sw.ElapsedMilliseconds);
 
         return Result.Success(existingRequest.Id);
     }

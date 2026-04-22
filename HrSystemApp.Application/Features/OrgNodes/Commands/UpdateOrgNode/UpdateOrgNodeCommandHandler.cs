@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using HrSystemApp.Application.Common;
 using HrSystemApp.Application.DTOs.OrgNodes;
 using HrSystemApp.Application.Errors;
@@ -33,15 +32,12 @@ public class UpdateOrgNodeCommandHandler : IRequestHandler<UpdateOrgNodeCommand,
 
     public async Task<Result<Guid>> Handle(UpdateOrgNodeCommand request, CancellationToken cancellationToken)
     {
-        var sw = Stopwatch.StartNew();
-        _logger.LogActionStart(_loggingOptions, LogAction.OrgNode.UpdateOrgNode);
 
         var node = await _unitOfWork.OrgNodes.GetByIdAsync(request.Id, cancellationToken);
         if (node == null)
         {
             _logger.LogDecision(_loggingOptions, LogAction.OrgNode.UpdateOrgNode, LogStage.Processing,
                 "NodeNotFound", new { NodeId = request.Id });
-            sw.Stop();
             return Result.Failure<Guid>(DomainErrors.OrgNode.NotFound);
         }
 
@@ -51,7 +47,6 @@ public class UpdateOrgNodeCommandHandler : IRequestHandler<UpdateOrgNodeCommand,
             {
                 _logger.LogDecision(_loggingOptions, LogAction.OrgNode.UpdateOrgNode, LogStage.Processing,
                     "CircularReference", new { NodeId = request.Id });
-                sw.Stop();
                 return Result.Failure<Guid>(DomainErrors.OrgNode.CircularReference);
             }
 
@@ -60,7 +55,6 @@ public class UpdateOrgNodeCommandHandler : IRequestHandler<UpdateOrgNodeCommand,
             {
                 _logger.LogDecision(_loggingOptions, LogAction.OrgNode.UpdateOrgNode, LogStage.Processing,
                     "ParentNotFound", new { ParentId = request.ParentId });
-                sw.Stop();
                 return Result.Failure<Guid>(DomainErrors.OrgNode.NotFound);
             }
 
@@ -69,7 +63,6 @@ public class UpdateOrgNodeCommandHandler : IRequestHandler<UpdateOrgNodeCommand,
             {
                 _logger.LogDecision(_loggingOptions, LogAction.OrgNode.UpdateOrgNode, LogStage.Processing,
                     "CircularReference", new { NodeId = request.Id, ParentId = request.ParentId });
-                sw.Stop();
                 return Result.Failure<Guid>(DomainErrors.OrgNode.CircularReference);
             }
         }
@@ -80,9 +73,6 @@ public class UpdateOrgNodeCommandHandler : IRequestHandler<UpdateOrgNodeCommand,
 
         await _unitOfWork.OrgNodes.UpdateAsync(node, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-        sw.Stop();
-        _logger.LogActionSuccess(_loggingOptions, LogAction.OrgNode.UpdateOrgNode, sw.ElapsedMilliseconds);
 
         return Result.Success(node.Id);
     }

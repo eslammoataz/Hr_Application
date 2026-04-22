@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using HrSystemApp.Application.Common;
 using HrSystemApp.Application.Common.Logging;
 using HrSystemApp.Application.Errors;
@@ -30,15 +29,12 @@ public class HandleProfileUpdateRequestCommandHandler : IRequestHandler<HandlePr
 
     public async Task<Result> Handle(HandleProfileUpdateRequestCommand command, CancellationToken cancellationToken)
     {
-        var sw = Stopwatch.StartNew();
-        _logger.LogActionStart(_loggingOptions, LogAction.Workflow.HandleProfileUpdateRequest);
 
         var request = await _unitOfWork.ProfileUpdateRequests.GetByIdAsync(command.RequestId, cancellationToken);
         if (request is null)
         {
             _logger.LogDecision(_loggingOptions, LogAction.Workflow.HandleProfileUpdateRequest, LogStage.Validation,
                 "RequestNotFound", new { RequestId = command.RequestId });
-            sw.Stop();
             return Result.Failure(DomainErrors.ProfileUpdate.NotFound);
         }
 
@@ -46,7 +42,6 @@ public class HandleProfileUpdateRequestCommandHandler : IRequestHandler<HandlePr
         {
             _logger.LogDecision(_loggingOptions, LogAction.Workflow.HandleProfileUpdateRequest, LogStage.Validation,
                 "RequestNotPending", new { RequestId = command.RequestId, Status = request.Status.ToString() });
-            sw.Stop();
             return Result.Failure(DomainErrors.ProfileUpdate.NotPending);
         }
 
@@ -55,7 +50,6 @@ public class HandleProfileUpdateRequestCommandHandler : IRequestHandler<HandlePr
         {
             _logger.LogDecision(_loggingOptions, LogAction.Workflow.HandleProfileUpdateRequest, LogStage.Authorization,
                 "HrEmployeeNotFound", new { HrUserId = command.HrUserId });
-            sw.Stop();
             return Result.Failure(DomainErrors.Hr.EmployeeNotFound);
         }
 
@@ -69,7 +63,6 @@ public class HandleProfileUpdateRequestCommandHandler : IRequestHandler<HandlePr
             {
                 _logger.LogDecision(_loggingOptions, LogAction.Workflow.HandleProfileUpdateRequest, LogStage.Validation,
                     "EmployeeNotFound", new { EmployeeId = request.EmployeeId, RequestId = command.RequestId });
-                sw.Stop();
                 return Result.Failure(DomainErrors.ProfileUpdate.EmployeeNotFound);
             }
 
@@ -77,7 +70,6 @@ public class HandleProfileUpdateRequestCommandHandler : IRequestHandler<HandlePr
             {
                 _logger.LogDecision(_loggingOptions, LogAction.Workflow.HandleProfileUpdateRequest, LogStage.Validation,
                     "EmptyChangesJson", new { RequestId = command.RequestId });
-                sw.Stop();
                 return Result.Failure(DomainErrors.ProfileUpdate.EmptyChanges);
             }
 
@@ -86,7 +78,6 @@ public class HandleProfileUpdateRequestCommandHandler : IRequestHandler<HandlePr
             {
                 _logger.LogDecision(_loggingOptions, LogAction.Workflow.HandleProfileUpdateRequest, LogStage.Validation,
                     "DeserializationFailed", new { RequestId = command.RequestId, ChangesJson = request.ChangesJson });
-                sw.Stop();
                 return Result.Failure(DomainErrors.ProfileUpdate.DeserializationFailed);
             }
 
@@ -96,7 +87,6 @@ public class HandleProfileUpdateRequestCommandHandler : IRequestHandler<HandlePr
                 {
                     _logger.LogDecision(_loggingOptions, LogAction.Workflow.HandleProfileUpdateRequest, LogStage.Validation,
                         "MissingNewValue", new { Field = change.Key, RequestId = command.RequestId });
-                    sw.Stop();
                     return Result.Failure(DomainErrors.ProfileUpdate.MalformedChanges);
                 }
 
@@ -105,7 +95,6 @@ public class HandleProfileUpdateRequestCommandHandler : IRequestHandler<HandlePr
                 {
                     _logger.LogDecision(_loggingOptions, LogAction.Workflow.HandleProfileUpdateRequest, LogStage.Validation,
                         "ApplyFieldChangeFailed", new { Field = change.Key, Error = applyResult.Error.Message });
-                    sw.Stop();
                     return applyResult;
                 }
             }
@@ -130,9 +119,6 @@ public class HandleProfileUpdateRequestCommandHandler : IRequestHandler<HandlePr
             await _unitOfWork.SaveChangesAsync(cancellationToken);
             await _unitOfWork.CommitTransactionAsync(cancellationToken);
 
-            sw.Stop();
-            _logger.LogActionSuccess(_loggingOptions, LogAction.Workflow.HandleProfileUpdateRequest, sw.ElapsedMilliseconds);
-
             return Result.Success();
         }
         catch (Exception ex)
@@ -140,7 +126,6 @@ public class HandleProfileUpdateRequestCommandHandler : IRequestHandler<HandlePr
             _logger.LogActionFailure(_loggingOptions, LogAction.Workflow.HandleProfileUpdateRequest, LogStage.Processing, ex,
                 new { RequestId = command.RequestId });
             await _unitOfWork.RollbackTransactionAsync(cancellationToken);
-            sw.Stop();
             throw;
         }
     }

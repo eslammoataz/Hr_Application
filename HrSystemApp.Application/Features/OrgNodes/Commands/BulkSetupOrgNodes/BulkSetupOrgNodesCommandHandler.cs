@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using HrSystemApp.Application.Common;
 using HrSystemApp.Application.DTOs.OrgNodes;
 using HrSystemApp.Application.Errors;
@@ -29,8 +28,6 @@ public class BulkSetupOrgNodesCommandHandler : IRequestHandler<BulkSetupOrgNodes
 
     public async Task<Result<BulkSetupOrgNodesResponse>> Handle(BulkSetupOrgNodesCommand request, CancellationToken cancellationToken)
     {
-        var sw = Stopwatch.StartNew();
-        _logger.LogActionStart(_loggingOptions, LogAction.OrgNode.BulkSetupOrgNodes);
 
         await _unitOfWork.BeginTransactionAsync(cancellationToken);
 
@@ -48,7 +45,6 @@ public class BulkSetupOrgNodesCommandHandler : IRequestHandler<BulkSetupOrgNodes
                     _logger.LogDecision(_loggingOptions, LogAction.OrgNode.BulkSetupOrgNodes, LogStage.Processing,
                         "ParentTempIdNotFound", new { ParentTempId = nodeDto.ParentTempId });
                     await _unitOfWork.RollbackTransactionAsync(cancellationToken);
-                    sw.Stop();
                     return Result.Failure<BulkSetupOrgNodesResponse>(DomainErrors.OrgNode.NotFound);
                 }
             }
@@ -119,7 +115,6 @@ public class BulkSetupOrgNodesCommandHandler : IRequestHandler<BulkSetupOrgNodes
                     _logger.LogDecision(_loggingOptions, LogAction.OrgNode.BulkSetupOrgNodes, LogStage.Processing,
                         "CircularReference", new { RemainingNodes = remaining.Select(n => n.TempId).ToList() });
                     await _unitOfWork.RollbackTransactionAsync(cancellationToken);
-                    sw.Stop();
                     return Result.Failure<BulkSetupOrgNodesResponse>(DomainErrors.OrgNode.InvalidHierarchyConfiguration);
                 }
             }
@@ -156,9 +151,6 @@ public class BulkSetupOrgNodesCommandHandler : IRequestHandler<BulkSetupOrgNodes
             await _unitOfWork.CommitTransactionAsync(cancellationToken);
 
             var companyNodeId = results.First(r => r.Depth == 0).RealId;
-
-            sw.Stop();
-            _logger.LogActionSuccess(_loggingOptions, LogAction.OrgNode.BulkSetupOrgNodes, sw.ElapsedMilliseconds);
 
             return Result.Success(new BulkSetupOrgNodesResponse
             {

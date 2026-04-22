@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using HrSystemApp.Application.DTOs.Requests;
 using HrSystemApp.Application.Interfaces;
 using HrSystemApp.Application.Interfaces.Services;
@@ -41,15 +40,12 @@ public class UpdateRequestDefinitionCommandHandler : IRequestHandler<UpdateReque
 
     public async Task<Result<Guid>> Handle(UpdateRequestDefinitionCommand request, CancellationToken cancellationToken)
     {
-        var sw = Stopwatch.StartNew();
-        _logger.LogActionStart(_loggingOptions, LogAction.Workflow.UpdateRequestDefinition);
 
         var userId = _currentUserService.UserId;
         if (string.IsNullOrEmpty(userId))
         {
             _logger.LogDecision(_loggingOptions, LogAction.Workflow.UpdateRequestDefinition, LogStage.Authorization,
                 "UserNotAuthenticated", null);
-            sw.Stop();
             return Result.Failure<Guid>(DomainErrors.Auth.Unauthorized);
         }
 
@@ -58,7 +54,6 @@ public class UpdateRequestDefinitionCommandHandler : IRequestHandler<UpdateReque
         {
             _logger.LogDecision(_loggingOptions, LogAction.Workflow.UpdateRequestDefinition, LogStage.Authorization,
                 "EmployeeNotFound", new { UserId = userId });
-            sw.Stop();
             return Result.Failure<Guid>(DomainErrors.Employee.NotFound);
         }
 
@@ -72,7 +67,6 @@ public class UpdateRequestDefinitionCommandHandler : IRequestHandler<UpdateReque
         {
             _logger.LogDecision(_loggingOptions, LogAction.Workflow.UpdateRequestDefinition, LogStage.Validation,
                 "DefinitionNotFound", new { DefinitionId = request.Id });
-            sw.Stop();
             return Result.Failure<Guid>(DomainErrors.Requests.DefinitionNotFound);
         }
 
@@ -80,7 +74,6 @@ public class UpdateRequestDefinitionCommandHandler : IRequestHandler<UpdateReque
         {
             _logger.LogDecision(_loggingOptions, LogAction.Workflow.UpdateRequestDefinition, LogStage.Authorization,
                 "UnauthorizedCrossCompany", new { DefinitionId = request.Id, UserId = userId, EmployeeCompanyId = employee.CompanyId });
-            sw.Stop();
             return Result.Failure<Guid>(DomainErrors.Auth.Unauthorized);
         }
 
@@ -89,7 +82,6 @@ public class UpdateRequestDefinitionCommandHandler : IRequestHandler<UpdateReque
         {
             _logger.LogDecision(_loggingOptions, LogAction.Workflow.UpdateRequestDefinition, LogStage.Validation,
                 "DuplicateSortOrders", null);
-            sw.Stop();
             return Result.Failure<Guid>(DomainErrors.General.ArgumentError);
         }
 
@@ -101,7 +93,6 @@ public class UpdateRequestDefinitionCommandHandler : IRequestHandler<UpdateReque
                 {
                     _logger.LogDecision(_loggingOptions, LogAction.Workflow.UpdateRequestDefinition, LogStage.Validation,
                         "MissingLevelsUp", new { SortOrder = step.SortOrder });
-                    sw.Stop();
                     return Result.Failure<Guid>(DomainErrors.Request.MissingLevelsUp);
                 }
 
@@ -109,7 +100,6 @@ public class UpdateRequestDefinitionCommandHandler : IRequestHandler<UpdateReque
                 {
                     _logger.LogDecision(_loggingOptions, LogAction.Workflow.UpdateRequestDefinition, LogStage.Validation,
                         "InvalidStartFromLevel", new { SortOrder = step.SortOrder });
-                    sw.Stop();
                     return Result.Failure<Guid>(DomainErrors.Request.InvalidStartFromLevel);
                 }
 
@@ -117,7 +107,6 @@ public class UpdateRequestDefinitionCommandHandler : IRequestHandler<UpdateReque
                 {
                     _logger.LogDecision(_loggingOptions, LogAction.Workflow.UpdateRequestDefinition, LogStage.Validation,
                         "UnexpectedFieldsOnHierarchyLevel", new { SortOrder = step.SortOrder });
-                    sw.Stop();
                     return Result.Failure<Guid>(DomainErrors.Request.UnexpectedFieldsOnHierarchyLevelStep);
                 }
             }
@@ -127,7 +116,6 @@ public class UpdateRequestDefinitionCommandHandler : IRequestHandler<UpdateReque
                 {
                     _logger.LogDecision(_loggingOptions, LogAction.Workflow.UpdateRequestDefinition, LogStage.Validation,
                         "HierarchyFieldsOnNonHierarchyStep", new { SortOrder = step.SortOrder });
-                    sw.Stop();
                     return Result.Failure<Guid>(DomainErrors.Request.HierarchyLevelFieldsOnNonHierarchyStep);
                 }
             }
@@ -153,7 +141,6 @@ public class UpdateRequestDefinitionCommandHandler : IRequestHandler<UpdateReque
                 {
                     _logger.LogDecision(_loggingOptions, LogAction.Workflow.UpdateRequestDefinition, LogStage.Validation,
                         "HierarchyRangesOverlap", new { A = a.SortOrder, B = b.SortOrder });
-                    sw.Stop();
                     return Result.Failure<Guid>(DomainErrors.Request.HierarchyRangesOverlap);
                 }
             }
@@ -167,7 +154,6 @@ public class UpdateRequestDefinitionCommandHandler : IRequestHandler<UpdateReque
                 {
                     _logger.LogDecision(_loggingOptions, LogAction.Workflow.UpdateRequestDefinition, LogStage.Validation,
                         "MissingOrgNodeId", new { SortOrder = step.SortOrder });
-                    sw.Stop();
                     return Result.Failure<Guid>(DomainErrors.Request.MissingOrgNodeId);
                 }
 
@@ -176,7 +162,6 @@ public class UpdateRequestDefinitionCommandHandler : IRequestHandler<UpdateReque
                 {
                     _logger.LogDecision(_loggingOptions, LogAction.Workflow.UpdateRequestDefinition, LogStage.Validation,
                         "OrgNodeNotFound", new { OrgNodeId = step.OrgNodeId.Value });
-                    sw.Stop();
                     return Result.Failure<Guid>(DomainErrors.OrgNode.NotFound);
                 }
 
@@ -184,7 +169,6 @@ public class UpdateRequestDefinitionCommandHandler : IRequestHandler<UpdateReque
                 {
                     _logger.LogDecision(_loggingOptions, LogAction.Workflow.UpdateRequestDefinition, LogStage.Validation,
                         "OrgNodeNotInCompany", new { OrgNodeId = step.OrgNodeId.Value });
-                    sw.Stop();
                     return Result.Failure<Guid>(DomainErrors.Request.OrgNodeNotInCompany);
                 }
             }
@@ -194,7 +178,6 @@ public class UpdateRequestDefinitionCommandHandler : IRequestHandler<UpdateReque
                 {
                     _logger.LogDecision(_loggingOptions, LogAction.Workflow.UpdateRequestDefinition, LogStage.Validation,
                         "MissingDirectEmployeeId", new { SortOrder = step.SortOrder });
-                    sw.Stop();
                     return Result.Failure<Guid>(DomainErrors.Request.MissingDirectEmployeeId);
                 }
 
@@ -203,7 +186,6 @@ public class UpdateRequestDefinitionCommandHandler : IRequestHandler<UpdateReque
                 {
                     _logger.LogDecision(_loggingOptions, LogAction.Workflow.UpdateRequestDefinition, LogStage.Validation,
                         "DirectEmployeeNotInCompany", new { DirectEmployeeId = step.DirectEmployeeId.Value });
-                    sw.Stop();
                     return Result.Failure<Guid>(DomainErrors.Request.DirectEmployeeNotInCompany);
                 }
 
@@ -211,7 +193,6 @@ public class UpdateRequestDefinitionCommandHandler : IRequestHandler<UpdateReque
                 {
                     _logger.LogDecision(_loggingOptions, LogAction.Workflow.UpdateRequestDefinition, LogStage.Validation,
                         "DirectEmployeeNotActive", new { DirectEmployeeId = step.DirectEmployeeId.Value });
-                    sw.Stop();
                     return Result.Failure<Guid>(DomainErrors.Request.DirectEmployeeNotActive);
                 }
             }
@@ -221,7 +202,6 @@ public class UpdateRequestDefinitionCommandHandler : IRequestHandler<UpdateReque
                 {
                     _logger.LogDecision(_loggingOptions, LogAction.Workflow.UpdateRequestDefinition, LogStage.Validation,
                         "MissingCompanyRoleId", new { SortOrder = step.SortOrder });
-                    sw.Stop();
                     return Result.Failure<Guid>(DomainErrors.Request.MissingCompanyRoleId);
                 }
 
@@ -230,7 +210,6 @@ public class UpdateRequestDefinitionCommandHandler : IRequestHandler<UpdateReque
                 {
                     _logger.LogDecision(_loggingOptions, LogAction.Workflow.UpdateRequestDefinition, LogStage.Validation,
                         "RoleNotInCompany", new { CompanyRoleId = step.CompanyRoleId.Value });
-                    sw.Stop();
                     return Result.Failure<Guid>(DomainErrors.Request.RoleNotInCompany);
                 }
             }
@@ -253,9 +232,6 @@ public class UpdateRequestDefinitionCommandHandler : IRequestHandler<UpdateReque
         }
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-        sw.Stop();
-        _logger.LogActionSuccess(_loggingOptions, LogAction.Workflow.UpdateRequestDefinition, sw.ElapsedMilliseconds);
 
         return Result.Success(definition.Id);
     }

@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using HrSystemApp.Application.Common;
 using HrSystemApp.Application.Errors;
 using HrSystemApp.Application.Interfaces;
@@ -28,14 +27,11 @@ public class ChangeEmployeeStatusCommandHandler : IRequestHandler<ChangeEmployee
 
     public async Task<Result> Handle(ChangeEmployeeStatusCommand request, CancellationToken cancellationToken)
     {
-        var sw = Stopwatch.StartNew();
-        _logger.LogActionStart(_loggingOptions, LogAction.OrgNode.ChangeEmployeeStatus);
 
         if (!Enum.IsDefined(typeof(EmploymentStatus), request.Status))
         {
             _logger.LogDecision(_loggingOptions, LogAction.OrgNode.ChangeEmployeeStatus, LogStage.Processing,
                 "InvalidStatus", new { Status = request.Status });
-            sw.Stop();
             return Result.Failure(DomainErrors.Employee.InvalidEmploymentStatus);
         }
 
@@ -44,7 +40,6 @@ public class ChangeEmployeeStatusCommandHandler : IRequestHandler<ChangeEmployee
         {
             _logger.LogDecision(_loggingOptions, LogAction.OrgNode.ChangeEmployeeStatus, LogStage.Processing,
                 "EmployeeNotFound", new { EmployeeId = request.Id });
-            sw.Stop();
             return Result.Failure(DomainErrors.Employee.NotFound);
         }
 
@@ -66,9 +61,6 @@ public class ChangeEmployeeStatusCommandHandler : IRequestHandler<ChangeEmployee
 
         await _unitOfWork.Employees.UpdateAsync(employee, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-        sw.Stop();
-        _logger.LogActionSuccess(_loggingOptions, LogAction.OrgNode.ChangeEmployeeStatus, sw.ElapsedMilliseconds);
 
         return Result.Success();
     }

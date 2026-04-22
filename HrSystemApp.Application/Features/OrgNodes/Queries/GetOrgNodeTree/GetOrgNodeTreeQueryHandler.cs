@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using HrSystemApp.Application.Common;
 using HrSystemApp.Application.Common.Logging;
 using HrSystemApp.Application.DTOs.OrgNodes;
@@ -32,8 +31,6 @@ public class GetOrgNodeTreeQueryHandler : IRequestHandler<GetOrgNodeTreeQuery, R
 
     public async Task<Result<List<OrgNodeTreeResponse>>> Handle(GetOrgNodeTreeQuery request, CancellationToken cancellationToken)
     {
-        var sw = Stopwatch.StartNew();
-        _logger.LogActionStart(_loggingOptions, LogAction.OrgNode.GetOrgNodeTree);
 
         var depth = request.Depth ?? 1;
 
@@ -43,8 +40,6 @@ public class GetOrgNodeTreeQueryHandler : IRequestHandler<GetOrgNodeTreeQuery, R
 
         if (depth <= 0)
         {
-            sw.Stop();
-            _logger.LogActionSuccess(_loggingOptions, LogAction.OrgNode.GetOrgNodeTree, sw.ElapsedMilliseconds);
             return Result.Success(new List<OrgNodeTreeResponse>());
         }
 
@@ -56,9 +51,6 @@ public class GetOrgNodeTreeQueryHandler : IRequestHandler<GetOrgNodeTreeQuery, R
 
         var result = new List<OrgNodeTreeResponse>();
         await BuildTreeAsync(startNodes, depth - 1, result, cancellationToken);
-
-        sw.Stop();
-        _logger.LogActionSuccess(_loggingOptions, LogAction.OrgNode.GetOrgNodeTree, sw.ElapsedMilliseconds);
 
         return Result.Success(result);
     }

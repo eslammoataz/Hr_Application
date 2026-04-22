@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using HrSystemApp.Application.Common;
 using HrSystemApp.Application.Common.Logging;
 using HrSystemApp.Application.DTOs.Requests;
@@ -44,14 +43,11 @@ public class PreviewApprovalChainQueryHandler : IRequestHandler<PreviewApprovalC
 
     public async Task<Result<List<PlannedStepDto>>> Handle(PreviewApprovalChainQuery request, CancellationToken ct)
     {
-        var sw = Stopwatch.StartNew();
-        _logger.LogActionStart(_loggingOptions, LogAction.Workflow.PreviewApprovalChain);
 
         if (request.DefinitionId.HasValue == (request.Steps != null && request.Steps.Count > 0))
         {
             _logger.LogDecision(_loggingOptions, LogAction.Workflow.PreviewApprovalChain, LogStage.Validation,
                 "InvalidInput", "must supply exactly one of DefinitionId or Steps");
-            sw.Stop();
             return Result.Failure<List<PlannedStepDto>>(DomainErrors.General.ArgumentError);
         }
 
@@ -65,7 +61,6 @@ public class PreviewApprovalChainQueryHandler : IRequestHandler<PreviewApprovalC
             {
                 _logger.LogDecision(_loggingOptions, LogAction.Workflow.PreviewApprovalChain, LogStage.Validation,
                     "DefinitionNotFound", new { DefinitionId = request.DefinitionId.Value });
-                sw.Stop();
                 return Result.Failure<List<PlannedStepDto>>(DomainErrors.Requests.DefinitionNotFound);
             }
 
@@ -90,7 +85,6 @@ public class PreviewApprovalChainQueryHandler : IRequestHandler<PreviewApprovalC
         {
             _logger.LogDecision(_loggingOptions, LogAction.Workflow.PreviewApprovalChain, LogStage.Validation,
                 "RequesterNodeNotFound", new { RequesterEmployeeId = request.RequesterEmployeeId });
-            sw.Stop();
             return Result.Failure<List<PlannedStepDto>>(DomainErrors.OrgNode.NotFound);
         }
 
@@ -99,9 +93,6 @@ public class PreviewApprovalChainQueryHandler : IRequestHandler<PreviewApprovalC
             assignment.OrgNodeId,
             stepsToResolve,
             ct);
-
-        sw.Stop();
-        _logger.LogActionSuccess(_loggingOptions, LogAction.Workflow.PreviewApprovalChain, sw.ElapsedMilliseconds);
 
         return result;
     }

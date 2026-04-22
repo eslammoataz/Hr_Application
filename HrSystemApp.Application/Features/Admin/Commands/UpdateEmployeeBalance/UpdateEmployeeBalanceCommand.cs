@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using HrSystemApp.Application.Common;
 using HrSystemApp.Application.Common.Logging;
 using HrSystemApp.Application.Errors;
@@ -38,15 +37,12 @@ public class UpdateEmployeeBalanceCommandHandler : IRequestHandler<UpdateEmploye
 
     public async Task<Result<bool>> Handle(UpdateEmployeeBalanceCommand request, CancellationToken cancellationToken)
     {
-        var sw = Stopwatch.StartNew();
-        _logger.LogActionStart(_loggingOptions, LogAction.Workflow.UpdateEmployeeBalance);
 
         var adminUserId = _currentUserService.UserId;
         if (string.IsNullOrEmpty(adminUserId))
         {
             _logger.LogDecision(_loggingOptions, LogAction.Workflow.UpdateEmployeeBalance, LogStage.Authorization,
                 "AdminNotAuthenticated", null);
-            sw.Stop();
             return Result.Failure<bool>(DomainErrors.Auth.Unauthorized);
         }
 
@@ -55,7 +51,6 @@ public class UpdateEmployeeBalanceCommandHandler : IRequestHandler<UpdateEmploye
         {
             _logger.LogDecision(_loggingOptions, LogAction.Workflow.UpdateEmployeeBalance, LogStage.Authorization,
                 "AdminNotFound", new { AdminUserId = adminUserId });
-            sw.Stop();
             return Result.Failure<bool>(DomainErrors.Employee.NotFound);
         }
 
@@ -64,7 +59,6 @@ public class UpdateEmployeeBalanceCommandHandler : IRequestHandler<UpdateEmploye
         {
             _logger.LogDecision(_loggingOptions, LogAction.Workflow.UpdateEmployeeBalance, LogStage.Authorization,
                 "UnauthorizedCrossCompanyAccess", new { AdminId = admin.Id, EmployeeId = request.EmployeeId });
-            sw.Stop();
             return Result.Failure<bool>(DomainErrors.Requests.Unauthorized);
         }
 
@@ -94,9 +88,6 @@ public class UpdateEmployeeBalanceCommandHandler : IRequestHandler<UpdateEmploye
         }
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-        sw.Stop();
-        _logger.LogActionSuccess(_loggingOptions, LogAction.Workflow.UpdateEmployeeBalance, sw.ElapsedMilliseconds);
 
         return Result.Success(true);
     }

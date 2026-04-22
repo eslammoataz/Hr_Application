@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using MediatR;
 using HrSystemApp.Application.Common;
 using HrSystemApp.Application.DTOs.Employees;
@@ -32,8 +31,6 @@ public class CreateEmployeeCommandHandler : IRequestHandler<CreateEmployeeComman
         CreateEmployeeCommand request,
         CancellationToken cancellationToken)
     {
-        var sw = Stopwatch.StartNew();
-        _logger.LogActionStart(_loggingOptions, LogAction.OrgNode.CreateEmployee);
 
         var existingUsers = await _unitOfWork.Users.FindAsync(
             u => u.Email == request.Email || u.PhoneNumber == request.PhoneNumber,
@@ -43,7 +40,6 @@ public class CreateEmployeeCommandHandler : IRequestHandler<CreateEmployeeComman
         {
             _logger.LogDecision(_loggingOptions, LogAction.OrgNode.CreateEmployee, LogStage.Validation,
                 "UserAlreadyExists", new { EmailDomain = request.Email.Split('@').Last() });
-            sw.Stop();
             return Result.Failure<CreateEmployeeResponse>(DomainErrors.Employee.AlreadyExists);
         }
 
@@ -52,7 +48,6 @@ public class CreateEmployeeCommandHandler : IRequestHandler<CreateEmployeeComman
         {
             _logger.LogDecision(_loggingOptions, LogAction.OrgNode.CreateEmployee, LogStage.Processing,
                 "CompanyNotFound", new { CompanyId = request.CompanyId });
-            sw.Stop();
             return Result.Failure<CreateEmployeeResponse>(DomainErrors.Company.NotFound);
         }
 
@@ -94,7 +89,6 @@ public class CreateEmployeeCommandHandler : IRequestHandler<CreateEmployeeComman
                 await _unitOfWork.RollbackTransactionAsync(cancellationToken);
                 _logger.LogDecision(_loggingOptions, LogAction.OrgNode.CreateEmployee, LogStage.Processing,
                     "UserCreationFailed", new { EmailDomain = request.Email.Split('@').Last() });
-                sw.Stop();
                 return Result.Failure<CreateEmployeeResponse>(DomainErrors.Employee.CreationFailed);
             }
 
@@ -112,9 +106,6 @@ public class CreateEmployeeCommandHandler : IRequestHandler<CreateEmployeeComman
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
             await _unitOfWork.CommitTransactionAsync(cancellationToken);
-
-            sw.Stop();
-            _logger.LogActionSuccess(_loggingOptions, LogAction.OrgNode.CreateEmployee, sw.ElapsedMilliseconds);
 
             return Result.Success(new CreateEmployeeResponse
             {

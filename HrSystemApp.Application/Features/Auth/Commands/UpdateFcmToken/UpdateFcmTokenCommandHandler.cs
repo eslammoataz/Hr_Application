@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -27,15 +26,12 @@ public class UpdateFcmTokenCommandHandler : IRequestHandler<UpdateFcmTokenComman
 
     public async Task<Result> Handle(UpdateFcmTokenCommand request, CancellationToken cancellationToken)
     {
-        var sw = Stopwatch.StartNew();
-        _logger.LogActionStart(_loggingOptions, LogAction.Auth.UpdateFcmToken);
 
         var user = await _unitOfWork.Users.GetByIdAsync(request.UserId, cancellationToken);
 
         if (user is null)
         {
             _logger.LogWarningUnauthorized(_loggingOptions, LogAction.Auth.UpdateFcmToken);
-            sw.Stop();
             return Result.Failure(DomainErrors.User.NotFound);
         }
 
@@ -44,9 +40,6 @@ public class UpdateFcmTokenCommandHandler : IRequestHandler<UpdateFcmTokenComman
 
         await _unitOfWork.Users.UpdateAsync(user, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-        sw.Stop();
-        _logger.LogActionSuccess(_loggingOptions, LogAction.Auth.UpdateFcmToken, sw.ElapsedMilliseconds);
 
         return Result.Success();
     }

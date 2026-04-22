@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -32,15 +31,12 @@ public class ChangePasswordCommandHandler : IRequestHandler<ChangePasswordComman
 
     public async Task<Result<AuthResponse>> Handle(ChangePasswordCommand request, CancellationToken cancellationToken)
     {
-        var sw = Stopwatch.StartNew();
-        _logger.LogActionStart(_loggingOptions, LogAction.Auth.ChangePassword);
 
         var user = await _unitOfWork.Users.GetByIdAsync(request.UserId, cancellationToken);
 
         if (user is null)
         {
             _logger.LogWarningUnauthorized(_loggingOptions, LogAction.Auth.ChangePassword);
-            sw.Stop();
             return Result.Failure<AuthResponse>(DomainErrors.User.NotFound);
         }
 
@@ -50,7 +46,6 @@ public class ChangePasswordCommandHandler : IRequestHandler<ChangePasswordComman
         {
             _logger.LogDecision(_loggingOptions, LogAction.Auth.ChangePassword, LogStage.Processing,
                 "PasswordChangeFailed", new { UserId = user.Id, ErrorCount = errors.Count() });
-            sw.Stop();
             return Result.Failure<AuthResponse>(new Error(DomainErrors.Auth.PasswordChangeFailed.Code,
                 string.Join(". ", errors)));
         }
@@ -60,9 +55,6 @@ public class ChangePasswordCommandHandler : IRequestHandler<ChangePasswordComman
 
         var roles = await _unitOfWork.Users.GetRolesAsync(user);
         var (token, expiresAt) = _tokenService.GenerateToken(user, roles);
-
-        sw.Stop();
-        _logger.LogActionSuccess(_loggingOptions, LogAction.Auth.ChangePassword, sw.ElapsedMilliseconds);
 
         return Result.Success(new AuthResponse(
             Token: token,

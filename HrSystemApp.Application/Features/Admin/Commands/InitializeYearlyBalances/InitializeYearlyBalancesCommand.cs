@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using HrSystemApp.Application.Common;
 using HrSystemApp.Application.Common.Logging;
 using HrSystemApp.Application.Errors;
@@ -35,15 +34,12 @@ public class InitializeYearlyBalancesCommandHandler : IRequestHandler<Initialize
 
     public async Task<Result<int>> Handle(InitializeYearlyBalancesCommand request, CancellationToken cancellationToken)
     {
-        var sw = Stopwatch.StartNew();
-        _logger.LogActionStart(_loggingOptions, LogAction.Workflow.InitializeYearlyBalances);
 
         var adminUserId = _currentUserService.UserId;
         if (string.IsNullOrEmpty(adminUserId))
         {
             _logger.LogDecision(_loggingOptions, LogAction.Workflow.InitializeYearlyBalances, LogStage.Authorization,
                 "AdminNotAuthenticated", null);
-            sw.Stop();
             return Result.Failure<int>(DomainErrors.Auth.Unauthorized);
         }
 
@@ -52,7 +48,6 @@ public class InitializeYearlyBalancesCommandHandler : IRequestHandler<Initialize
         {
             _logger.LogDecision(_loggingOptions, LogAction.Workflow.InitializeYearlyBalances, LogStage.Authorization,
                 "AdminNotFound", new { AdminUserId = adminUserId });
-            sw.Stop();
             return Result.Failure<int>(DomainErrors.Employee.NotFound);
         }
 
@@ -61,7 +56,6 @@ public class InitializeYearlyBalancesCommandHandler : IRequestHandler<Initialize
         {
             _logger.LogDecision(_loggingOptions, LogAction.Workflow.InitializeYearlyBalances, LogStage.Validation,
                 "CompanyNotFound", new { CompanyId = admin.CompanyId });
-            sw.Stop();
             return Result.Failure<int>(DomainErrors.Company.NotFound);
         }
 
@@ -90,9 +84,6 @@ public class InitializeYearlyBalancesCommandHandler : IRequestHandler<Initialize
         }
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-        sw.Stop();
-        _logger.LogActionSuccess(_loggingOptions, LogAction.Workflow.InitializeYearlyBalances, sw.ElapsedMilliseconds);
 
         return Result.Success(count);
     }

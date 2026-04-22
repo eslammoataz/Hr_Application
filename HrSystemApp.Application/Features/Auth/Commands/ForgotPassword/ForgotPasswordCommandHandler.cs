@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
@@ -37,8 +36,6 @@ public class ForgotPasswordCommandHandler : IRequestHandler<ForgotPasswordComman
 
     public async Task<Result> Handle(ForgotPasswordCommand request, CancellationToken cancellationToken)
     {
-        var sw = Stopwatch.StartNew();
-        _logger.LogActionStart(_loggingOptions, LogAction.Auth.ForgotPassword);
 
         var emailDomain = request.Email.Split('@').Last();
 
@@ -48,7 +45,6 @@ public class ForgotPasswordCommandHandler : IRequestHandler<ForgotPasswordComman
         {
             _logger.LogDecision(_loggingOptions, LogAction.Auth.ForgotPassword, LogStage.Authorization,
                 "UserNotFound", new { EmailDomain = emailDomain });
-            sw.Stop();
             return Result.Failure(DomainErrors.Auth.UserNotFound);
         }
 
@@ -68,9 +64,6 @@ public class ForgotPasswordCommandHandler : IRequestHandler<ForgotPasswordComman
             user.PhoneNumber,
             otp,
             request.Channel), cancellationToken);
-
-        sw.Stop();
-        _logger.LogActionSuccess(_loggingOptions, LogAction.Auth.ForgotPassword, sw.ElapsedMilliseconds);
 
         return Result.Success();
     }
