@@ -63,19 +63,23 @@ public class RequestWorkflowStep : BaseEntity
 
     /// <summary>
     /// For HierarchyLevel steps: the first ancestor level to include (1-based).
-    /// Level 1 = requester's own node. Level 2 = immediate parent. Etc.
-    /// NULL for non-HierarchyLevel steps. Defaults to 1 if omitted on a HierarchyLevel step.
+    /// Level 1 = the immediate parent.
     /// </summary>
     public int? StartFromLevel { get; set; }
 
     /// <summary>
-    /// For HierarchyLevel steps: how many consecutive levels this step covers starting at StartFromLevel.
-    /// NULL for non-HierarchyLevel steps. Required (>= 1) for HierarchyLevel steps.
+    /// For HierarchyLevel steps: how many consecutive ancestor levels to include.
     /// </summary>
     public int? LevelsUp { get; set; }
+
+    /// <summary>
+    /// For CompanyRole steps: the company role whose members must approve.
+    /// </summary>
+    public Guid? CompanyRoleId { get; set; }
 
     // Navigation
     public RequestDefinition RequestDefinition { get; set; } = null!;
     public OrgNode? OrgNode { get; set; }
     public Employee? DirectEmployee { get; set; }
+    public CompanyRole? CompanyRole { get; set; }
 }

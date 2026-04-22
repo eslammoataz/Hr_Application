@@ -5,6 +5,7 @@ using HrSystemApp.Application.Common;
 using HrSystemApp.Application.Errors;
 using HrSystemApp.Domain.Constants;
 using System.Text.Json;
+using HrSystemApp.Api.Logging;
 
 namespace HrSystemApp.Api;
 
@@ -13,6 +14,10 @@ public static class DependencyInjection
     public static IServiceCollection AddApi(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddHttpContextAccessor();
+
+        // Registered as singleton so Serilog can resolve it via ReadFrom.Services(services).
+        // ILogEventEnricher is the interface Serilog looks for when scanning services.
+        services.AddSingleton<Serilog.Core.ILogEventEnricher, RequestContextEnricher>();
 
         services.AddControllers();
 

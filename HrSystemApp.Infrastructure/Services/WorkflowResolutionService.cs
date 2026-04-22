@@ -1,4 +1,6 @@
+using System.Diagnostics;
 using HrSystemApp.Application.Common;
+using HrSystemApp.Application.Common.Logging;
 using HrSystemApp.Application.DTOs.Requests;
 using HrSystemApp.Application.Errors;
 using HrSystemApp.Application.Interfaces;
@@ -6,6 +8,7 @@ using HrSystemApp.Application.Interfaces.Services;
 using HrSystemApp.Domain.Enums;
 using HrSystemApp.Domain.Models;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace HrSystemApp.Infrastructure.Services;
 
@@ -13,11 +16,16 @@ public class WorkflowResolutionService : IWorkflowResolutionService
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<WorkflowResolutionService> _logger;
+    private readonly LoggingOptions _loggingOptions;
 
-    public WorkflowResolutionService(IUnitOfWork unitOfWork, ILogger<WorkflowResolutionService> logger)
+    public WorkflowResolutionService(
+        IUnitOfWork unitOfWork,
+        ILogger<WorkflowResolutionService> logger,
+        IOptions<LoggingOptions> loggingOptions)
     {
         _unitOfWork = unitOfWork;
         _logger = logger;
+        _loggingOptions = loggingOptions.Value;
     }
 
     public async Task<Result<List<PlannedStepDto>>> BuildApprovalChainAsync(
@@ -26,221 +34,216 @@ public class WorkflowResolutionService : IWorkflowResolutionService
         List<WorkflowStepDto> definitionSteps,
         CancellationToken ct)
     {
-        _logger.LogInformation("Building approval chain for employee {EmployeeId} from node {NodeId}",
-            requesterEmployeeId, requesterNodeId);
+        var sw = Stopwatch.StartNew();
+        var action = LogAction.Workflow.CreateRequest;
 
-        // Is the requester a manager at their own node? Used for self-approval skip below.
-        var isManagerAtOwnNode = await _unitOfWork.OrgNodeAssignments
-            .IsManagerAtNodeAsync(requesterEmployeeId, requesterNodeId, ct);
-
-        // Load the requester's own node.
-        var ownNode = await _unitOfWork.OrgNodes.GetByIdAsync(requesterNodeId, ct);
-        if (ownNode == null)
+        try
         {
-            _logger.LogWarning("Employee's node {NodeId} not found", requesterNodeId);
-            return Result.Failure<List<PlannedStepDto>>(DomainErrors.OrgNode.NotFound);
-        }
+            _logger.LogDecision(_loggingOptions, action, LogStage.ExternalCall,
+                "GetAncestorsAsync", new { NodeId = requesterNodeId });
 
-        // Ancestors: immediate parent first, then grandparent, ..., then root.
-        var ancestors = await _unitOfWork.OrgNodes.GetAncestorsAsync(requesterNodeId, ct);
-        var ancestorIds = ancestors.Select(a => a.Id).ToHashSet();
+            var isManagerAtOwnNode = await _unitOfWork.OrgNodeAssignments
+                .IsManagerAtNodeAsync(requesterEmployeeId, requesterNodeId, ct);
 
-        // Level-indexed chain: index 0 (Level 1) = own node, index 1 (Level 2) = immediate parent, etc.
-        var levelNodes = new List<OrgNode> { ownNode };
-        levelNodes.AddRange(ancestors);
-
-        // Sort definition steps by their declared SortOrder.
-        var sortedSteps = definitionSteps.OrderBy(s => s.SortOrder).ToList();
-
-        var plannedSteps = new List<PlannedStepDto>();
-        // Dedup across the entire resolved chain: an employee appears only at their earliest level.
-        var seenApproverIds = new HashSet<Guid>();
-
-        foreach (var step in sortedSteps)
-        {
-            if (step.StepType == WorkflowStepType.DirectEmployee)
+            var ownNode = await _unitOfWork.OrgNodes.GetByIdAsync(requesterNodeId, ct);
+            if (ownNode == null)
             {
-                // ── DIRECT EMPLOYEE STEP ─────────────────────────────────────────
-                if (step.DirectEmployeeId == null)
-                    return Result.Failure<List<PlannedStepDto>>(DomainErrors.Request.MissingDirectEmployeeId);
-
-                var directEmployee = await _unitOfWork.Employees.GetByIdAsync(step.DirectEmployeeId.Value, ct);
-                if (directEmployee == null)
-                    return Result.Failure<List<PlannedStepDto>>(DomainErrors.Request.DirectEmployeeNotInCompany);
-
-                // Dedup: if this employee was already added at an earlier step, skip.
-                if (seenApproverIds.Contains(directEmployee.Id))
-                {
-                    _logger.LogInformation("Dedup: DirectEmployee {EmployeeId} already present earlier, skipping", directEmployee.Id);
-                    continue;
-                }
-
-                seenApproverIds.Add(directEmployee.Id);
-
-                plannedSteps.Add(new PlannedStepDto
-                {
-                    StepType = WorkflowStepType.DirectEmployee,
-                    NodeId = null,
-                    NodeName = directEmployee.FullName,
-                    SortOrder = 0, // renumbered at the end
-                    Approvers = new List<ApproverDto>
-                    {
-                        new ApproverDto { EmployeeId = directEmployee.Id, EmployeeName = directEmployee.FullName }
-                    }
-                });
+                _logger.LogDecision(_loggingOptions, action, LogStage.Processing,
+                    "NodeNotFound", new { NodeId = requesterNodeId });
+                return Result.Failure<List<PlannedStepDto>>(DomainErrors.OrgNode.NotFound);
             }
-            else if (step.StepType == WorkflowStepType.HierarchyLevel)
+
+            var ancestors = await _unitOfWork.OrgNodes.GetAncestorsAsync(requesterNodeId, ct);
+            var ancestorIds = ancestors.Select(a => a.Id).ToHashSet();
+
+            _logger.LogExternalCall(_loggingOptions, action, "GetAncestorsAsync", sw.ElapsedMilliseconds);
+
+            var levelNodes = new List<OrgNode> { ownNode };
+            levelNodes.AddRange(ancestors);
+
+            _logger.LogDecision(_loggingOptions, action, LogStage.Processing,
+                "AncestorsResolved", new { AncestorCount = ancestors.Count });
+
+            var sortedSteps = definitionSteps.OrderBy(s => s.SortOrder).ToList();
+
+            var plannedSteps = new List<PlannedStepDto>();
+            var seenApproverIds = new HashSet<Guid>();
+
+            foreach (var step in sortedSteps)
             {
-                // ── HIERARCHY LEVEL STEP (dynamic) ───────────────────────────────
-                if (!step.LevelsUp.HasValue || step.LevelsUp.Value < 1)
-                    return Result.Failure<List<PlannedStepDto>>(DomainErrors.Request.MissingLevelsUp);
-
-                var startLevel = step.StartFromLevel ?? 1;
-                var endLevel = startLevel + step.LevelsUp.Value - 1;
-
-                for (int level = startLevel; level <= endLevel; level++)
+                if (step.StepType == WorkflowStepType.DirectEmployee)
                 {
-                    // Graceful truncation: requester has fewer ancestors than requested.
-                    if (level > levelNodes.Count)
-                    {
-                        _logger.LogInformation("Requester chain exhausted at level {Level}; stopping HierarchyLevel expansion early", level);
-                        break;
-                    }
+                    if (step.DirectEmployeeId == null)
+                        return Result.Failure<List<PlannedStepDto>>(DomainErrors.Request.MissingDirectEmployeeId);
 
-                    var node = levelNodes[level - 1]; // 1-based -> 0-based
-                    var managers = await _unitOfWork.OrgNodeAssignments.GetManagersByNodeAsync(node.Id, ct);
+                    var directEmployee = await _unitOfWork.Employees.GetByIdAsync(step.DirectEmployeeId.Value, ct);
+                    if (directEmployee == null)
+                        return Result.Failure<List<PlannedStepDto>>(DomainErrors.Request.DirectEmployeeNotInCompany);
 
-                    // D4: skip levels with no managers.
-                    if (managers.Count == 0)
-                    {
-                        _logger.LogInformation("Level {Level} (node {NodeName}) has no managers, skipping", level, node.Name);
+                    if (seenApproverIds.Contains(directEmployee.Id))
                         continue;
-                    }
 
-                    // D5: self-approval skip. Exclude the requester from approvers.
-                    var approvers = managers
-                        .Where(m => m.Id != requesterEmployeeId)
-                        .Select(m => new ApproverDto { EmployeeId = m.Id, EmployeeName = m.FullName })
+                    seenApproverIds.Add(directEmployee.Id);
+
+                    plannedSteps.Add(new PlannedStepDto
+                    {
+                        StepType = WorkflowStepType.DirectEmployee,
+                        NodeId = null,
+                        NodeName = directEmployee.FullName,
+                        SortOrder = 0,
+                        Approvers = new List<ApproverDto>
+                        {
+                            new ApproverDto { EmployeeId = directEmployee.Id, EmployeeName = directEmployee.FullName }
+                        }
+                    });
+                }
+                else if (step.StepType == WorkflowStepType.HierarchyLevel)
+                {
+                    if (!step.LevelsUp.HasValue || step.LevelsUp.Value < 1)
+                        return Result.Failure<List<PlannedStepDto>>(DomainErrors.Request.MissingLevelsUp);
+
+                    var startLevel = step.StartFromLevel ?? 1;
+                    var endLevel = startLevel + step.LevelsUp.Value - 1;
+
+                    for (int level = startLevel; level <= endLevel; level++)
+                    {
+                        if (level > levelNodes.Count)
+                        {
+                            _logger.LogDecision(_loggingOptions, action, LogStage.Processing,
+                                "ChainExhausted", new { RequestedLevel = level, AvailableLevels = levelNodes.Count });
+                            break;
+                        }
+
+                        var node = levelNodes[level - 1];
+                        var managers = await _unitOfWork.OrgNodeAssignments.GetManagersByNodeAsync(node.Id, ct);
+
+                        if (managers.Count == 0)
+                            continue;
+
+                        var approvers = managers
+                            .Where(m => m.Id != requesterEmployeeId)
+                            .Select(m => new ApproverDto { EmployeeId = m.Id, EmployeeName = m.FullName })
+                            .ToList();
+
+                        if (approvers.Count == 0)
+                            continue;
+
+                        approvers = approvers.Where(a => !seenApproverIds.Contains(a.EmployeeId)).ToList();
+                        if (approvers.Count == 0)
+                            continue;
+
+                        foreach (var a in approvers) seenApproverIds.Add(a.EmployeeId);
+
+                        plannedSteps.Add(new PlannedStepDto
+                        {
+                            StepType = WorkflowStepType.HierarchyLevel,
+                            NodeId = node.Id,
+                            NodeName = node.Name,
+                            SortOrder = 0,
+                            Approvers = approvers,
+                            ResolvedFromLevel = level
+                        });
+                    }
+                }
+                else if (step.StepType == WorkflowStepType.CompanyRole)
+                {
+                    if (!step.CompanyRoleId.HasValue)
+                        return Result.Failure<List<PlannedStepDto>>(DomainErrors.Request.MissingCompanyRoleId);
+
+                    var role = await _unitOfWork.CompanyRoles.GetByIdAsync(step.CompanyRoleId.Value, ct);
+                    if (role is null)
+                        return Result.Failure<List<PlannedStepDto>>(DomainErrors.Request.RoleNotFound);
+
+                    var roleHolders = await _unitOfWork.EmployeeCompanyRoles
+                        .GetActiveEmployeesByRoleIdAsync(step.CompanyRoleId.Value, ct);
+
+                    var approvers = roleHolders
+                        .Where(e => e.Id != requesterEmployeeId && !seenApproverIds.Contains(e.Id))
+                        .Select(e => new ApproverDto { EmployeeId = e.Id, EmployeeName = e.FullName })
                         .ToList();
 
-                    // Edge: requester was the only manager — skip this level entirely.
                     if (approvers.Count == 0)
-                    {
-                        _logger.LogInformation("Level {Level} skipped: requester was the only manager", level);
                         continue;
-                    }
-
-                    // D6: dedup against the chain seen so far.
-                    approvers = approvers.Where(a => !seenApproverIds.Contains(a.EmployeeId)).ToList();
-                    if (approvers.Count == 0)
-                    {
-                        _logger.LogInformation("Level {Level} skipped: all managers already present earlier in the chain", level);
-                        continue;
-                    }
 
                     foreach (var a in approvers) seenApproverIds.Add(a.EmployeeId);
 
                     plannedSteps.Add(new PlannedStepDto
                     {
-                        StepType = WorkflowStepType.HierarchyLevel,
-                        NodeId = node.Id,
-                        NodeName = node.Name,
-                        SortOrder = 0, // renumbered at the end
-                        Approvers = approvers,
-                        ResolvedFromLevel = level
+                        StepType = WorkflowStepType.CompanyRole,
+                        NodeId = null,
+                        NodeName = role.Name,
+                        CompanyRoleId = role.Id,
+                        RoleName = role.Name,
+                        SortOrder = 0,
+                        Approvers = approvers
+                    });
+                }
+                else
+                {
+                    if (step.OrgNodeId == null)
+                        return Result.Failure<List<PlannedStepDto>>(DomainErrors.Request.MissingOrgNodeId);
+
+                    if (step.OrgNodeId == requesterNodeId && isManagerAtOwnNode)
+                        continue;
+
+                    if (!step.BypassHierarchyCheck)
+                    {
+                        if (step.OrgNodeId != requesterNodeId && !ancestorIds.Contains(step.OrgNodeId.Value))
+                        {
+                            _logger.LogDecision(_loggingOptions, action, LogStage.Processing,
+                                "OrgNodeNotInPath", new { StepSortOrder = step.SortOrder, OrgNodeId = step.OrgNodeId });
+                            return Result.Failure<List<PlannedStepDto>>(DomainErrors.Request.InvalidWorkflowChain);
+                        }
+                    }
+
+                    OrgNode? stepNode = await _unitOfWork.OrgNodes.GetByIdAsync(step.OrgNodeId.Value, ct);
+                    var nodeName = stepNode?.Name ?? step.OrgNodeId.ToString()!;
+
+                    var managers = await _unitOfWork.OrgNodeAssignments
+                        .GetManagersByNodeAsync(step.OrgNodeId!.Value, ct);
+
+                    var approvers = managers
+                        .Where(e => e.Id != requesterEmployeeId && !seenApproverIds.Contains(e.Id))
+                        .Select(e => new ApproverDto { EmployeeId = e.Id, EmployeeName = e.FullName })
+                        .ToList();
+
+                    if (approvers.Count == 0)
+                        continue;
+
+                    foreach (var a in approvers) seenApproverIds.Add(a.EmployeeId);
+
+                    plannedSteps.Add(new PlannedStepDto
+                    {
+                        StepType = WorkflowStepType.OrgNode,
+                        NodeId = step.OrgNodeId,
+                        NodeName = nodeName,
+                        SortOrder = step.SortOrder,
+                        Approvers = approvers
                     });
                 }
             }
-            else
+
+            for (int i = 0; i < plannedSteps.Count; i++)
+                plannedSteps[i].SortOrder = i + 1;
+
+            sw.Stop();
+            _logger.LogActionSuccess(_loggingOptions, action, sw.ElapsedMilliseconds);
+
+            if (plannedSteps.Count == 0)
             {
-                // ── ORG NODE STEP ────────────────────────────────────────────────
-                if (step.OrgNodeId == null)
-                    return Result.Failure<List<PlannedStepDto>>(DomainErrors.Request.MissingOrgNodeId);
-
-                // Self-approval skip (existing behavior preserved).
-                if (step.OrgNodeId == requesterNodeId && isManagerAtOwnNode)
-                {
-                    _logger.LogInformation("Skipping OrgNode step {SortOrder}: self-approval prevention", step.SortOrder);
-                    continue;
-                }
-
-                // Hierarchy validation (existing behavior preserved).
-                if (!step.BypassHierarchyCheck)
-                {
-                    if (step.OrgNodeId != requesterNodeId && !ancestorIds.Contains(step.OrgNodeId.Value))
-                    {
-                        _logger.LogWarning("OrgNode step {SortOrder} references node {NodeId} not in approval path",
-                            step.SortOrder, step.OrgNodeId);
-                        return Result.Failure<List<PlannedStepDto>>(DomainErrors.Request.InvalidWorkflowChain);
-                    }
-                }
-
-                // Resolve node for its name.
-                OrgNode? stepNode;
-                if (step.OrgNodeId == requesterNodeId) stepNode = ownNode;
-                else if (ancestorIds.Contains(step.OrgNodeId.Value))
-                    stepNode = ancestors.First(a => a.Id == step.OrgNodeId.Value);
-                else
-                {
-                    stepNode = await _unitOfWork.OrgNodes.GetByIdAsync(step.OrgNodeId.Value, ct);
-                    if (stepNode == null)
-                        return Result.Failure<List<PlannedStepDto>>(DomainErrors.OrgNode.NotFound);
-                }
-
-                var managers = await _unitOfWork.OrgNodeAssignments.GetManagersByNodeAsync(step.OrgNodeId.Value, ct);
-                if (managers.Count == 0)
-                {
-                    _logger.LogWarning("No active managers at OrgNode step {SortOrder} (node: {NodeName})",
-                        step.SortOrder, stepNode.Name);
-                    return Result.Failure<List<PlannedStepDto>>(DomainErrors.Request.NoActiveManagersAtStep);
-                }
-
-                var approvers = managers
-                    .Where(m => m.Id != requesterEmployeeId)
-                    .Select(m => new ApproverDto { EmployeeId = m.Id, EmployeeName = m.FullName })
-                    .ToList();
-
-                // Edge: requester was the only manager — fall back to including them (existing behavior).
-                if (approvers.Count == 0)
-                {
-                    approvers = managers
-                        .Select(m => new ApproverDto { EmployeeId = m.Id, EmployeeName = m.FullName })
-                        .ToList();
-                }
-
-                // D6: dedup against chain so far.
-                approvers = approvers.Where(a => !seenApproverIds.Contains(a.EmployeeId)).ToList();
-                if (approvers.Count == 0)
-                {
-                    _logger.LogInformation("OrgNode step {SortOrder} skipped entirely due to dedup", step.SortOrder);
-                    continue;
-                }
-
-                foreach (var a in approvers) seenApproverIds.Add(a.EmployeeId);
-
-                plannedSteps.Add(new PlannedStepDto
-                {
-                    StepType = WorkflowStepType.OrgNode,
-                    NodeId = stepNode.Id,
-                    NodeName = stepNode.Name,
-                    SortOrder = 0, // renumbered at the end
-                    Approvers = approvers
-                });
+                _logger.LogDecision(_loggingOptions, action, LogStage.Processing,
+                    "EmptyChain", new { EmployeeId = requesterEmployeeId, NodeId = requesterNodeId });
             }
-        }
 
-        // Renumber SortOrder to 1..N contiguous on the resolved chain.
-        for (int i = 0; i < plannedSteps.Count; i++)
-            plannedSteps[i].SortOrder = i + 1;
-
-        if (plannedSteps.Count == 0)
-        {
-            _logger.LogInformation("Approval chain empty for employee {EmployeeId}; request will auto-approve", requesterEmployeeId);
             return Result.Success(plannedSteps);
         }
-
-        _logger.LogInformation("Built approval chain with {StepCount} steps", plannedSteps.Count);
-        return Result.Success(plannedSteps);
+        catch (Exception ex)
+        {
+            sw.Stop();
+            var lastKnownState = new { EmployeeId = requesterEmployeeId, NodeId = requesterNodeId };
+            _logger.LogActionFailure(_loggingOptions, action, LogStage.Processing, ex, lastKnownState);
+            throw;
+        }
     }
 
     public async Task<Result> ValidateWorkflowStepsAsync(
@@ -249,59 +252,14 @@ public class WorkflowResolutionService : IWorkflowResolutionService
         List<WorkflowStepDto> definitionSteps,
         CancellationToken ct)
     {
-        _logger.LogInformation("Validating {StepCount} workflow steps for node {NodeId}",
-            definitionSteps.Count, requesterNodeId);
+        var chainResult = await BuildApprovalChainAsync(
+            requesterEmployeeId,
+            requesterNodeId,
+            definitionSteps,
+            ct);
 
-        // Check if employee is a manager at their own node
-        var isManagerAtOwnNode = await _unitOfWork.OrgNodeAssignments
-            .IsManagerAtNodeAsync(requesterEmployeeId, requesterNodeId, ct);
-
-        // Get own node
-        var ownNode = await _unitOfWork.OrgNodes.GetByIdAsync(requesterNodeId, ct);
-        if (ownNode == null)
-        {
-            _logger.LogWarning("Employee's node {NodeId} not found", requesterNodeId);
-            return Result.Failure(DomainErrors.OrgNode.NotFound);
-        }
-
-        // Get all ancestors
-        var ancestors = await _unitOfWork.OrgNodes.GetAncestorsAsync(requesterNodeId, ct);
-        var ancestorIds = ancestors.Select(a => a.Id).ToHashSet();
-
-        // Check each step references a valid node (own node or ancestor)
-        foreach (var step in definitionSteps)
-        {
-            if (step.StepType == WorkflowStepType.DirectEmployee)
-            {
-                if (step.DirectEmployeeId == null)
-                    return Result.Failure(DomainErrors.Request.MissingDirectEmployeeId);
-
-                var emp = await _unitOfWork.Employees.GetByIdAsync(step.DirectEmployeeId.Value, ct);
-                if (emp == null)
-                    return Result.Failure(DomainErrors.Request.DirectEmployeeNotInCompany);
-
-                // No hierarchy validation needed for direct employee steps
-                continue;
-            }
-
-            // OrgNode step
-            if (step.OrgNodeId == null)
-                return Result.Failure(DomainErrors.Request.MissingOrgNodeId);
-
-            if (step.OrgNodeId == requesterNodeId && isManagerAtOwnNode)
-                continue; // will be skipped at build time
-
-            if (!step.BypassHierarchyCheck)
-            {
-                if (step.OrgNodeId != requesterNodeId && !ancestorIds.Contains(step.OrgNodeId.Value))
-                    return Result.Failure(DomainErrors.Request.InvalidWorkflowChain);
-            }
-
-            var managers = await _unitOfWork.OrgNodeAssignments.GetManagersByNodeAsync(step.OrgNodeId.Value, ct);
-            if (managers.Count == 0)
-                return Result.Failure(DomainErrors.Request.NoActiveManagersAtStep);
-        }
-
-        return Result.Success();
+        return chainResult.IsSuccess
+            ? Result.Success()
+            : Result.Failure(chainResult.Error);
     }
 }

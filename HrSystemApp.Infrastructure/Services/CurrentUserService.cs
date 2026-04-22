@@ -20,6 +20,8 @@ public class CurrentUserService : ICurrentUserService
     // MapInboundClaims = false in JWT config → claims stay as raw names
     public string? UserId => _httpContextAccessor.HttpContext?.User?.FindFirstValue(AppClaimTypes.Subject);
 
+    public string? Email => _httpContextAccessor.HttpContext?.User?.FindFirstValue(AppClaimTypes.Email);
+
     public string? PhoneNumber => _httpContextAccessor.HttpContext?.User?.FindFirstValue(AppClaimTypes.PhoneNumber);
 
     public string? Role => _httpContextAccessor.HttpContext?.User?.FindFirstValue(AppClaimTypes.Role);
@@ -33,6 +35,6 @@ public class CurrentUserService : ICurrentUserService
         }
     }
 
-    public bool IsAuthenticated => _httpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated ?? false;
+    public bool IsAuthenticated =>
+        _httpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated ?? false;
 }
-

@@ -104,7 +104,6 @@ public class OrgNodesController : BaseApiController
     [Authorize(Roles = Roles.Viewers)]
     public async Task<IActionResult> GetMyCompanyHierarchy([FromQuery] GetMyCompanyHierarchyQuery query, CancellationToken cancellationToken)
     {
-        var result = await _sender.Send(query, cancellationToken);
-        return HandleResult(result);
+        return HandleResult(await _sender.Send(query, cancellationToken));
     }
 }

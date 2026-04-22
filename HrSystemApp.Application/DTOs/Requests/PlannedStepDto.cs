@@ -2,12 +2,30 @@ using HrSystemApp.Domain.Enums;
 
 namespace HrSystemApp.Application.DTOs.Requests;
 
+public class ApproverDto
+{
+    public Guid EmployeeId { get; set; }
+    public string EmployeeName { get; set; } = string.Empty;
+}
+
+public class PlannedStepDto
+{
+    public WorkflowStepType StepType { get; set; } = WorkflowStepType.OrgNode;
+    public Guid? NodeId { get; set; }
+    public string NodeName { get; set; } = string.Empty;
+    public int SortOrder { get; set; }
+    public int? ResolvedFromLevel { get; set; }
+    public Guid? CompanyRoleId { get; set; }
+    public string? RoleName { get; set; }
+    public List<ApproverDto> Approvers { get; set; } = new();
+}
+
 public class WorkflowStepDto
 {
     public WorkflowStepType StepType { get; set; } = WorkflowStepType.OrgNode;
 
     /// <summary>
-    /// Human-readable name of the step type: "OrgNode", "DirectEmployee", or "HierarchyLevel".
+    /// Human-readable name of the step type: "OrgNode", "DirectEmployee", "HierarchyLevel", or "CompanyRole".
     /// </summary>
     public string StepTypeName { get; set; } = string.Empty;
 
@@ -22,30 +40,19 @@ public class WorkflowStepDto
     public int? StartFromLevel { get; set; }
 
     /// <summary>
-    /// For HierarchyLevel steps: how many consecutive levels covered. Required (>=1) for HierarchyLevel. Null on other step types.
+    /// For HierarchyLevel steps: how many ancestor levels to include starting from StartFromLevel.
+    /// Must be >= 1. Null on other step types.
     /// </summary>
     public int? LevelsUp { get; set; }
 
-    public int SortOrder { get; set; }
-}
-
-public class PlannedStepDto
-{
-    public WorkflowStepType StepType { get; set; } = WorkflowStepType.OrgNode;
-    public Guid? NodeId { get; set; }
-    public string NodeName { get; set; } = string.Empty;
-    public int SortOrder { get; set; }
-    public List<ApproverDto> Approvers { get; set; } = new();
+    /// <summary>
+    /// For CompanyRole steps: the ID of the company role whose members will approve this step.
+    /// Null on other step types.
+    /// </summary>
+    public Guid? CompanyRoleId { get; set; }
 
     /// <summary>
-    /// For planned steps produced by a HierarchyLevel definition step:
-    /// which ancestor level (1-based) this resolved step came from. Null for OrgNode/DirectEmployee steps.
+    /// Determines the order in which steps are executed. Must be unique across all steps in a definition.
     /// </summary>
-    public int? ResolvedFromLevel { get; set; }
-}
-
-public class ApproverDto
-{
-    public Guid EmployeeId { get; set; }
-    public string EmployeeName { get; set; } = string.Empty;
+    public int SortOrder { get; set; }
 }

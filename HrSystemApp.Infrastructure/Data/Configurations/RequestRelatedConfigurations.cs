@@ -50,6 +50,12 @@ public class RequestWorkflowConfiguration : IEntityTypeConfiguration<RequestDefi
             .WithMany()
             .HasForeignKey(x => x.DirectEmployeeId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        // CompanyRole FK - optional, only for CompanyRole steps
+        builder.HasOne(x => x.CompanyRole)
+            .WithMany()
+            .HasForeignKey(x => x.CompanyRoleId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }
 
@@ -69,19 +75,5 @@ public class RequestHistoryConfiguration : IEntityTypeConfiguration<RequestAppro
             .WithMany()
             .HasForeignKey(x => x.ApproverId)
             .OnDelete(DeleteBehavior.Restrict);
-    }
-}
-
-public class RequestAttachmentConfiguration : IEntityTypeConfiguration<RequestAttachment>
-{
-    public void Configure(EntityTypeBuilder<RequestAttachment> builder)
-    {
-        builder.ToTable("RequestAttachments");
-        builder.HasKey(x => x.Id);
-
-        builder.HasOne(x => x.Request)
-            .WithMany(x => x.Attachments)
-            .HasForeignKey(x => x.RequestId)
-            .OnDelete(DeleteBehavior.Cascade);
     }
 }

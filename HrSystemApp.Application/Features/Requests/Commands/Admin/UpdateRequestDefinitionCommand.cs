@@ -1,12 +1,15 @@
+using System.Diagnostics;
 using HrSystemApp.Application.DTOs.Requests;
 using HrSystemApp.Application.Interfaces;
 using HrSystemApp.Application.Interfaces.Services;
 using HrSystemApp.Application.Common;
+using HrSystemApp.Application.Common.Logging;
 using HrSystemApp.Application.Errors;
 using HrSystemApp.Domain.Enums;
 using HrSystemApp.Domain.Models;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace HrSystemApp.Application.Features.Requests.Commands.Admin;
 
@@ -22,30 +25,43 @@ public class UpdateRequestDefinitionCommandHandler : IRequestHandler<UpdateReque
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
     private readonly ILogger<UpdateRequestDefinitionCommandHandler> _logger;
+    private readonly LoggingOptions _loggingOptions;
 
     public UpdateRequestDefinitionCommandHandler(
         IUnitOfWork unitOfWork,
         ICurrentUserService currentUserService,
-        ILogger<UpdateRequestDefinitionCommandHandler> logger)
+        ILogger<UpdateRequestDefinitionCommandHandler> logger,
+        IOptions<LoggingOptions> loggingOptions)
     {
         _unitOfWork = unitOfWork;
         _currentUserService = currentUserService;
         _logger = logger;
+        _loggingOptions = loggingOptions.Value;
     }
 
     public async Task<Result<Guid>> Handle(UpdateRequestDefinitionCommand request, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Attempting to update Request Definition ID {DefinitionId}.", request.Id);
+        var sw = Stopwatch.StartNew();
+        _logger.LogActionStart(_loggingOptions, LogAction.Workflow.UpdateRequestDefinition);
 
         var userId = _currentUserService.UserId;
         if (string.IsNullOrEmpty(userId))
+        {
+            _logger.LogDecision(_loggingOptions, LogAction.Workflow.UpdateRequestDefinition, LogStage.Authorization,
+                "UserNotAuthenticated", null);
+            sw.Stop();
             return Result.Failure<Guid>(DomainErrors.Auth.Unauthorized);
+        }
 
         var employee = await _unitOfWork.Employees.GetByUserIdAsync(userId, cancellationToken);
         if (employee == null)
+        {
+            _logger.LogDecision(_loggingOptions, LogAction.Workflow.UpdateRequestDefinition, LogStage.Authorization,
+                "EmployeeNotFound", new { UserId = userId });
+            sw.Stop();
             return Result.Failure<Guid>(DomainErrors.Employee.NotFound);
+        }
 
-        // 1. Find the definition
         var definition = await _unitOfWork.RequestDefinitions.GetFirstOrDefaultAsync(
             d => d.Id == request.Id,
             cancellationToken,
@@ -54,53 +70,69 @@ public class UpdateRequestDefinitionCommandHandler : IRequestHandler<UpdateReque
 
         if (definition == null)
         {
-            _logger.LogWarning("UpdateRequestDefinition failed: Definition ID {DefinitionId} not found.", request.Id);
+            _logger.LogDecision(_loggingOptions, LogAction.Workflow.UpdateRequestDefinition, LogStage.Validation,
+                "DefinitionNotFound", new { DefinitionId = request.Id });
+            sw.Stop();
             return Result.Failure<Guid>(DomainErrors.Requests.DefinitionNotFound);
         }
 
-        // 2. Security: Does this user belong to the company and have admin rights?
         if (definition.CompanyId != employee.CompanyId)
         {
-            _logger.LogWarning(
-                "Unauthorized update attempt for Definition {DefinitionId} by user {UserId} from different company {CompanyId}.",
-                request.Id, userId, employee.CompanyId);
+            _logger.LogDecision(_loggingOptions, LogAction.Workflow.UpdateRequestDefinition, LogStage.Authorization,
+                "UnauthorizedCrossCompany", new { DefinitionId = request.Id, UserId = userId, EmployeeCompanyId = employee.CompanyId });
+            sw.Stop();
             return Result.Failure<Guid>(DomainErrors.Auth.Unauthorized);
         }
 
-        // 3. Validate steps have unique sort orders
         var sortOrders = request.Steps.Select(s => s.SortOrder).ToList();
         if (sortOrders.Distinct().Count() != sortOrders.Count)
         {
-            _logger.LogWarning("UpdateRequestDefinition failed: Duplicate sort orders detected.");
+            _logger.LogDecision(_loggingOptions, LogAction.Workflow.UpdateRequestDefinition, LogStage.Validation,
+                "DuplicateSortOrders", null);
+            sw.Stop();
             return Result.Failure<Guid>(DomainErrors.General.ArgumentError);
         }
 
-        // (NEW) Per-step field consistency
         foreach (var step in request.Steps)
         {
             if (step.StepType == WorkflowStepType.HierarchyLevel)
             {
-                // HierarchyLevel must have LevelsUp >= 1
                 if (!step.LevelsUp.HasValue || step.LevelsUp.Value < 1)
+                {
+                    _logger.LogDecision(_loggingOptions, LogAction.Workflow.UpdateRequestDefinition, LogStage.Validation,
+                        "MissingLevelsUp", new { SortOrder = step.SortOrder });
+                    sw.Stop();
                     return Result.Failure<Guid>(DomainErrors.Request.MissingLevelsUp);
+                }
 
-                // StartFromLevel (if set) must be >= 1
                 if (step.StartFromLevel.HasValue && step.StartFromLevel.Value < 1)
+                {
+                    _logger.LogDecision(_loggingOptions, LogAction.Workflow.UpdateRequestDefinition, LogStage.Validation,
+                        "InvalidStartFromLevel", new { SortOrder = step.SortOrder });
+                    sw.Stop();
                     return Result.Failure<Guid>(DomainErrors.Request.InvalidStartFromLevel);
+                }
 
-                // HierarchyLevel must NOT have OrgNodeId, DirectEmployeeId, or BypassHierarchyCheck
                 if (step.OrgNodeId.HasValue || step.DirectEmployeeId.HasValue || step.BypassHierarchyCheck)
+                {
+                    _logger.LogDecision(_loggingOptions, LogAction.Workflow.UpdateRequestDefinition, LogStage.Validation,
+                        "UnexpectedFieldsOnHierarchyLevel", new { SortOrder = step.SortOrder });
+                    sw.Stop();
                     return Result.Failure<Guid>(DomainErrors.Request.UnexpectedFieldsOnHierarchyLevelStep);
+                }
             }
             else
             {
-                // OrgNode and DirectEmployee steps must NOT have StartFromLevel or LevelsUp
                 if (step.StartFromLevel.HasValue || step.LevelsUp.HasValue)
+                {
+                    _logger.LogDecision(_loggingOptions, LogAction.Workflow.UpdateRequestDefinition, LogStage.Validation,
+                        "HierarchyFieldsOnNonHierarchyStep", new { SortOrder = step.SortOrder });
+                    sw.Stop();
                     return Result.Failure<Guid>(DomainErrors.Request.HierarchyLevelFieldsOnNonHierarchyStep);
+                }
             }
         }
 
-        // (NEW) HierarchyLevel ranges must not overlap
         var hierarchyRanges = request.Steps
             .Where(s => s.StepType == WorkflowStepType.HierarchyLevel)
             .Select(s => new
@@ -117,85 +149,113 @@ public class UpdateRequestDefinitionCommandHandler : IRequestHandler<UpdateReque
             {
                 var a = hierarchyRanges[i];
                 var b = hierarchyRanges[j];
-                // Overlap test: max(start) <= min(end)
                 if (Math.Max(a.Start, b.Start) <= Math.Min(a.End, b.End))
                 {
-                    _logger.LogWarning("HierarchyLevel ranges overlap between steps sortOrder {A} [{As}..{Ae}] and {B} [{Bs}..{Be}]",
-                        a.SortOrder, a.Start, a.End, b.SortOrder, b.Start, b.End);
+                    _logger.LogDecision(_loggingOptions, LogAction.Workflow.UpdateRequestDefinition, LogStage.Validation,
+                        "HierarchyRangesOverlap", new { A = a.SortOrder, B = b.SortOrder });
+                    sw.Stop();
                     return Result.Failure<Guid>(DomainErrors.Request.HierarchyRangesOverlap);
                 }
             }
         }
 
-        // 4. Validate each step's referenced entity exists and belongs to this company
         foreach (var step in request.Steps)
         {
             if (step.StepType == WorkflowStepType.OrgNode)
             {
                 if (!step.OrgNodeId.HasValue)
+                {
+                    _logger.LogDecision(_loggingOptions, LogAction.Workflow.UpdateRequestDefinition, LogStage.Validation,
+                        "MissingOrgNodeId", new { SortOrder = step.SortOrder });
+                    sw.Stop();
                     return Result.Failure<Guid>(DomainErrors.Request.MissingOrgNodeId);
+                }
 
                 var node = await _unitOfWork.OrgNodes.GetByIdAsync(step.OrgNodeId.Value, cancellationToken);
                 if (node == null)
+                {
+                    _logger.LogDecision(_loggingOptions, LogAction.Workflow.UpdateRequestDefinition, LogStage.Validation,
+                        "OrgNodeNotFound", new { OrgNodeId = step.OrgNodeId.Value });
+                    sw.Stop();
                     return Result.Failure<Guid>(DomainErrors.OrgNode.NotFound);
+                }
 
                 if (node.CompanyId != definition.CompanyId)
+                {
+                    _logger.LogDecision(_loggingOptions, LogAction.Workflow.UpdateRequestDefinition, LogStage.Validation,
+                        "OrgNodeNotInCompany", new { OrgNodeId = step.OrgNodeId.Value });
+                    sw.Stop();
                     return Result.Failure<Guid>(DomainErrors.Request.OrgNodeNotInCompany);
+                }
             }
             else if (step.StepType == WorkflowStepType.DirectEmployee)
             {
                 if (!step.DirectEmployeeId.HasValue)
+                {
+                    _logger.LogDecision(_loggingOptions, LogAction.Workflow.UpdateRequestDefinition, LogStage.Validation,
+                        "MissingDirectEmployeeId", new { SortOrder = step.SortOrder });
+                    sw.Stop();
                     return Result.Failure<Guid>(DomainErrors.Request.MissingDirectEmployeeId);
+                }
 
-                var emp = await _unitOfWork.Employees.GetByIdAsync(step.DirectEmployeeId.Value, cancellationToken);
-                if (emp == null)
-                    return Result.Failure<Guid>(DomainErrors.Employee.NotFound);
-
-                if (emp.CompanyId != definition.CompanyId)
+                var directEmp = await _unitOfWork.Employees.GetByIdAsync(step.DirectEmployeeId.Value, cancellationToken);
+                if (directEmp == null || directEmp.CompanyId != definition.CompanyId)
+                {
+                    _logger.LogDecision(_loggingOptions, LogAction.Workflow.UpdateRequestDefinition, LogStage.Validation,
+                        "DirectEmployeeNotInCompany", new { DirectEmployeeId = step.DirectEmployeeId.Value });
+                    sw.Stop();
                     return Result.Failure<Guid>(DomainErrors.Request.DirectEmployeeNotInCompany);
+                }
+
+                if (directEmp.EmploymentStatus != EmploymentStatus.Active)
+                {
+                    _logger.LogDecision(_loggingOptions, LogAction.Workflow.UpdateRequestDefinition, LogStage.Validation,
+                        "DirectEmployeeNotActive", new { DirectEmployeeId = step.DirectEmployeeId.Value });
+                    sw.Stop();
+                    return Result.Failure<Guid>(DomainErrors.Request.DirectEmployeeNotActive);
+                }
             }
-            // HierarchyLevel steps are already validated above; no additional entity lookup needed.
-        }
-
-        // 5. Cross-step conflict check:
-        //    A DirectEmployee approver must not also be a manager at any OrgNode step.
-        var directEmployeeIds = request.Steps
-            .Where(s => s.StepType == WorkflowStepType.DirectEmployee && s.DirectEmployeeId.HasValue)
-            .Select(s => s.DirectEmployeeId!.Value)
-            .ToHashSet();
-
-        if (directEmployeeIds.Count > 0)
-        {
-            var orgNodeSteps = request.Steps.Where(s => s.StepType == WorkflowStepType.OrgNode && s.OrgNodeId.HasValue);
-            foreach (var nodeStep in orgNodeSteps)
+            else if (step.StepType == WorkflowStepType.CompanyRole)
             {
-                var managers = await _unitOfWork.OrgNodeAssignments.GetManagersByNodeAsync(nodeStep.OrgNodeId!.Value, cancellationToken);
-                var conflict = managers.Any(m => directEmployeeIds.Contains(m.Id));
-                if (conflict)
-                    return Result.Failure<Guid>(DomainErrors.Request.DirectEmployeeAlsoNodeManager);
+                if (!step.CompanyRoleId.HasValue)
+                {
+                    _logger.LogDecision(_loggingOptions, LogAction.Workflow.UpdateRequestDefinition, LogStage.Validation,
+                        "MissingCompanyRoleId", new { SortOrder = step.SortOrder });
+                    sw.Stop();
+                    return Result.Failure<Guid>(DomainErrors.Request.MissingCompanyRoleId);
+                }
+
+                var role = await _unitOfWork.CompanyRoles.GetByIdAsync(step.CompanyRoleId.Value, cancellationToken);
+                if (role is null || role.IsDeleted || role.CompanyId != definition.CompanyId)
+                {
+                    _logger.LogDecision(_loggingOptions, LogAction.Workflow.UpdateRequestDefinition, LogStage.Validation,
+                        "RoleNotInCompany", new { CompanyRoleId = step.CompanyRoleId.Value });
+                    sw.Stop();
+                    return Result.Failure<Guid>(DomainErrors.Request.RoleNotInCompany);
+                }
             }
         }
 
-        // 6. Update
-        definition.IsActive = request.IsActive;
         definition.WorkflowSteps.Clear();
-        definition.WorkflowSteps = request.Steps.Select(s => new RequestWorkflowStep
+        foreach (var step in request.Steps)
         {
-            StepType = s.StepType,
-            OrgNodeId = s.StepType == WorkflowStepType.OrgNode ? s.OrgNodeId : null,
-            BypassHierarchyCheck = s.StepType == WorkflowStepType.OrgNode && s.BypassHierarchyCheck,
-            DirectEmployeeId = s.StepType == WorkflowStepType.DirectEmployee ? s.DirectEmployeeId : null,
-            StartFromLevel = s.StepType == WorkflowStepType.HierarchyLevel ? (s.StartFromLevel ?? 1) : (int?)null,
-            LevelsUp = s.StepType == WorkflowStepType.HierarchyLevel ? s.LevelsUp : (int?)null,
-            SortOrder = s.SortOrder,
-            RequestDefinitionId = definition.Id
-        }).ToList();
+            definition.WorkflowSteps.Add(new RequestWorkflowStep
+            {
+                StepType = step.StepType,
+                OrgNodeId = step.OrgNodeId,
+                BypassHierarchyCheck = step.BypassHierarchyCheck,
+                DirectEmployeeId = step.DirectEmployeeId,
+                StartFromLevel = step.StartFromLevel,
+                LevelsUp = step.LevelsUp,
+                CompanyRoleId = step.CompanyRoleId,
+                SortOrder = step.SortOrder
+            });
+        }
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        _logger.LogInformation(
-            "Successfully updated Request Definition ID {DefinitionId} (Type: {Type}). New step count: {StepCount}",
-            definition.Id, definition.RequestType, definition.WorkflowSteps.Count);
+        sw.Stop();
+        _logger.LogActionSuccess(_loggingOptions, LogAction.Workflow.UpdateRequestDefinition, sw.ElapsedMilliseconds);
 
         return Result.Success(definition.Id);
     }

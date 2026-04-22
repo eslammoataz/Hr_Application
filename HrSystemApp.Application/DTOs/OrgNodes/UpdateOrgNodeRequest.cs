@@ -4,5 +4,4 @@ public record UpdateOrgNodeRequest(
     Guid Id,
     string Name,
     Guid? ParentId,
-    string? Type
-);
+    string? Type);

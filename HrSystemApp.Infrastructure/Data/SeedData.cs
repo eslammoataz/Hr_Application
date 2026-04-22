@@ -331,74 +331,98 @@ public static class SeedData
     {
         if (employees.Count == 0) return;
 
-        // Check if already seeded
-        if (await context.OrgNodes.AnyAsync())
+        OrgNode backendTeam;
+
+        if (!await context.OrgNodes.AnyAsync())
         {
-            logger.LogInformation("OrgNode hierarchy already exists, skipping.");
-            return;
+            var ceo = employees["ceo"];
+            var hr = employees["hr"];
+
+            // Create org node hierarchy
+            var rootNode = new OrgNode
+            {
+                Id = Guid.NewGuid(),
+                Name = "HRMS Company",
+                Type = "company",
+                ParentId = null
+            };
+
+            var hrNode = new OrgNode
+            {
+                Id = Guid.NewGuid(),
+                Name = "Human Resources",
+                Type = "department",
+                ParentId = rootNode.Id
+            };
+
+            var engNode = new OrgNode
+            {
+                Id = Guid.NewGuid(),
+                Name = "Engineering",
+                Type = "division",
+                ParentId = rootNode.Id
+            };
+
+            backendTeam = new OrgNode
+            {
+                Id = Guid.NewGuid(),
+                Name = "Backend Team",
+                Type = "team",
+                ParentId = engNode.Id
+            };
+
+            context.OrgNodes.AddRange(rootNode, hrNode, engNode, backendTeam);
+            await context.SaveChangesAsync();
+
+            // Seed base manager assignments
+            var baseAssignments = new List<OrgNodeAssignment>
+            {
+                new() { Id = Guid.NewGuid(), OrgNodeId = rootNode.Id, EmployeeId = ceo.Id, Role = OrgRole.Manager },
+                new() { Id = Guid.NewGuid(), OrgNodeId = hrNode.Id, EmployeeId = hr.Id, Role = OrgRole.Manager },
+            };
+
+            context.OrgNodeAssignments.AddRange(baseAssignments);
+            await context.SaveChangesAsync();
+
+            logger.LogInformation("OrgNode hierarchy seeded with 4 nodes.");
+        }
+        else
+        {
+            logger.LogInformation("OrgNode hierarchy already exists, checking for missing assignments.");
+            backendTeam = await context.OrgNodes.FirstOrDefaultAsync(n => n.Name == "Backend Team")
+                          ?? await context.OrgNodes.FirstOrDefaultAsync(n => n.Type == "team")
+                          ?? await context.OrgNodes.OrderBy(n => n.Id).LastAsync();
         }
 
-        var ceo = employees["ceo"];
-        var hr = employees["hr"];
-
-        // Create org node hierarchy
-        var rootNode = new OrgNode
-        {
-            Id = Guid.NewGuid(),
-            Name = "HRMS Company",
-            Type = "company",
-            ParentId = null
-        };
-
-        var hrNode = new OrgNode
-        {
-            Id = Guid.NewGuid(),
-            Name = "Human Resources",
-            Type = "department",
-            ParentId = rootNode.Id
-        };
-
-        var engNode = new OrgNode
-        {
-            Id = Guid.NewGuid(),
-            Name = "Engineering",
-            Type = "division",
-            ParentId = rootNode.Id
-        };
-
-        var backendTeam = new OrgNode
-        {
-            Id = Guid.NewGuid(),
-            Name = "Backend Team",
-            Type = "team",
-            ParentId = engNode.Id
-        };
-
-        context.OrgNodes.AddRange(rootNode, hrNode, engNode, backendTeam);
-        await context.SaveChangesAsync();
-
-        // Assign employees to nodes
-        var assignments = new List<OrgNodeAssignment>
-        {
-            new() { Id = Guid.NewGuid(), OrgNodeId = rootNode.Id, EmployeeId = ceo.Id, Role = OrgRole.Manager },
-            new() { Id = Guid.NewGuid(), OrgNodeId = hrNode.Id, EmployeeId = hr.Id, Role = OrgRole.Manager },
-        };
+        // Idempotently ensure Charlie and Fiona are assigned to backendTeam
+        var newAssignments = new List<OrgNodeAssignment>();
 
         if (employees.TryGetValue("charlie", out var charlie))
         {
-            assignments.Add(new OrgNodeAssignment { Id = Guid.NewGuid(), OrgNodeId = backendTeam.Id, EmployeeId = charlie.Id, Role = OrgRole.Member });
+            var exists = await context.OrgNodeAssignments
+                .AnyAsync(a => a.EmployeeId == charlie.Id);
+            if (!exists)
+                newAssignments.Add(new OrgNodeAssignment { Id = Guid.NewGuid(), OrgNodeId = backendTeam.Id, EmployeeId = charlie.Id, Role = OrgRole.Member });
         }
 
         if (employees.TryGetValue("fiona", out var fiona))
         {
-            assignments.Add(new OrgNodeAssignment { Id = Guid.NewGuid(), OrgNodeId = backendTeam.Id, EmployeeId = fiona.Id, Role = OrgRole.Member });
+            var exists = await context.OrgNodeAssignments
+                .AnyAsync(a => a.EmployeeId == fiona.Id);
+            if (!exists)
+                newAssignments.Add(new OrgNodeAssignment { Id = Guid.NewGuid(), OrgNodeId = backendTeam.Id, EmployeeId = fiona.Id, Role = OrgRole.Member });
         }
 
-        context.OrgNodeAssignments.AddRange(assignments);
-        await context.SaveChangesAsync();
-
-        logger.LogInformation("OrgNode hierarchy seeded with {NodeCount} nodes and {AssignmentCount} assignments.",
-            4, assignments.Count);
+        if (newAssignments.Count > 0)
+        {
+            context.OrgNodeAssignments.AddRange(newAssignments);
+            await context.SaveChangesAsync();
+            logger.LogInformation("Added {Count} missing OrgNode assignments.", newAssignments.Count);
+        }
+        else
+        {
+            logger.LogInformation("All employee OrgNode assignments already present.");
+        }
     }
 
     private static async Task<Employee?> CreateHierarchyUserAsync(

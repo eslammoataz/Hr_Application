@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using HrSystemApp.Application.Common;
 using HrSystemApp.Application.DTOs.OrgNodes;
 using HrSystemApp.Application.Errors;
@@ -5,6 +6,8 @@ using HrSystemApp.Application.Interfaces;
 using HrSystemApp.Domain.Models;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using HrSystemApp.Application.Common.Logging;
 
 namespace HrSystemApp.Application.Features.OrgNodes.Commands.BulkSetupOrgNodes;
 
@@ -12,16 +15,22 @@ public class BulkSetupOrgNodesCommandHandler : IRequestHandler<BulkSetupOrgNodes
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<BulkSetupOrgNodesCommandHandler> _logger;
+    private readonly LoggingOptions _loggingOptions;
 
-    public BulkSetupOrgNodesCommandHandler(IUnitOfWork unitOfWork, ILogger<BulkSetupOrgNodesCommandHandler> logger)
+    public BulkSetupOrgNodesCommandHandler(
+        IUnitOfWork unitOfWork,
+        ILogger<BulkSetupOrgNodesCommandHandler> logger,
+        IOptions<LoggingOptions> loggingOptions)
     {
         _unitOfWork = unitOfWork;
         _logger = logger;
+        _loggingOptions = loggingOptions.Value;
     }
 
     public async Task<Result<BulkSetupOrgNodesResponse>> Handle(BulkSetupOrgNodesCommand request, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Starting bulk org nodes setup with {Count} nodes", request.Request.Nodes.Count);
+        var sw = Stopwatch.StartNew();
+        _logger.LogActionStart(_loggingOptions, LogAction.OrgNode.BulkSetupOrgNodes);
 
         await _unitOfWork.BeginTransactionAsync(cancellationToken);
 
@@ -31,19 +40,19 @@ public class BulkSetupOrgNodesCommandHandler : IRequestHandler<BulkSetupOrgNodes
             var tempIdToDepth = new Dictionary<string, int>();
             var results = new List<BulkNodeResultDto>();
 
-            // Build dependency graph and validate all parentTempIds exist
             var allTempIds = request.Request.Nodes.Select(n => n.TempId).ToHashSet();
             foreach (var nodeDto in request.Request.Nodes)
             {
                 if (!string.IsNullOrEmpty(nodeDto.ParentTempId) && !allTempIds.Contains(nodeDto.ParentTempId))
                 {
-                    _logger.LogWarning("BulkSetup failed: ParentTempId '{ParentTempId}' not found in request", nodeDto.ParentTempId);
+                    _logger.LogDecision(_loggingOptions, LogAction.OrgNode.BulkSetupOrgNodes, LogStage.Processing,
+                        "ParentTempIdNotFound", new { ParentTempId = nodeDto.ParentTempId });
                     await _unitOfWork.RollbackTransactionAsync(cancellationToken);
+                    sw.Stop();
                     return Result.Failure<BulkSetupOrgNodesResponse>(DomainErrors.OrgNode.NotFound);
                 }
             }
 
-            // First pass: create all root nodes (no parent)
             var roots = request.Request.Nodes.Where(n => string.IsNullOrEmpty(n.ParentTempId)).ToList();
             foreach (var root in roots)
             {
@@ -59,10 +68,10 @@ public class BulkSetupOrgNodesCommandHandler : IRequestHandler<BulkSetupOrgNodes
                 tempIdToNode[root.TempId] = node;
                 tempIdToDepth[root.TempId] = 0;
 
-                _logger.LogInformation("Created root node: {TempId} -> {NodeId} ({Name})", root.TempId, node.Id, node.Name);
+                _logger.LogDecision(_loggingOptions, LogAction.OrgNode.BulkSetupOrgNodes, LogStage.Processing,
+                    "RootNodeCreated", new { TempId = root.TempId, NodeId = node.Id, Name = node.Name });
             }
 
-            // Second pass: resolve dependencies in correct order using topological sort
             var resolved = new HashSet<string>(tempIdToNode.Keys);
             var remaining = request.Request.Nodes.Where(n => !resolved.Contains(n.TempId)).ToList();
 
@@ -76,7 +85,7 @@ public class BulkSetupOrgNodesCommandHandler : IRequestHandler<BulkSetupOrgNodes
                         continue;
 
                     if (!string.IsNullOrEmpty(nodeDto.ParentTempId) && !resolved.Contains(nodeDto.ParentTempId))
-                        continue; // parent not resolved yet
+                        continue;
 
                     var parentId = string.IsNullOrEmpty(nodeDto.ParentTempId)
                         ? (Guid?)null
@@ -101,21 +110,20 @@ public class BulkSetupOrgNodesCommandHandler : IRequestHandler<BulkSetupOrgNodes
                     remaining.Remove(nodeDto);
                     madeProgress = true;
 
-                    _logger.LogInformation("Created node: {TempId} -> {NodeId} (Parent: {ParentTempId}, Depth: {Depth})",
-                        nodeDto.TempId, node.Id, nodeDto.ParentTempId ?? "null", parentDepth + 1);
+                    _logger.LogDecision(_loggingOptions, LogAction.OrgNode.BulkSetupOrgNodes, LogStage.Processing,
+                        "ChildNodeCreated", new { TempId = nodeDto.TempId, NodeId = node.Id, ParentTempId = nodeDto.ParentTempId ?? "root", Depth = parentDepth + 1 });
                 }
 
-                // Safety check for circular references
                 if (!madeProgress && remaining.Count > 0)
                 {
-                    _logger.LogError("BulkSetup failed: circular reference detected among remaining nodes: {Remaining}",
-                        string.Join(", ", remaining.Select(n => n.TempId)));
+                    _logger.LogDecision(_loggingOptions, LogAction.OrgNode.BulkSetupOrgNodes, LogStage.Processing,
+                        "CircularReference", new { RemainingNodes = remaining.Select(n => n.TempId).ToList() });
                     await _unitOfWork.RollbackTransactionAsync(cancellationToken);
+                    sw.Stop();
                     return Result.Failure<BulkSetupOrgNodesResponse>(DomainErrors.OrgNode.InvalidHierarchyConfiguration);
                 }
             }
 
-            // Third pass: create assignments
             foreach (var nodeDto in request.Request.Nodes)
             {
                 var node = tempIdToNode[nodeDto.TempId];
@@ -130,8 +138,9 @@ public class BulkSetupOrgNodesCommandHandler : IRequestHandler<BulkSetupOrgNodes
                     };
 
                     await _unitOfWork.OrgNodeAssignments.AddAsync(assignment, cancellationToken);
-                    _logger.LogInformation("Assigned Employee {EmployeeId} to node {NodeId} with role {Role}",
-                        assignmentDto.EmployeeId, node.Id, assignmentDto.Role);
+
+                    _logger.LogDecision(_loggingOptions, LogAction.OrgNode.BulkSetupOrgNodes, LogStage.Processing,
+                        "EmployeeAssigned", new { EmployeeId = assignmentDto.EmployeeId, NodeId = node.Id, Role = assignmentDto.Role });
                 }
 
                 results.Add(new BulkNodeResultDto
@@ -146,10 +155,10 @@ public class BulkSetupOrgNodesCommandHandler : IRequestHandler<BulkSetupOrgNodes
             await _unitOfWork.SaveChangesAsync(cancellationToken);
             await _unitOfWork.CommitTransactionAsync(cancellationToken);
 
-            // Company node is the root with depth 0
             var companyNodeId = results.First(r => r.Depth == 0).RealId;
 
-            _logger.LogInformation("BulkSetup completed successfully. Created {Count} nodes and assignments.", results.Count);
+            sw.Stop();
+            _logger.LogActionSuccess(_loggingOptions, LogAction.OrgNode.BulkSetupOrgNodes, sw.ElapsedMilliseconds);
 
             return Result.Success(new BulkSetupOrgNodesResponse
             {
@@ -159,8 +168,9 @@ public class BulkSetupOrgNodesCommandHandler : IRequestHandler<BulkSetupOrgNodes
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "BulkSetup failed with exception");
             await _unitOfWork.RollbackTransactionAsync(cancellationToken);
+            _logger.LogActionFailure(_loggingOptions, LogAction.OrgNode.BulkSetupOrgNodes, LogStage.Processing, ex,
+                new { CompanyId = request.Request.CompanyId, NodeCount = request.Request.Nodes.Count });
             throw;
         }
     }

@@ -38,5 +38,5 @@ public static class Roles
         $"{SuperAdmin},{CompanyAdmin},{Executive},{HR},{Employee}";
 
     public const string CompanyAdmins =
-        $"{SuperAdmin},{CompanyAdmin}";
+        $"{SuperAdmin},{CompanyAdmin},{Executive},{HR}";
 }

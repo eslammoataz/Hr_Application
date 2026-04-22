@@ -151,10 +151,7 @@ public class OverrideClockInCommandHandler : IRequestHandler<OverrideClockInComm
             attendance.FirstClockInUtc,
             attendance.LastClockOutUtc,
             attendance.TotalHours,
-            Status = attendance.Status.ToString(),
-            attendance.IsLate,
-            attendance.IsEarlyLeave,
-            attendance.Reason
+            Status = AttendanceStatus.Present
         });
     }
 }

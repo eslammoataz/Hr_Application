@@ -43,4 +43,15 @@ public class RequestRepository : Repository<Request>, IRequestRepository
             .OrderByDescending(x => x.CreatedAt)
             .ToListAsync(cancellationToken);
     }
+
+    public async Task<List<RequestApprovalHistory>> GetApprovalActionsAsync(Guid approverId, CancellationToken cancellationToken = default)
+    {
+        return await _context.Set<RequestApprovalHistory>()
+            .AsNoTracking()
+            .Where(h => h.ApproverId == approverId)
+            .Include(h => h.Request)
+                .ThenInclude(r => r.Employee)
+            .OrderByDescending(h => h.CreatedAt)
+            .ToListAsync(cancellationToken);
+    }
 }

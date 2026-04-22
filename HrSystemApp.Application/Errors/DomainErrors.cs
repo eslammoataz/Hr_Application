@@ -391,6 +391,27 @@ public static class DomainErrors
             "OrgNode.InvalidHierarchyConfiguration", "Invalid hierarchy configuration detected.");
     }
 
+    public static class Roles
+    {
+        public static readonly Error NotFound =
+            new("Roles.NotFound", "The role was not found.");
+
+        public static readonly Error NameAlreadyExists =
+            new("Roles.NameAlreadyExists", "A role with this name already exists in the company.");
+
+        public static readonly Error InUseByWorkflow =
+            new("Roles.InUseByWorkflow", "This role is referenced by an active workflow definition and cannot be deleted.");
+
+        public static readonly Error AlreadyAssigned =
+            new("Roles.AlreadyAssigned", "This role is already assigned to the employee.");
+
+        public static readonly Error AssignmentNotFound =
+            new("Roles.AssignmentNotFound", "This role assignment does not exist.");
+
+        public static readonly Error InvalidPermission =
+            new("Roles.InvalidPermission", "One or more permissions are not valid. Check AppPermissions for allowed values.");
+    }
+
     public static class Request
     {
         public static readonly Error NoActiveManagersAtStep = new(
@@ -406,36 +427,42 @@ public static class DomainErrors
             "Request.StepOrderExceeded", "Step order exceeds the number of workflow steps.");
 
         public static readonly Error OrgNodeNotInCompany = new(
-            "Request.OrgNodeNotInCompany", "The referenced OrgNode does not belong to this company.");
+            "Request.OrgNodeNotInCompany", "The referenced org node does not belong to this company.");
 
         public static readonly Error DirectEmployeeNotInCompany = new(
             "Request.DirectEmployeeNotInCompany", "The referenced employee does not belong to this company.");
 
-        public static readonly Error DirectEmployeeAlsoNodeManager = new(
-            "Request.DirectEmployeeAlsoNodeManager", "A DirectEmployee approver cannot also be a manager at an OrgNode step in the same chain.");
-
         public static readonly Error DirectEmployeeNotActive = new(
-            "Request.DirectEmployeeNotActive", "The DirectEmployee approver is not an active employee.");
-
-        public static readonly Error MissingOrgNodeId = new(
-            "Request.MissingOrgNodeId", "OrgNode step must have an OrgNodeId.");
+            "Request.DirectEmployeeNotActive", "The referenced employee is not active.");
 
         public static readonly Error MissingDirectEmployeeId = new(
-            "Request.MissingDirectEmployeeId", "DirectEmployee step must have a DirectEmployeeId.");
+            "Request.MissingDirectEmployeeId", "A DirectEmployee step must specify a DirectEmployeeId.");
+
+        public static readonly Error MissingOrgNodeId = new(
+            "Request.MissingOrgNodeId", "An OrgNode step must specify an OrgNodeId.");
+
+        public static readonly Error MissingCompanyRoleId = new(
+            "Request.MissingCompanyRoleId", "A CompanyRole step must specify a CompanyRoleId.");
+
+        public static readonly Error RoleNotInCompany = new(
+            "Request.RoleNotInCompany", "The referenced company role does not belong to this company.");
+
+        public static readonly Error RoleNotFound = new(
+            "Request.RoleNotFound", "The referenced company role was not found.");
 
         public static readonly Error MissingLevelsUp = new(
-            "Request.MissingLevelsUp", "HierarchyLevel step must have LevelsUp >= 1.");
+            "Request.MissingLevelsUp", "A HierarchyLevel step must specify LevelsUp >= 1.");
 
         public static readonly Error InvalidStartFromLevel = new(
-            "Request.InvalidStartFromLevel", "HierarchyLevel step StartFromLevel must be >= 1 when specified.");
-
-        public static readonly Error HierarchyRangesOverlap = new(
-            "Request.HierarchyRangesOverlap", "Two HierarchyLevel steps in this definition cover overlapping levels.");
-
-        public static readonly Error HierarchyLevelFieldsOnNonHierarchyStep = new(
-            "Request.HierarchyLevelFieldsOnNonHierarchyStep", "StartFromLevel/LevelsUp are only valid on HierarchyLevel steps.");
+            "Request.InvalidStartFromLevel", "StartFromLevel must be >= 1.");
 
         public static readonly Error UnexpectedFieldsOnHierarchyLevelStep = new(
-            "Request.UnexpectedFieldsOnHierarchyLevelStep", "HierarchyLevel steps must not have OrgNodeId, DirectEmployeeId, or BypassHierarchyCheck set.");
+            "Request.UnexpectedFieldsOnHierarchyLevelStep", "HierarchyLevel steps must not have OrgNodeId, DirectEmployeeId, or BypassHierarchyCheck.");
+
+        public static readonly Error HierarchyLevelFieldsOnNonHierarchyStep = new(
+            "Request.HierarchyLevelFieldsOnNonHierarchyStep", "StartFromLevel and LevelsUp are only valid on HierarchyLevel steps.");
+
+        public static readonly Error HierarchyRangesOverlap = new(
+            "Request.HierarchyRangesOverlap", "HierarchyLevel step ranges must not overlap.");
     }
 }

@@ -16,7 +16,8 @@
       "Bash(taskkill //F //PID 16528)",
       "Bash(netstat -ano)",
       "Bash(awk '{print $5}')",
-      "Bash(xargs -I{} taskkill //F //PID {})"
+      "Bash(xargs -I{} taskkill //F //PID {})",
+      "Bash(dotnet restore *)"
     ]
   }
 }

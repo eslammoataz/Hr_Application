@@ -493,6 +493,78 @@ namespace HrSystemApp.Infrastructure.Migrations
                     b.ToTable("CompanyLocations");
                 });
 
+            modelBuilder.Entity("HrSystemApp.Domain.Models.CompanyRole", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedById")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UpdatedById")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId", "Name")
+                        .IsUnique();
+
+                    b.ToTable("CompanyRoles");
+                });
+
+            modelBuilder.Entity("HrSystemApp.Domain.Models.CompanyRolePermission", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Permission")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<Guid>("RoleId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RoleId", "Permission")
+                        .IsUnique();
+
+                    b.ToTable("CompanyRolePermissions");
+                });
+
             modelBuilder.Entity("HrSystemApp.Domain.Models.ContactAdminRequest", b =>
                 {
                     b.Property<Guid>("Id")
@@ -632,6 +704,40 @@ namespace HrSystemApp.Infrastructure.Migrations
                         .HasFilter("\"UserId\" IS NOT NULL");
 
                     b.ToTable("Employees");
+                });
+
+            modelBuilder.Entity("HrSystemApp.Domain.Models.EmployeeCompanyRole", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("AssignedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("EmployeeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid>("RoleId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RoleId");
+
+                    b.HasIndex("EmployeeId", "RoleId")
+                        .IsUnique();
+
+                    b.ToTable("EmployeeCompanyRoles");
                 });
 
             modelBuilder.Entity("HrSystemApp.Domain.Models.LeaveBalance", b =>
@@ -1081,6 +1187,9 @@ namespace HrSystemApp.Infrastructure.Migrations
                         .HasColumnType("boolean")
                         .HasDefaultValue(false);
 
+                    b.Property<Guid?>("CompanyRoleId")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -1112,6 +1221,8 @@ namespace HrSystemApp.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CompanyRoleId");
 
                     b.HasIndex("DirectEmployeeId");
 
@@ -1358,6 +1469,28 @@ namespace HrSystemApp.Infrastructure.Migrations
                     b.Navigation("Company");
                 });
 
+            modelBuilder.Entity("HrSystemApp.Domain.Models.CompanyRole", b =>
+                {
+                    b.HasOne("HrSystemApp.Domain.Models.Company", "Company")
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Company");
+                });
+
+            modelBuilder.Entity("HrSystemApp.Domain.Models.CompanyRolePermission", b =>
+                {
+                    b.HasOne("HrSystemApp.Domain.Models.CompanyRole", "Role")
+                        .WithMany("Permissions")
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Role");
+                });
+
             modelBuilder.Entity("HrSystemApp.Domain.Models.Employee", b =>
                 {
                     b.HasOne("HrSystemApp.Domain.Models.Company", "Company")
@@ -1388,6 +1521,25 @@ namespace HrSystemApp.Infrastructure.Migrations
                     b.Navigation("Manager");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("HrSystemApp.Domain.Models.EmployeeCompanyRole", b =>
+                {
+                    b.HasOne("HrSystemApp.Domain.Models.Employee", "Employee")
+                        .WithMany("CompanyRoles")
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("HrSystemApp.Domain.Models.CompanyRole", "Role")
+                        .WithMany("EmployeeRoles")
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Employee");
+
+                    b.Navigation("Role");
                 });
 
             modelBuilder.Entity("HrSystemApp.Domain.Models.LeaveBalance", b =>
@@ -1523,6 +1675,11 @@ namespace HrSystemApp.Infrastructure.Migrations
 
             modelBuilder.Entity("HrSystemApp.Domain.Models.RequestWorkflowStep", b =>
                 {
+                    b.HasOne("HrSystemApp.Domain.Models.CompanyRole", "CompanyRole")
+                        .WithMany()
+                        .HasForeignKey("CompanyRoleId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("HrSystemApp.Domain.Models.Employee", "DirectEmployee")
                         .WithMany()
                         .HasForeignKey("DirectEmployeeId")
@@ -1538,6 +1695,8 @@ namespace HrSystemApp.Infrastructure.Migrations
                         .HasForeignKey("RequestDefinitionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("CompanyRole");
 
                     b.Navigation("DirectEmployee");
 
@@ -1620,11 +1779,20 @@ namespace HrSystemApp.Infrastructure.Migrations
                     b.Navigation("Locations");
                 });
 
+            modelBuilder.Entity("HrSystemApp.Domain.Models.CompanyRole", b =>
+                {
+                    b.Navigation("EmployeeRoles");
+
+                    b.Navigation("Permissions");
+                });
+
             modelBuilder.Entity("HrSystemApp.Domain.Models.Employee", b =>
                 {
                     b.Navigation("AttendanceLogs");
 
                     b.Navigation("Attendances");
+
+                    b.Navigation("CompanyRoles");
 
                     b.Navigation("Notifications");
                 });

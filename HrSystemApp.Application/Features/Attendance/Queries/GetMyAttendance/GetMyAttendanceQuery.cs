@@ -72,6 +72,6 @@ public class GetMyAttendanceQueryHandler
                 a.Logs.OrderBy(l => l.TimestampUtc).ToList()))).ToList();
 
         return Result.Success(PagedResult<AttendanceSummaryResponse>.Create(
-            items, paged.PageNumber, paged.PageSize, paged.TotalCount));
+            items, request.PageNumber, request.PageSize, paged.TotalCount));
     }
 }

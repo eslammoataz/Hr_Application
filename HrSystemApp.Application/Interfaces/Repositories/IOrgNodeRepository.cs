@@ -26,5 +26,5 @@ public interface IOrgNodeRepository : IRepository<OrgNode>
     /// <summary>
     /// Gets the root node of the tree containing the given node.
     /// </summary>
-    Task<OrgNode> GetRootNodeAsync(Guid nodeId, CancellationToken ct);
+    Task<OrgNode> GetRootNodeAsync(Guid nodeId, CancellationToken ct = default);
 }

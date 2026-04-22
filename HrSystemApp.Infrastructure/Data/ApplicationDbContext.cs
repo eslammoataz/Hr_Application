@@ -35,6 +35,9 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<Request> Requests { get; set; } = null!;
     public DbSet<OrgNode> OrgNodes { get; set; } = null!;
     public DbSet<OrgNodeAssignment> OrgNodeAssignments { get; set; } = null!;
+    public DbSet<CompanyRole> CompanyRoles { get; set; } = null!;
+    public DbSet<CompanyRolePermission> CompanyRolePermissions { get; set; } = null!;
+    public DbSet<EmployeeCompanyRole> EmployeeCompanyRoles { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -48,6 +51,10 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
         builder.Entity<IdentityUserLogin<string>>().ToTable("UserLogins");
         builder.Entity<IdentityRoleClaim<string>>().ToTable("RoleClaims");
         builder.Entity<IdentityUserToken<string>>().ToTable("UserTokens");
+
+        // RequestAttachment has no DbSet so EF Core defaults to the class name (singular).
+        // The migration created it as "RequestAttachments" (plural), so pin the name explicitly.
+        builder.Entity<RequestAttachment>().ToTable("RequestAttachments");
 
         // Apply all configurations from the current assembly
         builder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
@@ -111,9 +118,9 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
                         break;
 
                     // Standard soft-delete behavior
+                    entry.Property("IsDeleted").CurrentValue = true;
+                    entry.Property("DeletedAt").CurrentValue = DateTime.UtcNow;
                     entry.State = EntityState.Modified;
-                    entry.Entity.IsDeleted = true;
-                    entry.Entity.UpdatedAt = DateTime.UtcNow;
                     break;
             }
         }

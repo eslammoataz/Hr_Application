@@ -1,10 +1,13 @@
+using System.Diagnostics;
 using HrSystemApp.Application.Common;
+using HrSystemApp.Application.Common.Logging;
 using HrSystemApp.Application.DTOs.OrgNodes;
 using HrSystemApp.Application.Interfaces;
 using HrSystemApp.Application.Interfaces.Services;
 using HrSystemApp.Domain.Models;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace HrSystemApp.Application.Features.OrgNodes.Queries.GetOrgNodeTree;
 
@@ -13,33 +16,38 @@ public class GetOrgNodeTreeQueryHandler : IRequestHandler<GetOrgNodeTreeQuery, R
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
     private readonly ILogger<GetOrgNodeTreeQueryHandler> _logger;
+    private readonly LoggingOptions _loggingOptions;
 
     public GetOrgNodeTreeQueryHandler(
         IUnitOfWork unitOfWork,
         ICurrentUserService currentUserService,
-        ILogger<GetOrgNodeTreeQueryHandler> logger)
+        ILogger<GetOrgNodeTreeQueryHandler> logger,
+        IOptions<LoggingOptions> loggingOptions)
     {
         _unitOfWork = unitOfWork;
         _currentUserService = currentUserService;
         _logger = logger;
+        _loggingOptions = loggingOptions.Value;
     }
 
     public async Task<Result<List<OrgNodeTreeResponse>>> Handle(GetOrgNodeTreeQuery request, CancellationToken cancellationToken)
     {
+        var sw = Stopwatch.StartNew();
+        _logger.LogActionStart(_loggingOptions, LogAction.OrgNode.GetOrgNodeTree);
+
         var depth = request.Depth ?? 1;
-        _logger.LogInformation("Getting OrgNode tree. ParentId: {ParentId}, Depth: {Depth}",
-            request.ParentId, depth);
 
-        // If depth <= 0, return empty
-        if (depth <= 0)
-            return Result.Success(new List<OrgNodeTreeResponse>());
-
-        // Get starting nodes (root or children of parent)
         var startNodes = request.ParentId.HasValue
             ? await _unitOfWork.OrgNodes.GetChildrenAsync(request.ParentId, cancellationToken)
             : await _unitOfWork.OrgNodes.GetRootNodesAsync(cancellationToken);
 
-        // Filter by Type if provided
+        if (depth <= 0)
+        {
+            sw.Stop();
+            _logger.LogActionSuccess(_loggingOptions, LogAction.OrgNode.GetOrgNodeTree, sw.ElapsedMilliseconds);
+            return Result.Success(new List<OrgNodeTreeResponse>());
+        }
+
         if (!string.IsNullOrWhiteSpace(request.Type))
         {
             var normalizedType = request.Type.Trim().ToLower();
@@ -48,6 +56,9 @@ public class GetOrgNodeTreeQueryHandler : IRequestHandler<GetOrgNodeTreeQuery, R
 
         var result = new List<OrgNodeTreeResponse>();
         await BuildTreeAsync(startNodes, depth - 1, result, cancellationToken);
+
+        sw.Stop();
+        _logger.LogActionSuccess(_loggingOptions, LogAction.OrgNode.GetOrgNodeTree, sw.ElapsedMilliseconds);
 
         return Result.Success(result);
     }

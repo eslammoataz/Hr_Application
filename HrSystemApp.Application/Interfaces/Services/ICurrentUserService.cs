@@ -6,6 +6,7 @@ namespace HrSystemApp.Application.Interfaces.Services;
 public interface ICurrentUserService
 {
     string? UserId { get; }
+    string? Email { get; }
     string? PhoneNumber { get; }
     string? Role { get; }
     Guid? CompanyId { get; }

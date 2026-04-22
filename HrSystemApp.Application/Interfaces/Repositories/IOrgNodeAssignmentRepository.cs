@@ -18,5 +18,5 @@ public interface IOrgNodeAssignmentRepository : IRepository<OrgNodeAssignment>
     /// <summary>
     /// Checks if an employee has OrgRole = Manager at a specific node (excludes IsDeleted).
     /// </summary>
-    Task<bool> IsManagerAtNodeAsync(Guid employeeId, Guid orgNodeId, CancellationToken ct);
+    Task<bool> IsManagerAtNodeAsync(Guid employeeId, Guid orgNodeId, CancellationToken ct = default);
 }

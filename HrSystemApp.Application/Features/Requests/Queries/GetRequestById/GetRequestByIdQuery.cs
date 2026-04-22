@@ -1,11 +1,14 @@
+using System.Diagnostics;
 using System.Text.Json;
 using HrSystemApp.Application.Common;
+using HrSystemApp.Application.Common.Logging;
 using HrSystemApp.Application.DTOs.Requests;
 using HrSystemApp.Application.Errors;
 using HrSystemApp.Application.Interfaces;
 using HrSystemApp.Domain.Enums;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace HrSystemApp.Application.Features.Requests.Queries.GetRequestById;
 
@@ -40,23 +43,31 @@ public class GetRequestByIdQueryHandler : IRequestHandler<GetRequestByIdQuery, R
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<GetRequestByIdQueryHandler> _logger;
+    private readonly LoggingOptions _loggingOptions;
 
-    public GetRequestByIdQueryHandler(IUnitOfWork unitOfWork, ILogger<GetRequestByIdQueryHandler> logger)
+    public GetRequestByIdQueryHandler(
+        IUnitOfWork unitOfWork,
+        ILogger<GetRequestByIdQueryHandler> logger,
+        IOptions<LoggingOptions> loggingOptions)
     {
         _unitOfWork = unitOfWork;
         _logger = logger;
+        _loggingOptions = loggingOptions.Value;
     }
 
     public async Task<Result<RequestDetailDto>> Handle(GetRequestByIdQuery request, CancellationToken cancellationToken)
     {
+        var sw = Stopwatch.StartNew();
+        _logger.LogActionStart(_loggingOptions, LogAction.Workflow.CreateRequest);
+
         var existingRequest = await _unitOfWork.Requests.GetByIdWithHistoryAsync(request.Id, cancellationToken);
         if (existingRequest == null)
         {
-            _logger.LogWarning("GetRequestById failed: Request {RequestId} not found.", request.Id);
+            _logger.LogDecision(_loggingOptions, LogAction.Workflow.CreateRequest, LogStage.Validation,
+                "RequestNotFound", new { RequestId = request.Id });
+            sw.Stop();
             return Result.Failure<RequestDetailDto>(DomainErrors.Requests.NotFound);
         }
-
-        _logger.LogInformation("Retrieving details for request {RequestId} of type {Type}", existingRequest.Id, existingRequest.RequestType);
 
         var dto = new RequestDetailDto
         {
@@ -79,6 +90,9 @@ public class GetRequestByIdQueryHandler : IRequestHandler<GetRequestByIdQuery, R
             Data = JsonSerializer.Deserialize<object>(existingRequest.Data) ?? new { },
             PlannedSteps = JsonSerializer.Deserialize<List<PlannedStepDto>>(existingRequest.PlannedStepsJson ?? "[]") ?? new List<PlannedStepDto>()
         };
+
+        sw.Stop();
+        _logger.LogActionSuccess(_loggingOptions, LogAction.Workflow.CreateRequest, sw.ElapsedMilliseconds);
 
         return Result.Success(dto);
     }

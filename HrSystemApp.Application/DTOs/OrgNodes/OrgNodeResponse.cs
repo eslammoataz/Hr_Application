@@ -6,5 +6,4 @@ public record OrgNodeResponse(
     Guid? ParentId,
     string? Type,
     bool HasChildren,
-    int AssignmentCount
-);
+    int AssignmentCount);

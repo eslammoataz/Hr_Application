@@ -1,3 +1,4 @@
+using System.Threading;
 using HrSystemApp.Application.Interfaces.Repositories;
 
 namespace HrSystemApp.Application.Interfaces;
@@ -24,6 +25,8 @@ public interface IUnitOfWork : IAsyncDisposable
     IAttendanceAdjustmentRepository AttendanceAdjustments { get; }
     IOrgNodeRepository OrgNodes { get; }
     IOrgNodeAssignmentRepository OrgNodeAssignments { get; }
+    ICompanyRoleRepository CompanyRoles { get; }
+    IEmployeeCompanyRoleRepository EmployeeCompanyRoles { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     Task BeginTransactionAsync(CancellationToken cancellationToken = default);

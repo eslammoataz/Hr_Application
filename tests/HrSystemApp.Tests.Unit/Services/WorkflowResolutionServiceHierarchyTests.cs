@@ -1,4 +1,5 @@
 using FluentAssertions;
+using HrSystemApp.Application.Common.Logging;
 using HrSystemApp.Application.DTOs.Requests;
 using HrSystemApp.Application.Interfaces;
 using HrSystemApp.Application.Interfaces.Repositories;
@@ -6,6 +7,7 @@ using HrSystemApp.Domain.Enums;
 using HrSystemApp.Domain.Models;
 using HrSystemApp.Infrastructure.Services;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Moq;
 using Xunit;
 
@@ -30,7 +32,10 @@ public class WorkflowResolutionServiceHierarchyTests
         _unitOfWorkMock.SetupGet(x => x.OrgNodeAssignments).Returns(_assignmentRepoMock.Object);
         _unitOfWorkMock.SetupGet(x => x.Employees).Returns(_employeeRepoMock.Object);
 
-        _sut = new WorkflowResolutionService(_unitOfWorkMock.Object, new Mock<ILogger<WorkflowResolutionService>>().Object);
+        _sut = new WorkflowResolutionService(
+            _unitOfWorkMock.Object,
+            new Mock<ILogger<WorkflowResolutionService>>().Object,
+            Options.Create(new LoggingOptions()));
     }
 
     // ── Helper: build a fake org tree ─────────────────────────────────────────

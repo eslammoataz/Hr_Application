@@ -34,7 +34,12 @@ public class RequestDefinitionRepository : Repository<RequestDefinition>, IReque
     [Obsolete("Role-based workflow is deprecated. Use OrgNode-based workflow steps.")]
     public async Task<bool> AnyDefinitionUsingRoleAsync(Guid companyId, UserRole role, CancellationToken ct = default)
     {
-        // This method is deprecated and always returns false since we no longer use role-based workflow.
         return await Task.FromResult(false);
+    }
+
+    public async Task<bool> IsRoleInUseAsync(Guid companyRoleId, CancellationToken ct = default)
+    {
+        return await _context.RequestDefinitions
+            .AnyAsync(d => d.WorkflowSteps.Any(s => s.CompanyRoleId == companyRoleId), ct);
     }
 }

@@ -26,8 +26,9 @@ public class CorrelationIdMiddleware
 
         context.Response.Headers[CorrelationIdHeader] = correlationId;
 
-        // Add to Serilog LogContext so all logs within this request have the ID
-        using (LogContext.PushProperty("CorrelationId", correlationId))
+        // Add to Serilog LogContext so all logs within this request have the ID.
+        // .ToString() is required — StringValues serializes as a JSON array otherwise: ["abc"] instead of abc
+        using (LogContext.PushProperty("CorrelationId", correlationId.ToString()))
         {
             await _next(context);
         }

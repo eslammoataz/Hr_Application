@@ -85,14 +85,4 @@ public class RequestDefinitionsController : BaseApiController
         var schemas = types.ToDictionary(t => t.ToString(), t => validator.GetSchema(t));
         return Ok(schemas);
     }
-
-    /// <summary>
-    /// Preview the resolved approval chain for a specific employee against a definition
-    /// (saved or draft). Read-only; does not create a request.
-    /// </summary>
-    [HttpPost("preview")]
-    public async Task<IActionResult> Preview([FromBody] PreviewApprovalChainQuery query)
-    {
-        return HandleResult(await _sender.Send(query));
-    }
 }

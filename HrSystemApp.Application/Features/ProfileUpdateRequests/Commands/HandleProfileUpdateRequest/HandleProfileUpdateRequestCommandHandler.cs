@@ -1,10 +1,13 @@
+using System.Diagnostics;
 using HrSystemApp.Application.Common;
+using HrSystemApp.Application.Common.Logging;
 using HrSystemApp.Application.Errors;
 using HrSystemApp.Application.Interfaces;
 using HrSystemApp.Domain.Enums;
 using HrSystemApp.Domain.Models;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using System.Text.Json;
 
 namespace HrSystemApp.Application.Features.ProfileUpdateRequests.Commands.HandleProfileUpdateRequest;
@@ -13,47 +16,49 @@ public class HandleProfileUpdateRequestCommandHandler : IRequestHandler<HandlePr
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<HandleProfileUpdateRequestCommandHandler> _logger;
+    private readonly LoggingOptions _loggingOptions;
 
-    public HandleProfileUpdateRequestCommandHandler(IUnitOfWork unitOfWork,
-        ILogger<HandleProfileUpdateRequestCommandHandler> logger)
+    public HandleProfileUpdateRequestCommandHandler(
+        IUnitOfWork unitOfWork,
+        ILogger<HandleProfileUpdateRequestCommandHandler> logger,
+        IOptions<LoggingOptions> loggingOptions)
     {
         _unitOfWork = unitOfWork;
         _logger = logger;
+        _loggingOptions = loggingOptions.Value;
     }
 
     public async Task<Result> Handle(HandleProfileUpdateRequestCommand command, CancellationToken cancellationToken)
     {
-        _logger.LogInformation(
-            "Handling profile update request '{RequestId}' by HR user '{HrUserId}' with decision '{Decision}'.",
-            command.RequestId, command.HrUserId, command.Dto.IsAccepted ? "Approved" : "Rejected");
+        var sw = Stopwatch.StartNew();
+        _logger.LogActionStart(_loggingOptions, LogAction.Workflow.HandleProfileUpdateRequest);
 
-        // ── 1. Validate request exists and is still pending ──────────────────
         var request = await _unitOfWork.ProfileUpdateRequests.GetByIdAsync(command.RequestId, cancellationToken);
         if (request is null)
         {
-            _logger.LogWarning("Profile update request '{RequestId}' not found.", command.RequestId);
+            _logger.LogDecision(_loggingOptions, LogAction.Workflow.HandleProfileUpdateRequest, LogStage.Validation,
+                "RequestNotFound", new { RequestId = command.RequestId });
+            sw.Stop();
             return Result.Failure(DomainErrors.ProfileUpdate.NotFound);
         }
 
         if (request.Status != ProfileUpdateRequestStatus.Pending)
         {
-            _logger.LogWarning(
-                "Profile update request '{RequestId}' is not in Pending status. Current status: '{Status}'.",
-                command.RequestId, request.Status);
+            _logger.LogDecision(_loggingOptions, LogAction.Workflow.HandleProfileUpdateRequest, LogStage.Validation,
+                "RequestNotPending", new { RequestId = command.RequestId, Status = request.Status.ToString() });
+            sw.Stop();
             return Result.Failure(DomainErrors.ProfileUpdate.NotPending);
         }
 
-        // ── 2. Validate HR employee exists ───────────────────────────────────
         var hrEmployee = await _unitOfWork.Employees.GetByUserIdAsync(command.HrUserId, cancellationToken);
         if (hrEmployee is null)
         {
-            _logger.LogWarning("HR user '{HrUserId}' has no employee record.", command.HrUserId);
+            _logger.LogDecision(_loggingOptions, LogAction.Workflow.HandleProfileUpdateRequest, LogStage.Authorization,
+                "HrEmployeeNotFound", new { HrUserId = command.HrUserId });
+            sw.Stop();
             return Result.Failure(DomainErrors.Hr.EmployeeNotFound);
         }
 
-        // ── 3. Pre-validate everything needed for approval ───────────────────
-        //       All validation is done BEFORE opening the transaction so we
-        //       hold DB resources for the shortest possible time.
         Employee? employee = null;
         Dictionary<string, JsonElement>? changes = null;
 
@@ -62,51 +67,55 @@ public class HandleProfileUpdateRequestCommandHandler : IRequestHandler<HandlePr
             employee = await _unitOfWork.Employees.GetWithDetailsAsync(request.EmployeeId, cancellationToken);
             if (employee is null)
             {
-                _logger.LogError("Employee with ID '{EmployeeId}' not found during approval of request '{RequestId}'.",
-                    request.EmployeeId, command.RequestId);
+                _logger.LogDecision(_loggingOptions, LogAction.Workflow.HandleProfileUpdateRequest, LogStage.Validation,
+                    "EmployeeNotFound", new { EmployeeId = request.EmployeeId, RequestId = command.RequestId });
+                sw.Stop();
                 return Result.Failure(DomainErrors.ProfileUpdate.EmployeeNotFound);
             }
 
             if (string.IsNullOrWhiteSpace(request.ChangesJson))
             {
-                _logger.LogError("ChangesJson is empty for approved request '{RequestId}'.", command.RequestId);
+                _logger.LogDecision(_loggingOptions, LogAction.Workflow.HandleProfileUpdateRequest, LogStage.Validation,
+                    "EmptyChangesJson", new { RequestId = command.RequestId });
+                sw.Stop();
                 return Result.Failure(DomainErrors.ProfileUpdate.EmptyChanges);
             }
 
             changes = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(request.ChangesJson);
             if (changes is null)
             {
-                _logger.LogError("Failed to deserialize ChangesJson for request '{RequestId}'. Data: {ChangesJson}",
-                    command.RequestId, request.ChangesJson);
+                _logger.LogDecision(_loggingOptions, LogAction.Workflow.HandleProfileUpdateRequest, LogStage.Validation,
+                    "DeserializationFailed", new { RequestId = command.RequestId, ChangesJson = request.ChangesJson });
+                sw.Stop();
                 return Result.Failure(DomainErrors.ProfileUpdate.DeserializationFailed);
             }
 
-            // Validate and apply all field changes before touching the DB
             foreach (var change in changes)
             {
                 if (!change.Value.TryGetProperty("newValue", out var newValueElement))
                 {
-                    _logger.LogError(
-                        "Missing 'newValue' key in ChangesJson for field '{Field}' in request '{RequestId}'.",
-                        change.Key, command.RequestId);
+                    _logger.LogDecision(_loggingOptions, LogAction.Workflow.HandleProfileUpdateRequest, LogStage.Validation,
+                        "MissingNewValue", new { Field = change.Key, RequestId = command.RequestId });
+                    sw.Stop();
                     return Result.Failure(DomainErrors.ProfileUpdate.MalformedChanges);
                 }
 
                 var applyResult = ApplyFieldChange(employee, change.Key, newValueElement.GetString());
                 if (applyResult.IsFailure)
                 {
-                    _logger.LogError("Failed to apply field change for field '{Field}' with error: {Error}", change.Key,
-                        applyResult.Error.Message);
+                    _logger.LogDecision(_loggingOptions, LogAction.Workflow.HandleProfileUpdateRequest, LogStage.Validation,
+                        "ApplyFieldChangeFailed", new { Field = change.Key, Error = applyResult.Error.Message });
+                    sw.Stop();
                     return applyResult;
                 }
             }
         }
 
-        // ── 4. Open transaction — only DB writes from this point ─────────────
         await _unitOfWork.BeginTransactionAsync(cancellationToken);
         try
         {
-            _logger.LogInformation("Beginning transaction for handling request '{RequestId}'.", command.RequestId);
+            _logger.LogDecision(_loggingOptions, LogAction.Workflow.HandleProfileUpdateRequest, LogStage.Processing,
+                "TransactionStarted", new { RequestId = command.RequestId });
 
             request.Status = command.Dto.IsAccepted ? ProfileUpdateRequestStatus.Approved : ProfileUpdateRequestStatus.Rejected;
             request.HrNote = command.Dto.HrNote;
@@ -121,15 +130,17 @@ public class HandleProfileUpdateRequestCommandHandler : IRequestHandler<HandlePr
             await _unitOfWork.SaveChangesAsync(cancellationToken);
             await _unitOfWork.CommitTransactionAsync(cancellationToken);
 
-            _logger.LogInformation("Successfully handled profile update request '{RequestId}'.", command.RequestId);
+            sw.Stop();
+            _logger.LogActionSuccess(_loggingOptions, LogAction.Workflow.HandleProfileUpdateRequest, sw.ElapsedMilliseconds);
+
             return Result.Success();
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex,
-                "An error occurred while handling profile update request '{RequestId}'. Rolling back transaction.",
-                command.RequestId);
+            _logger.LogActionFailure(_loggingOptions, LogAction.Workflow.HandleProfileUpdateRequest, LogStage.Processing, ex,
+                new { RequestId = command.RequestId });
             await _unitOfWork.RollbackTransactionAsync(cancellationToken);
+            sw.Stop();
             throw;
         }
     }

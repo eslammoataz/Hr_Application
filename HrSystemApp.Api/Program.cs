@@ -1,3 +1,5 @@
+using HrSystemApp.Application.Common.Logging;
+using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 using HrSystemApp.Api;
 using HrSystemApp.Application;
@@ -6,45 +8,68 @@ using HrSystemApp.Api.Middleware;
 using HrSystemApp.Infrastructure;
 using Hangfire;
 using Hangfire.PostgreSql;
+using Elastic.Serilog.Sinks;
+using Elastic.Ingest.Elasticsearch;
 using HrSystemApp.Infrastructure.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configure Serilog
-var loggerConfiguration = new LoggerConfiguration()
-    .ReadFrom.Configuration(builder.Configuration);
+// ── Bootstrap logger ──────────────────────────────────────────────────────────
+// Minimal console sink for startup/host errors emitted before the DI container
+// is available. Replaced by the full logger once the host is built.
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.Console()
+    .CreateBootstrapLogger();
 
-// Add Seq if enabled in settings
-var seqEnabled = builder.Configuration.GetValue<bool>("SeqSettings:Enabled");
-var seqUrl = builder.Configuration.GetValue<string>("SeqSettings:ServerUrl") ?? "http://localhost:5341";
-
-if (seqEnabled)
-{
-    loggerConfiguration.WriteTo.Seq(seqUrl);
-}
-
-Log.Logger = loggerConfiguration.CreateLogger();
-
-// Verify Seq logging at startup
-if (seqEnabled)
-{
-    Log.Information("🚀 Seq Logging is ENABLED at {SeqUrl}", seqUrl);
-}
-else
-{
-    Log.Warning("⚠️ Seq Logging is DISABLED.");
-}
-
-// Enable Serilog SelfLog to output sink errors to the console
+// Enable Serilog SelfLog so sink errors appear in the console.
 Serilog.Debugging.SelfLog.Enable(msg => Console.WriteLine($"Serilog Error: {msg}"));
 
-builder.Host.UseSerilog();
+// ── Full logger ───────────────────────────────────────────────────────────────
+// UseSerilog callback runs after the DI container is built, so services
+// (including RequestContextEnricher) are available via ReadFrom.Services(services).
+builder.Host.UseSerilog((ctx, services, config) =>
+{
+    config
+        .ReadFrom.Configuration(ctx.Configuration)
+        .ReadFrom.Services(services)   // picks up ILogEventEnricher (RequestContextEnricher) from DI
+        .Enrich.FromLogContext()
+        .Enrich.WithProperty("Application", "HrSystemApp");
 
-// Add Api layer services 
+    var seqEnabled = ctx.Configuration.GetValue<bool>("SeqSettings:Enabled");
+    if (seqEnabled)
+    {
+        var seqUrl = ctx.Configuration.GetValue<string>("SeqSettings:ServerUrl") ?? "http://localhost:5341";
+        config.WriteTo.Seq(seqUrl);
+        Log.Information("🚀 Seq Logging is ENABLED at {SeqUrl}", seqUrl);
+    }
+    else
+    {
+        Log.Warning("⚠️ Seq Logging is DISABLED.");
+    }
+
+    var elasticEnabled = ctx.Configuration.GetValue<bool>("ElasticSettings:Enabled");
+    if (elasticEnabled)
+    {
+        var nodeUri = ctx.Configuration["ElasticSettings:NodeUri"] ?? "http://localhost:9200";
+        var prefix = ctx.Configuration["ElasticSettings:IndexPrefix"] ?? "hrsystemapp";
+        var env = ctx.Configuration["ElasticSettings:Environment"] ?? "production";
+        var indexFormat = $"{prefix}-{env}-{{0:yyyy.MM.dd}}";
+
+        config.WriteTo.Elasticsearch(new[] { new Uri(nodeUri) }, opts =>
+        {
+            opts.DataStream = new Elastic.Ingest.Elasticsearch.DataStreams.DataStreamName("logs", prefix, env);
+        });
+
+        Log.Information("🚀 ElasticSearch Logging is ENABLED at {NodeUri}", nodeUri);
+    }
+});
+
+// Add Api layer services
 builder.Services.AddApi(builder.Configuration);
 
-// Add Application layer services 
+// Add Application layer services
 builder.Services.AddApplication();
+builder.Services.Configure<LoggingOptions>(builder.Configuration.GetSection("LoggingOptions"));
 
 // Add Infrastructure layer services
 builder.Services.AddInfrastructure(builder.Configuration);
@@ -128,7 +153,7 @@ try
 catch (Exception ex)
 {
     Log.Fatal(ex, "❌ Database initialization failed.");
-    throw; 
+    throw;
 }
 
 // Swagger UI (available in all environments for now)
@@ -139,17 +164,21 @@ app.UseSwaggerUI(options =>
     options.RoutePrefix = "swagger";
 });
 
-// Custom Logging Middlewares
+// ── Middleware pipeline ───────────────────────────────────────────────────────
+
+// CorrelationId: assigns/propagates X-Correlation-ID and pushes it to LogContext.
 app.UseMiddleware<CorrelationIdMiddleware>();
+
+// Request/response logging (skips /health and /swagger paths).
 app.UseMiddleware<RequestResponseLoggingMiddleware>();
 
-// Global exception handling (early in pipeline to catch all downstream errors)
+// Global exception handler — wraps all downstream middleware.
 app.UseMiddleware<ExceptionMiddleware>();
 
 // CORS
 app.UseCors("AllowAll");
 
-// Routing must run before CORS, Auth, and endpoints
+// Routing must run before auth and endpoint mapping.
 app.UseRouting();
 
 if (!app.Environment.IsDevelopment())
@@ -161,6 +190,11 @@ if (!app.Environment.IsDevelopment())
 app.UseAuthentication();
 app.UseAuthorization();
 
+// NOTE: LoggingScopeMiddleware has been removed.
+// User context (UserId, Email, AppEnvironment) is now enriched by RequestContextEnricher,
+// a Serilog ILogEventEnricher that reads IHttpContextAccessor lazily at log-emit time.
+// This correctly handles logs emitted before, during, and after the middleware pipeline.
+
 // Map controllers
 app.MapControllers();
 app.UseHangfireDashboard("/hangfire");
@@ -168,12 +202,11 @@ app.UseHangfireDashboard("/hangfire");
 RecurringJob.AddOrUpdate<AttendanceRecurringJobs>(
     "attendance-reminder-job",
     job => job.RunReminderJob(),
-    "*/15 * * * *");
+    Cron.Daily);
 
 RecurringJob.AddOrUpdate<AttendanceRecurringJobs>(
-    "attendance-auto-clock-out-job",
+    "attendance-auto-clockout-job",
     job => job.RunAutoClockOutJob(),
-    "0 * * * *");
+    Cron.Daily);
 
-// Run the application
 app.Run();

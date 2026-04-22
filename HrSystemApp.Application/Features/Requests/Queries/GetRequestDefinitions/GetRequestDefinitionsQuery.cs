@@ -78,10 +78,8 @@ public class GetRequestDefinitionsQueryHandler : IRequestHandler<GetRequestDefin
                 LevelsUp = s.LevelsUp,
                 SortOrder = s.SortOrder
             }).ToList(),
-            Schema = string.IsNullOrEmpty(d.FormSchemaJson)
-                ? _validator.GetSchema(d.RequestType)
-                : JsonSerializer.Deserialize<object>(d.FormSchemaJson)
-        }).ToList();
+            Schema = string.Empty
+            }).ToList();
 
         return Result.Success(dtos);
     }
