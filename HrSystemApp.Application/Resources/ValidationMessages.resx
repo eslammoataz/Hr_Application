@@ -1,0 +1,326 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+    xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter</value></resheader>
+
+  <!-- General -->
+  <data name="Val.FieldRequired" xml:space="preserve">
+    <value>A required field is missing.</value>
+  </data>
+  <data name="Val.InvalidType" xml:space="preserve">
+    <value>Field has an invalid data type.</value>
+  </data>
+  <data name="Val.ValidationError" xml:space="preserve">
+    <value>An error occurred during validation.</value>
+  </data>
+
+  <!-- Auth -->
+  <data name="Val.EmailRequired" xml:space="preserve">
+    <value>Email is required.</value>
+  </data>
+  <data name="Val.ValidEmailRequired" xml:space="preserve">
+    <value>A valid email address is required.</value>
+  </data>
+  <data name="Val.PasswordRequired" xml:space="preserve">
+    <value>Password is required.</value>
+  </data>
+  <data name="Val.PasswordMinLength" xml:space="preserve">
+    <value>Password must be at least 6 characters.</value>
+  </data>
+  <data name="Val.PasswordMinLength8" xml:space="preserve">
+    <value>New password must be at least 8 characters.</value>
+  </data>
+  <data name="Val.NewPasswordDifferent" xml:space="preserve">
+    <value>New password must be different from the current password.</value>
+  </data>
+  <data name="Val.CurrentPasswordRequired" xml:space="preserve">
+    <value>Current password is required.</value>
+  </data>
+  <data name="Val.FcmTokenNotEmpty" xml:space="preserve">
+    <value>FCM token cannot be empty if provided.</value>
+  </data>
+  <data name="Val.InvalidDeviceType" xml:space="preserve">
+    <value>Invalid device type specified.</value>
+  </data>
+  <data name="Val.LanguageNotEmpty" xml:space="preserve">
+    <value>Language cannot be empty if provided.</value>
+  </data>
+  <data name="Val.LanguageMaxLength" xml:space="preserve">
+    <value>Language code must not exceed 10 characters.</value>
+  </data>
+  <data name="Val.InvalidRole" xml:space="preserve">
+    <value>Invalid role specified.</value>
+  </data>
+  <data name="Val.CannotAssignSuperAdmin" xml:space="preserve">
+    <value>Cannot assign SuperAdmin role via this endpoint.</value>
+  </data>
+  <data name="Val.CannotAssignSuperAdminRegistration" xml:space="preserve">
+    <value>Cannot assign SuperAdmin role via registration endpoint.</value>
+  </data>
+  <data name="Val.InvalidDeliveryChannel" xml:space="preserve">
+    <value>Invalid delivery channel specified.</value>
+  </data>
+
+  <!-- OTP -->
+  <data name="Val.OtpRequired" xml:space="preserve">
+    <value>OTP is required.</value>
+  </data>
+  <data name="Val.OtpMustBe6Chars" xml:space="preserve">
+    <value>OTP must be exactly 6 characters.</value>
+  </data>
+  <data name="Val.OtpMustBeNumeric" xml:space="preserve">
+    <value>OTP must be numeric.</value>
+  </data>
+
+  <!-- Employee -->
+  <data name="Val.FullNameRequired" xml:space="preserve">
+    <value>Full name is required.</value>
+  </data>
+  <data name="Val.FullNameMaxLength" xml:space="preserve">
+    <value>Full name cannot exceed 200 characters.</value>
+  </data>
+  <data name="Val.PhoneRequired" xml:space="preserve">
+    <value>Phone number is required.</value>
+  </data>
+  <data name="Val.PhoneMustBeDigits" xml:space="preserve">
+    <value>Phone number must be 7-15 digits.</value>
+  </data>
+  <data name="Val.CompanyIdRequired" xml:space="preserve">
+    <value>Company ID is required.</value>
+  </data>
+  <data name="Val.TeamIdRequiredForTeamLeader" xml:space="preserve">
+    <value>Team ID is required for TeamLeader.</value>
+  </data>
+  <data name="Val.UnitIdRequiredForUnitLeader" xml:space="preserve">
+    <value>Unit ID is required for UnitLeader.</value>
+  </data>
+  <data name="Val.DepartmentIdRequired" xml:space="preserve">
+    <value>Department ID is required for this role.</value>
+  </data>
+
+  <!-- Name -->
+  <data name="Val.NameRequired" xml:space="preserve">
+    <value>Name is required.</value>
+  </data>
+  <data name="Val.NameMaxLength" xml:space="preserve">
+    <value>Name must not exceed 100 characters.</value>
+  </data>
+
+  <!-- Notification -->
+  <data name="Val.EmployeeIdRequired" xml:space="preserve">
+    <value>EmployeeId is required.</value>
+  </data>
+  <data name="Val.TitleRequired" xml:space="preserve">
+    <value>Title is required.</value>
+  </data>
+  <data name="Val.TitleMaxLength" xml:space="preserve">
+    <value>Title must not exceed 200 characters.</value>
+  </data>
+  <data name="Val.MessageRequired" xml:space="preserve">
+    <value>Message is required.</value>
+  </data>
+  <data name="Val.MessageMaxLength" xml:space="preserve">
+    <value>Message must not exceed 2000 characters.</value>
+  </data>
+  <data name="Val.InvalidNotificationType" xml:space="preserve">
+    <value>Invalid notification type.</value>
+  </data>
+
+  <!-- Department -->
+  <data name="Val.CompanyIdRequiredForDepartment" xml:space="preserve">
+    <value>CompanyId is required.</value>
+  </data>
+  <data name="Val.DepartmentNameRequired" xml:space="preserve">
+    <value>Department name is required and must not exceed 200 characters.</value>
+  </data>
+
+  <!-- Contact Admin -->
+  <data name="Val.EmailNotValid" xml:space="preserve">
+    <value>Email is not valid.</value>
+  </data>
+  <data name="Val.EmailMaxLength" xml:space="preserve">
+    <value>Email must not exceed 255 characters.</value>
+  </data>
+  <data name="Val.CompanyNameRequired" xml:space="preserve">
+    <value>Company Name is required.</value>
+  </data>
+  <data name="Val.CompanyNameMaxLength" xml:space="preserve">
+    <value>Company Name must not exceed 200 characters.</value>
+  </data>
+  <data name="Val.PhoneNumberRequired" xml:space="preserve">
+    <value>Phone Number is required.</value>
+  </data>
+  <data name="Val.PhoneNumberMaxLength" xml:space="preserve">
+    <value>Phone Number must not exceed 50 characters.</value>
+  </data>
+
+  <!-- Company Location -->
+  <data name="Val.LocationNameRequired" xml:space="preserve">
+    <value>Location name is required.</value>
+  </data>
+  <data name="Val.LocationNameMaxLength" xml:space="preserve">
+    <value>Location name cannot exceed 100 characters.</value>
+  </data>
+
+  <!-- Company -->
+  <data name="Val.CompanyNameRequiredForCompany" xml:space="preserve">
+    <value>Company name is required.</value>
+  </data>
+  <data name="Val.CompanyNameMaxLengthForCompany" xml:space="preserve">
+    <value>Company name cannot exceed 200 characters.</value>
+  </data>
+  <data name="Val.YearlyVacationDaysRequired" xml:space="preserve">
+    <value>Yearly vacation days is required.</value>
+  </data>
+  <data name="Val.GraceMinutesMustBeNonNegative" xml:space="preserve">
+    <value>Grace minutes must be zero or positive.</value>
+  </data>
+  <data name="Val.TimeZoneIdRequired" xml:space="preserve">
+    <value>Time zone id is required.</value>
+  </data>
+  <data name="Val.TimeZoneIdMaxLength" xml:space="preserve">
+    <value>Time zone id cannot exceed 100 characters.</value>
+  </data>
+
+  <!-- Employee Update -->
+  <data name="Val.EmployeeFullNameMaxLength" xml:space="preserve">
+    <value>Full name must not exceed 200 characters.</value>
+  </data>
+  <data name="Val.EmployeePhoneMaxLength" xml:space="preserve">
+    <value>Phone number must not exceed 20 characters.</value>
+  </data>
+  <data name="Val.EmployeeAddressMaxLength" xml:space="preserve">
+    <value>Address must not exceed 500 characters.</value>
+  </data>
+
+  <!-- Attendance -->
+  <data name="Val.ClockInFutureTimestamp" xml:space="preserve">
+    <value>Clock-in timestamp cannot be in the future.</value>
+  </data>
+  <data name="Val.ClockOutFutureTimestamp" xml:space="preserve">
+    <value>Clock-out timestamp cannot be in the future.</value>
+  </data>
+
+  <!-- Change Employee Status -->
+  <data name="Val.ChangeEmployeeStatusIdRequired" xml:space="preserve">
+    <value>Employee ID is required.</value>
+  </data>
+  <data name="Val.ChangeEmployeeStatusInvalid" xml:space="preserve">
+    <value>Invalid employment status value.</value>
+  </data>
+
+  <!-- Update Company -->
+  <data name="Val.UpdateCompanyIdRequired" xml:space="preserve">
+    <value>Company ID is required.</value>
+  </data>
+  <data name="Val.UpdateCompanyNameRequired" xml:space="preserve">
+    <value>Company name is required.</value>
+  </data>
+  <data name="Val.UpdateCompanyNameMaxLength" xml:space="preserve">
+    <value>Company name must not exceed 300 characters.</value>
+  </data>
+  <data name="Val.UpdateCompanyGraceMinutesNegative" xml:space="preserve">
+    <value>Grace minutes cannot be negative.</value>
+  </data>
+  <data name="Val.UpdateCompanyGraceMinutesExceed" xml:space="preserve">
+    <value>Grace minutes cannot exceed 120.</value>
+  </data>
+  <data name="Val.UpdateCompanyVacationDaysPositive" xml:space="preserve">
+    <value>Yearly vacation days must be greater than 0.</value>
+  </data>
+  <data name="Val.UpdateCompanyVacationDaysExceed" xml:space="preserve">
+    <value>Yearly vacation days cannot exceed 365.</value>
+  </data>
+  <data name="Val.UpdateCompanyTimeZoneRequired" xml:space="preserve">
+    <value>Time zone is required.</value>
+  </data>
+  <data name="Val.UpdateCompanyTimeZoneMaxLength" xml:space="preserve">
+    <value>Time zone must not exceed 100 characters.</value>
+  </data>
+  <data name="Val.UpdateCompanyStartBeforeEnd" xml:space="preserve">
+    <value>Start time must be before end time.</value>
+  </data>
+
+  <!-- Update My Company -->
+  <data name="Val.UpdateMyCompanyNameRequired" xml:space="preserve">
+    <value>Company name is required.</value>
+  </data>
+  <data name="Val.UpdateMyCompanyNameMaxLength" xml:space="preserve">
+    <value>Company name must not exceed 300 characters.</value>
+  </data>
+  <data name="Val.UpdateMyCompanyGraceMinutesNegative" xml:space="preserve">
+    <value>Grace minutes cannot be negative.</value>
+  </data>
+  <data name="Val.UpdateMyCompanyGraceMinutesExceed" xml:space="preserve">
+    <value>Grace minutes cannot exceed 120.</value>
+  </data>
+  <data name="Val.UpdateMyCompanyVacationDaysPositive" xml:space="preserve">
+    <value>Yearly vacation days must be greater than 0.</value>
+  </data>
+  <data name="Val.UpdateMyCompanyVacationDaysExceed" xml:space="preserve">
+    <value>Yearly vacation days cannot exceed 365.</value>
+  </data>
+  <data name="Val.UpdateMyCompanyTimeZoneRequired" xml:space="preserve">
+    <value>Time zone is required.</value>
+  </data>
+  <data name="Val.UpdateMyCompanyTimeZoneMaxLength" xml:space="preserve">
+    <value>Time zone must not exceed 100 characters.</value>
+  </data>
+  <data name="Val.UpdateMyCompanyStartBeforeEnd" xml:space="preserve">
+    <value>Start time must be before end time.</value>
+  </data>
+
+  <!-- OrgNode / BulkSetup -->
+  <data name="Val.OrgNodeNameMaxLength" xml:space="preserve">
+    <value>Name cannot exceed 200 characters.</value>
+  </data>
+  <data name="Val.BulkSetupRequestCannotBeNull" xml:space="preserve">
+    <value>Request cannot be null.</value>
+  </data>
+  <data name="Val.BulkSetupAtLeastOneNode" xml:space="preserve">
+    <value>At least one node is required.</value>
+  </data>
+  <data name="Val.BulkSetupTempIdsUnique" xml:space="preserve">
+    <value>All tempIds must be unique.</value>
+  </data>
+  <data name="Val.BulkSetupParentTempIdInvalid" xml:space="preserve">
+    <value>ParentTempId must reference a valid TempId in the request.</value>
+  </data>
+
+  <!-- Assign Employee -->
+  <data name="Val.AssignEmployeeAlreadyAssigned" xml:space="preserve">
+    <value>Employee is already assigned to a node. Each employee can belong to only one node at a time.</value>
+  </data>
+</root>

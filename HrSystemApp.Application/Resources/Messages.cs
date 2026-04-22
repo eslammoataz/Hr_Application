@@ -39,14 +39,29 @@ public static class Messages
         public const string FullNameMaxLength = "Full name cannot exceed 200 characters.";
         public const string PhoneRequired = "Phone number is required.";
         public const string PhoneMustBeDigits = "Phone number must be 7-15 digits.";
+        public const string EmployeePhoneMaxLength = "Phone number must not exceed 20 characters.";
         public const string CompanyIdRequired = "Company ID is required.";
         public const string TeamIdRequiredForTeamLeader = "Team ID is required for TeamLeader.";
         public const string UnitIdRequiredForUnitLeader = "Unit ID is required for UnitLeader.";
         public const string DepartmentIdRequired = "Department ID is required for this role.";
+        public const string EmployeeAddressMaxLength = "Address must not exceed 500 characters.";
+        public const string ClockInFutureTimestamp = "Clock-in timestamp cannot be in the future.";
+        public const string ClockOutFutureTimestamp = "Clock-out timestamp cannot be in the future.";
+        public const string InvalidEmploymentStatus = "Employment status value is invalid.";
 
         // Name
         public const string NameRequired = "Name is required.";
         public const string NameMaxLength = "Name must not exceed 100 characters.";
+        public const string OrgNodeNameMaxLength = "Name cannot exceed 200 characters.";
+
+        // OrgNode / BulkSetup
+        public const string BulkSetupRequestCannotBeNull = "Request cannot be null.";
+        public const string BulkSetupAtLeastOneNode = "At least one node is required.";
+        public const string BulkSetupTempIdsUnique = "All tempIds must be unique.";
+        public const string BulkSetupParentTempIdInvalid = "ParentTempId must reference a valid TempId in the request.";
+
+        // Assign Employee
+        public const string AssignEmployeeAlreadyAssigned = "Employee is already assigned to a node. Each employee can belong to only one node at a time.";
 
         // Notification
         public const string EmployeeIdRequired = "EmployeeId is required.";
@@ -71,6 +86,14 @@ public static class Messages
         // Company Location
         public const string LocationNameRequired = "Location name is required.";
         public const string LocationNameMaxLength = "Location name cannot exceed 100 characters.";
+
+        // Update Company / Update My Company
+        public const string UpdateCompanyGraceMinutesNegative = "Grace minutes cannot be negative.";
+        public const string UpdateCompanyGraceMinutesExceed = "Grace minutes cannot exceed 120.";
+        public const string UpdateCompanyVacationDaysPositive = "Yearly vacation days must be greater than 0.";
+        public const string UpdateCompanyVacationDaysExceed = "Yearly vacation days cannot exceed 365.";
+        public const string UpdateCompanyTimeZoneMaxLength = "Time zone must not exceed 100 characters.";
+        public const string UpdateCompanyStartBeforeEnd = "Start time must be before end time.";
 
         // Company
         public const string CompanyNameRequiredForCompany = "Company name is required.";

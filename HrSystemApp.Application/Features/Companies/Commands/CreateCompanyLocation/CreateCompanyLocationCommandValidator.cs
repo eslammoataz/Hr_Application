@@ -8,10 +8,10 @@ public class CreateCompanyLocationCommandValidator : AbstractValidator<CreateCom
     public CreateCompanyLocationCommandValidator()
     {
         RuleFor(x => x.CompanyId)
-            .NotEmpty().WithMessage(Messages.Validation.CompanyIdRequired);
+            .NotEmpty().WithErrorCode(ErrorCodes.CompanyIdRequired).WithMessage(Messages.Validation.CompanyIdRequired);
 
         RuleFor(x => x.LocationName)
-            .NotEmpty().WithMessage(Messages.Validation.LocationNameRequired)
-            .MaximumLength(100).WithMessage(Messages.Validation.LocationNameMaxLength);
+            .NotEmpty().WithErrorCode(ErrorCodes.LocationNameRequired).WithMessage(Messages.Validation.LocationNameRequired)
+            .MaximumLength(100).WithErrorCode(ErrorCodes.LocationNameMaxLength).WithMessage(Messages.Validation.LocationNameMaxLength);
     }
 }

@@ -8,20 +8,20 @@ public class LoginUserCommandValidator : AbstractValidator<LoginUserCommand>
     public LoginUserCommandValidator()
     {
         RuleFor(x => x.Email)
-            .NotEmpty().WithMessage(Messages.Validation.EmailRequired)
-            .EmailAddress().WithMessage(Messages.Validation.ValidEmailRequired);
+            .NotEmpty().WithErrorCode(ErrorCodes.EmailRequired).WithMessage(Messages.Validation.EmailRequired)
+            .EmailAddress().WithErrorCode(ErrorCodes.ValidEmailRequired).WithMessage(Messages.Validation.ValidEmailRequired);
 
         RuleFor(x => x.Password)
-            .NotEmpty().WithMessage(Messages.Validation.PasswordRequired);
+            .NotEmpty().WithErrorCode(ErrorCodes.PasswordRequired).WithMessage(Messages.Validation.PasswordRequired);
 
         RuleFor(x => x.FcmToken)
-            .NotEmpty().When(x => x.FcmToken != null).WithMessage(Messages.Validation.FcmTokenNotEmpty);
+            .NotEmpty().When(x => x.FcmToken != null).WithErrorCode(ErrorCodes.FcmTokenNotEmpty).WithMessage(Messages.Validation.FcmTokenNotEmpty);
 
         RuleFor(x => x.DeviceType)
-            .IsInEnum().When(x => x.DeviceType != null).WithMessage(Messages.Validation.InvalidDeviceType);
+            .IsInEnum().When(x => x.DeviceType != null).WithErrorCode(ErrorCodes.InvalidDeviceType).WithMessage(Messages.Validation.InvalidDeviceType);
 
         RuleFor(x => x.Language)
-            .NotEmpty().When(x => x.Language != null).WithMessage(Messages.Validation.LanguageNotEmpty)
-            .MaximumLength(10).When(x => x.Language != null).WithMessage(Messages.Validation.LanguageMaxLength);
+            .NotEmpty().When(x => x.Language != null).WithErrorCode(ErrorCodes.LanguageNotEmpty).WithMessage(Messages.Validation.LanguageNotEmpty)
+            .MaximumLength(10).When(x => x.Language != null).WithErrorCode(ErrorCodes.LanguageMaxLength).WithMessage(Messages.Validation.LanguageMaxLength);
     }
 }

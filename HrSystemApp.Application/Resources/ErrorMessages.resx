@@ -1,0 +1,460 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+    xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter</value></resheader>
+
+  <!-- Auth -->
+  <data name="Auth.InvalidCredentials" xml:space="preserve">
+    <value>Invalid email or password.</value>
+  </data>
+  <data name="Auth.UserNotFound" xml:space="preserve">
+    <value>User was not found.</value>
+  </data>
+  <data name="Auth.AccountInactive" xml:space="preserve">
+    <value>Your account is inactive. Please contact HR.</value>
+  </data>
+  <data name="Auth.CompanyInactive" xml:space="preserve">
+    <value>Your company's account is currently inactive. Please contact support.</value>
+  </data>
+  <data name="Auth.TokenNotFound" xml:space="preserve">
+    <value>Authentication token was not found.</value>
+  </data>
+  <data name="Auth.TokenExpired" xml:space="preserve">
+    <value>Authentication token has expired.</value>
+  </data>
+  <data name="Auth.Unauthorized" xml:space="preserve">
+    <value>You are not authorized to perform this action.</value>
+  </data>
+  <data name="Auth.EmployeeBlockedStatus" xml:space="preserve">
+    <value>Your account is not active. Please contact HR.</value>
+  </data>
+  <data name="Auth.InvalidRefreshToken" xml:space="preserve">
+    <value>The refresh token is invalid.</value>
+  </data>
+  <data name="Auth.RefreshTokenExpired" xml:space="preserve">
+    <value>The refresh token has expired.</value>
+  </data>
+  <data name="Auth.RefreshTokenRevoked" xml:space="preserve">
+    <value>Suspicious activity detected: Refresh token reuse. All sessions revoked.</value>
+  </data>
+  <data name="Auth.ResetFailed" xml:space="preserve">
+    <value>Failed to reset password.</value>
+  </data>
+  <data name="Auth.PasswordChangeFailed" xml:space="preserve">
+    <value>Failed to change password.</value>
+  </data>
+  <data name="Auth.ForcedChangeNotRequired" xml:space="preserve">
+    <value>User is not required to change their password via this endpoint.</value>
+  </data>
+  <data name="Auth.InvalidOtp" xml:space="preserve">
+    <value>Invalid OTP code provided.</value>
+  </data>
+  <data name="Auth.Forbidden" xml:space="preserve">
+    <value>You are not authorized to access this resource.</value>
+  </data>
+
+  <!-- User -->
+  <data name="User.NotFound" xml:space="preserve">
+    <value>User was not found.</value>
+  </data>
+  <data name="User.AlreadyExists" xml:space="preserve">
+    <value>User with this email already exists.</value>
+  </data>
+  <data name="User.UpdateFailed" xml:space="preserve">
+    <value>Failed to update user.</value>
+  </data>
+  <data name="User.DeleteFailed" xml:space="preserve">
+    <value>Failed to delete user.</value>
+  </data>
+  <data name="User.InvalidOtp" xml:space="preserve">
+    <value>Invalid OTP code provided.</value>
+  </data>
+  <data name="User.OtpMaxAttemptsReached" xml:space="preserve">
+    <value>Maximum OTP attempts reached. Please request a new code.</value>
+  </data>
+
+  <!-- Employee -->
+  <data name="Employee.NotFound" xml:space="preserve">
+    <value>Employee was not found.</value>
+  </data>
+  <data name="Employee.AlreadyExists" xml:space="preserve">
+    <value>An employee with this email or phone number already exists.</value>
+  </data>
+  <data name="Employee.CreationFailed" xml:space="preserve">
+    <value>Failed to create employee account. Please try again.</value>
+  </data>
+  <data name="Employee.AlreadyInactive" xml:space="preserve">
+    <value>Employee is already inactive.</value>
+  </data>
+  <data name="Employee.InvalidEmploymentStatus" xml:space="preserve">
+    <value>Employment status value is invalid.</value>
+  </data>
+
+  <!-- Company -->
+  <data name="Company.NotFound" xml:space="preserve">
+    <value>Company was not found.</value>
+  </data>
+
+  <!-- Department -->
+  <data name="Department.NotFound" xml:space="preserve">
+    <value>Department was not found.</value>
+  </data>
+  <data name="Department.AlreadyExists" xml:space="preserve">
+    <value>A department with this name already exists in the company.</value>
+  </data>
+
+  <!-- Unit -->
+  <data name="Unit.NotFound" xml:space="preserve">
+    <value>Unit was not found.</value>
+  </data>
+  <data name="Unit.AlreadyExists" xml:space="preserve">
+    <value>A unit with this name already exists in the department.</value>
+  </data>
+
+  <!-- Team -->
+  <data name="Team.NotFound" xml:space="preserve">
+    <value>Team was not found.</value>
+  </data>
+  <data name="Team.AlreadyExists" xml:space="preserve">
+    <value>A team with this name already exists in the unit.</value>
+  </data>
+
+  <!-- LeaveBalance -->
+  <data name="LeaveBalance.NotFound" xml:space="preserve">
+    <value>No leave balance found for this employee and year.</value>
+  </data>
+  <data name="LeaveBalance.AlreadyInitialized" xml:space="preserve">
+    <value>Leave balance for this type and year already exists.</value>
+  </data>
+  <data name="LeaveBalance.Insufficient" xml:space="preserve">
+    <value>Insufficient leave balance for the requested duration.</value>
+  </data>
+  <data name="LeaveBalance.InvalidDuration" xml:space="preserve">
+    <value>Duration must be positive.</value>
+  </data>
+
+  <!-- Request -->
+  <data name="Request.NotFound" xml:space="preserve">
+    <value>Request was not found.</value>
+  </data>
+  <data name="Request.TypeDisabled" xml:space="preserve">
+    <value>The requested type is not available for your company.</value>
+  </data>
+  <data name="Request.NotPending" xml:space="preserve">
+    <value>Only pending requests can be modified or deleted.</value>
+  </data>
+  <data name="Request.ModificationLocked" xml:space="preserve">
+    <value>Request is locked once approval process has started.</value>
+  </data>
+  <data name="Request.DefinitionNotFound" xml:space="preserve">
+    <value>Request configuration for this type was not found.</value>
+  </data>
+  <data name="Request.DefinitionAlreadyExists" xml:space="preserve">
+    <value>A request definition for this type already exists for this company.</value>
+  </data>
+  <data name="Request.Unauthorized" xml:space="preserve">
+    <value>You are not the designated approver for this request at this stage.</value>
+  </data>
+  <data name="Request.Locked" xml:space="preserve">
+    <value>Request is not in a state that can be approved or handled.</value>
+  </data>
+  <data name="Request.InvalidDuration" xml:space="preserve">
+    <value>Duration must be positive.</value>
+  </data>
+  <data name="Request.NoActiveManagersAtStep" xml:space="preserve">
+    <value>A workflow step has no active managers assigned.</value>
+  </data>
+  <data name="Request.InvalidWorkflowChain" xml:space="preserve">
+    <value>Workflow step references a node not in the approval chain.</value>
+  </data>
+  <data name="Request.NotPendingApproval" xml:space="preserve">
+    <value>This request is not currently awaiting approval.</value>
+  </data>
+  <data name="Request.StepOrderExceeded" xml:space="preserve">
+    <value>Step order exceeds the number of workflow steps.</value>
+  </data>
+  <data name="Request.OrgNodeNotInCompany" xml:space="preserve">
+    <value>The referenced org node does not belong to this company.</value>
+  </data>
+  <data name="Request.DirectEmployeeNotInCompany" xml:space="preserve">
+    <value>The referenced employee does not belong to this company.</value>
+  </data>
+  <data name="Request.DirectEmployeeNotActive" xml:space="preserve">
+    <value>The referenced employee is not active.</value>
+  </data>
+  <data name="Request.MissingDirectEmployeeId" xml:space="preserve">
+    <value>A DirectEmployee step must specify a DirectEmployeeId.</value>
+  </data>
+  <data name="Request.MissingOrgNodeId" xml:space="preserve">
+    <value>An OrgNode step must specify an OrgNodeId.</value>
+  </data>
+  <data name="Request.MissingCompanyRoleId" xml:space="preserve">
+    <value>A CompanyRole step must specify a CompanyRoleId.</value>
+  </data>
+  <data name="Request.RoleNotInCompany" xml:space="preserve">
+    <value>The referenced company role does not belong to this company.</value>
+  </data>
+  <data name="Request.RoleNotFound" xml:space="preserve">
+    <value>The referenced company role was not found.</value>
+  </data>
+  <data name="Request.MissingLevelsUp" xml:space="preserve">
+    <value>A HierarchyLevel step must specify LevelsUp greater than or equal to 1.</value>
+  </data>
+  <data name="Request.InvalidStartFromLevel" xml:space="preserve">
+    <value>StartFromLevel must be greater than or equal to 1.</value>
+  </data>
+  <data name="Request.UnexpectedFieldsOnHierarchyLevelStep" xml:space="preserve">
+    <value>HierarchyLevel steps must not have OrgNodeId, DirectEmployeeId, or BypassHierarchyCheck.</value>
+  </data>
+  <data name="Request.HierarchyLevelFieldsOnNonHierarchyStep" xml:space="preserve">
+    <value>StartFromLevel and LevelsUp are only valid on HierarchyLevel steps.</value>
+  </data>
+  <data name="Request.HierarchyRangesOverlap" xml:space="preserve">
+    <value>HierarchyLevel step ranges must not overlap.</value>
+  </data>
+
+  <!-- Notification -->
+  <data name="Notification.NotFound" xml:space="preserve">
+    <value>Notification was not found.</value>
+  </data>
+  <data name="Notification.Forbidden" xml:space="preserve">
+    <value>You are not allowed to access this notification.</value>
+  </data>
+  <data name="Notification.SendFailed" xml:space="preserve">
+    <value>Failed to send the notification.</value>
+  </data>
+  <data name="Notification.TokenMissing" xml:space="preserve">
+    <value>The target employee does not have a valid FCM token.</value>
+  </data>
+
+  <!-- Attendance -->
+  <data name="Attendance.NotFound" xml:space="preserve">
+    <value>Attendance record was not found.</value>
+  </data>
+  <data name="Attendance.AlreadyClockedIn" xml:space="preserve">
+    <value>Employee already has an open attendance record.</value>
+  </data>
+  <data name="Attendance.ClockInRequired" xml:space="preserve">
+    <value>Employee must clock in before clocking out.</value>
+  </data>
+  <data name="Attendance.AlreadyClockedOut" xml:space="preserve">
+    <value>Employee has already clocked out.</value>
+  </data>
+  <data name="Attendance.InvalidClockOut" xml:space="preserve">
+    <value>Clock-out time must be after clock-in time.</value>
+  </data>
+  <data name="Attendance.OverrideReasonRequired" xml:space="preserve">
+    <value>Override reason is required.</value>
+  </data>
+
+  <!-- Workflow -->
+  <data name="Workflow.NotFound" xml:space="preserve">
+    <value>No approval workflow defined for this request type.</value>
+  </data>
+  <data name="Workflow.InvalidStep" xml:space="preserve">
+    <value>The workflow step is no longer valid or has changed.</value>
+  </data>
+
+  <!-- OrgNode -->
+  <data name="OrgNode.NotFound" xml:space="preserve">
+    <value>The requested organization node was not found.</value>
+  </data>
+  <data name="OrgNode.CircularReference" xml:space="preserve">
+    <value>Cannot create a circular hierarchy reference.</value>
+  </data>
+  <data name="OrgNode.DuplicateAssignment" xml:space="preserve">
+    <value>This employee is already assigned to this node.</value>
+  </data>
+  <data name="OrgNode.AssignmentNotFound" xml:space="preserve">
+    <value>Assignment not found.</value>
+  </data>
+  <data name="OrgNode.InvalidHierarchyConfiguration" xml:space="preserve">
+    <value>Invalid hierarchy configuration detected.</value>
+  </data>
+
+  <!-- Roles -->
+  <data name="Roles.NotFound" xml:space="preserve">
+    <value>The role was not found.</value>
+  </data>
+  <data name="Roles.NameAlreadyExists" xml:space="preserve">
+    <value>A role with this name already exists in the company.</value>
+  </data>
+  <data name="Roles.InUseByWorkflow" xml:space="preserve">
+    <value>This role is referenced by an active workflow definition and cannot be deleted.</value>
+  </data>
+  <data name="Roles.AlreadyAssigned" xml:space="preserve">
+    <value>This role is already assigned to the employee.</value>
+  </data>
+  <data name="Roles.AssignmentNotFound" xml:space="preserve">
+    <value>This role assignment does not exist.</value>
+  </data>
+  <data name="Roles.InvalidPermission" xml:space="preserve">
+    <value>One or more permissions are not valid. Check AppPermissions for allowed values.</value>
+  </data>
+
+  <!-- Hierarchy -->
+  <data name="Hierarchy.NotConfigured" xml:space="preserve">
+    <value>The company hierarchy has not been configured yet.</value>
+  </data>
+  <data name="Hierarchy.InvalidRole" xml:space="preserve">
+    <value>One or more roles are not valid for the company hierarchy. SuperAdmin is not allowed.</value>
+  </data>
+  <data name="Hierarchy.DuplicateRole" xml:space="preserve">
+    <value>Each role can only appear once in the hierarchy configuration.</value>
+  </data>
+  <data name="Hierarchy.MultipleCeos" xml:space="preserve">
+    <value>Only one CEO position can be configured per company.</value>
+  </data>
+  <data name="Hierarchy.WorkflowRoleNotInHierarchy" xml:space="preserve">
+    <value>One or more workflow step roles are not configured in the company hierarchy.</value>
+  </data>
+  <data name="Hierarchy.InvalidStepOrder" xml:space="preserve">
+    <value>Workflow steps must strictly escalate in authority order.</value>
+  </data>
+  <data name="Hierarchy.RoleInUse" xml:space="preserve">
+    <value>Cannot remove role because it is currently being used in one or more active Request Definitions.</value>
+  </data>
+
+  <!-- Storage -->
+  <data name="Storage.BucketNotFound" xml:space="preserve">
+    <value>The storage bucket was not found.</value>
+  </data>
+  <data name="Storage.ObjectNotFound" xml:space="preserve">
+    <value>The object was not found in storage.</value>
+  </data>
+  <data name="Storage.UploadFailed" xml:space="preserve">
+    <value>Failed to upload the file to storage.</value>
+  </data>
+  <data name="Storage.DeleteFailed" xml:space="preserve">
+    <value>Failed to delete the object from storage.</value>
+  </data>
+  <data name="Storage.ListFailed" xml:space="preserve">
+    <value>Failed to list objects in storage.</value>
+  </data>
+  <data name="Storage.PresignedUrlFailed" xml:space="preserve">
+    <value>Failed to generate a download URL.</value>
+  </data>
+
+  <!-- ContactAdmin -->
+  <data name="ContactAdmin.NotFound" xml:space="preserve">
+    <value>Contact admin request was not found.</value>
+  </data>
+  <data name="ContactAdmin.AlreadyProcessed" xml:space="preserve">
+    <value>This request has already been processed.</value>
+  </data>
+  <data name="ContactAdmin.DuplicatePendingRequest" xml:space="preserve">
+    <value>A pending request with this email or company name already exists.</value>
+  </data>
+  <data name="ContactAdmin.PhoneNumberAlreadyTaken" xml:space="preserve">
+    <value>This phone number is already taken.</value>
+  </data>
+  <data name="ContactAdmin.EmailAlreadyTaken" xml:space="preserve">
+    <value>This email is already taken.</value>
+  </data>
+  <data name="ContactAdmin.CompanyNameAlreadyTaken" xml:space="preserve">
+    <value>This company name is already taken.</value>
+  </data>
+
+  <!-- ProfileUpdate -->
+  <data name="ProfileUpdate.NotFound" xml:space="preserve">
+    <value>Request not found.</value>
+  </data>
+  <data name="ProfileUpdate.NotPending" xml:space="preserve">
+    <value>Only pending requests can be handled.</value>
+  </data>
+  <data name="ProfileUpdate.EmployeeNotFound" xml:space="preserve">
+    <value>Employee not found. Data may be corrupted.</value>
+  </data>
+  <data name="ProfileUpdate.EmptyChanges" xml:space="preserve">
+    <value>ChangesJson is empty for approved request. Cannot apply changes.</value>
+  </data>
+  <data name="ProfileUpdate.DeserializationFailed" xml:space="preserve">
+    <value>Failed to deserialize ChangesJson for request.</value>
+  </data>
+  <data name="ProfileUpdate.UnknownField" xml:space="preserve">
+    <value>Unknown field in ChangesJson.</value>
+  </data>
+  <data name="ProfileUpdate.HasPending" xml:space="preserve">
+    <value>You already have a pending profile update request.</value>
+  </data>
+  <data name="ProfileUpdate.InvalidField" xml:space="preserve">
+    <value>Field is not allowed for update.</value>
+  </data>
+  <data name="ProfileUpdate.NoChanges" xml:space="preserve">
+    <value>No new or valid changes provided. The entered values map to your existing profile.</value>
+  </data>
+  <data name="ProfileUpdate.MalformedChanges" xml:space="preserve">
+    <value>One or more fields in the changes payload are missing the required 'newValue' key.</value>
+  </data>
+  <data name="ProfileUpdate.InvalidLocationId" xml:space="preserve">
+    <value>Invalid CompanyLocationId provided.</value>
+  </data>
+
+  <!-- Hr -->
+  <data name="Hr.EmployeeNotFound" xml:space="preserve">
+    <value>The acting user has no employee record.</value>
+  </data>
+
+  <!-- General -->
+  <data name="General.ServerError" xml:space="preserve">
+    <value>An unexpected error occurred.</value>
+  </data>
+  <data name="General.ValidationError" xml:space="preserve">
+    <value>One or more validation errors occurred.</value>
+  </data>
+  <data name="General.NotFound" xml:space="preserve">
+    <value>The requested resource was not found.</value>
+  </data>
+  <data name="General.ArgumentError" xml:space="preserve">
+    <value>An invalid argument was provided.</value>
+  </data>
+  <data name="General.InvalidOperation" xml:space="preserve">
+    <value>The requested operation is not valid in the current state.</value>
+  </data>
+  <data name="General.Forbidden" xml:space="preserve">
+    <value>You are not authorized to access this resource.</value>
+  </data>
+
+  <!-- Validation -->
+  <data name="Validation.FieldRequired" xml:space="preserve">
+    <value>A required field is missing.</value>
+  </data>
+  <data name="Validation.InvalidType" xml:space="preserve">
+    <value>Field has an invalid data type.</value>
+  </data>
+  <data name="Validation.Error" xml:space="preserve">
+    <value>An error occurred during validation.</value>
+  </data>
+</root>

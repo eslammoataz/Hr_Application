@@ -8,17 +8,17 @@ public class CreateCompanyCommandValidator : AbstractValidator<CreateCompanyComm
     public CreateCompanyCommandValidator()
     {
         RuleFor(x => x.CompanyName)
-            .NotEmpty().WithMessage(Messages.Validation.CompanyNameRequiredForCompany)
-            .MaximumLength(200).WithMessage(Messages.Validation.CompanyNameMaxLengthForCompany);
+            .NotEmpty().WithErrorCode(ErrorCodes.CompanyNameRequiredForCompany).WithMessage(Messages.Validation.CompanyNameRequiredForCompany)
+            .MaximumLength(200).WithErrorCode(ErrorCodes.CompanyNameMaxLengthForCompany).WithMessage(Messages.Validation.CompanyNameMaxLengthForCompany);
 
         RuleFor(x => x.YearlyVacationDays)
-            .NotNull().WithMessage(Messages.Validation.YearlyVacationDaysRequired);
+            .NotNull().WithErrorCode(ErrorCodes.YearlyVacationDaysRequired).WithMessage(Messages.Validation.YearlyVacationDaysRequired);
 
         RuleFor(x => x.GraceMinutes)
-            .GreaterThanOrEqualTo(0).WithMessage(Messages.Validation.GraceMinutesMustBeNonNegative);
+            .GreaterThanOrEqualTo(0).WithErrorCode(ErrorCodes.GraceMinutesMustBeNonNegative).WithMessage(Messages.Validation.GraceMinutesMustBeNonNegative);
 
         RuleFor(x => x.TimeZoneId)
-            .NotEmpty().WithMessage(Messages.Validation.TimeZoneIdRequired)
-            .MaximumLength(100).WithMessage(Messages.Validation.TimeZoneIdMaxLength);
+            .NotEmpty().WithErrorCode(ErrorCodes.TimeZoneIdRequired).WithMessage(Messages.Validation.TimeZoneIdRequired)
+            .MaximumLength(100).WithErrorCode(ErrorCodes.TimeZoneIdMaxLength).WithMessage(Messages.Validation.TimeZoneIdMaxLength);
     }
 }

@@ -9,17 +9,17 @@ public class SendNotificationToEmployeeCommandValidator : AbstractValidator<Send
     public SendNotificationToEmployeeCommandValidator()
     {
         RuleFor(x => x.EmployeeId)
-            .NotEmpty().WithMessage(Messages.Validation.EmployeeIdRequired);
+            .NotEmpty().WithErrorCode(ErrorCodes.EmployeeIdRequired).WithMessage(Messages.Validation.EmployeeIdRequired);
 
         RuleFor(x => x.Title)
-            .NotEmpty().WithMessage(Messages.Validation.TitleRequired)
-            .MaximumLength(200).WithMessage(Messages.Validation.TitleMaxLength);
+            .NotEmpty().WithErrorCode(ErrorCodes.TitleRequired).WithMessage(Messages.Validation.TitleRequired)
+            .MaximumLength(200).WithErrorCode(ErrorCodes.TitleMaxLength).WithMessage(Messages.Validation.TitleMaxLength);
 
         RuleFor(x => x.Message)
-            .NotEmpty().WithMessage(Messages.Validation.MessageRequired)
-            .MaximumLength(2000).WithMessage(Messages.Validation.MessageMaxLength);
+            .NotEmpty().WithErrorCode(ErrorCodes.MessageRequired).WithMessage(Messages.Validation.MessageRequired)
+            .MaximumLength(2000).WithErrorCode(ErrorCodes.MessageMaxLength).WithMessage(Messages.Validation.MessageMaxLength);
 
         RuleFor(x => x.Type)
-            .IsInEnum().WithMessage(Messages.Validation.InvalidNotificationType);
+            .IsInEnum().WithErrorCode(ErrorCodes.InvalidNotificationType).WithMessage(Messages.Validation.InvalidNotificationType);
     }
 }

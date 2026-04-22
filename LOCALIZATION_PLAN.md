@@ -36,7 +36,7 @@ before building the `ApiResponse`.
 
 ### Step 1 — Add NuGet package to Application project
 
-`HrSystemApp.Application/HrSystemApp.Application.csproj` — add one line inside the existing `<ItemGroup>`:
+`HrSystemApp.Application/HrSystemApp.Application.csproj` — add inside the existing `<ItemGroup>`:
 
 ```xml
 <PackageReference Include="Microsoft.Extensions.Localization.Abstractions" Version="8.0.0" />
@@ -46,12 +46,10 @@ before building the `ApiResponse`.
 
 ### Step 2 — Create the IErrorLocalizer interface
 
-**New file: `HrSystemApp.Application/Localization/IErrorLocalizer.cs`**
+**New file: `HrSystemApp.Application/Resources/IErrorLocalizer.cs`**
 
 ```csharp
-using HrSystemApp.Application.Common;
-
-namespace HrSystemApp.Application.Localization;
+namespace HrSystemApp.Application.Resources;
 
 /// <summary>
 /// Translates an Error's message into the current request culture.
@@ -68,17 +66,20 @@ public interface IErrorLocalizer
 }
 ```
 
+> **Important:** This file lives in `HrSystemApp.Application/Resources/` with namespace
+> `HrSystemApp.Application.Resources`. This is intentional — see the note at Step 3 about why.
+
 ---
 
-### Step 3 — Create the marker classes for IStringLocalizer<T>
+### Step 3 — Create the marker class for IStringLocalizer<T>
 
 These are empty classes whose sole purpose is to be the type parameter for `IStringLocalizer<T>`.
 The generic type parameter tells .NET which `.resx` file to load.
 
-**New file: `HrSystemApp.Application/Localization/ErrorMessages.cs`**
+**New file: `HrSystemApp.Application/Resources/ErrorMessages.cs`**
 
 ```csharp
-namespace HrSystemApp.Application.Localization;
+namespace HrSystemApp.Application.Resources;
 
 /// <summary>
 /// Marker class for IStringLocalizer&lt;ErrorMessages&gt;.
@@ -89,31 +90,23 @@ namespace HrSystemApp.Application.Localization;
 public sealed class ErrorMessages { }
 ```
 
-**New file: `HrSystemApp.Application/Localization/ValidationMessages.cs`**
-
-```csharp
-namespace HrSystemApp.Application.Localization;
-
-/// <summary>
-/// Marker class for IStringLocalizer&lt;ValidationMessages&gt;.
-/// The corresponding resource files are:
-///   Resources/ValidationMessages.resx       (English — default)
-///   Resources/ValidationMessages.ar.resx    (Arabic)
-/// </summary>
-public sealed class ValidationMessages { }
-```
+**Why this path matters:** `IStringLocalizer<T>` resolves resource paths by stripping the
+assembly's root namespace from the type's full name and prepending `ResourcesPath`. With this
+namespace, .NET looks for `Resources/ErrorMessages.resx` — which is exactly where the `.resx`
+files live. If you put the marker class under `HrSystemApp.Application.Localization` instead,
+.NET would look for `Resources/Localization/ErrorMessages.resx` and silently fall back to English.
 
 ---
 
 ### Step 4 — Create the ErrorLocalizer implementation
 
-**New file: `HrSystemApp.Application/Localization/ErrorLocalizer.cs`**
+**New file: `HrSystemApp.Application/Resources/ErrorLocalizer.cs`**
 
 ```csharp
 using HrSystemApp.Application.Common;
 using Microsoft.Extensions.Localization;
 
-namespace HrSystemApp.Application.Localization;
+namespace HrSystemApp.Application.Resources;
 
 public sealed class ErrorLocalizer : IErrorLocalizer
 {
@@ -150,7 +143,7 @@ public sealed class ErrorLocalizer : IErrorLocalizer
 Add to `AddApplication()`:
 
 ```csharp
-using HrSystemApp.Application.Localization;
+using HrSystemApp.Application.Resources;
 
 // inside AddApplication():
 services.AddScoped<IErrorLocalizer, ErrorLocalizer>();
@@ -203,7 +196,7 @@ app.UseMiddleware<ExceptionMiddleware>();
 
 ```csharp
 using HrSystemApp.Application.Common;
-using HrSystemApp.Application.Localization;
+using HrSystemApp.Application.Resources;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HrSystemApp.Api.Controllers;
@@ -212,10 +205,6 @@ namespace HrSystemApp.Api.Controllers;
 [Route("api/[controller]")]
 public abstract class BaseApiController : ControllerBase
 {
-    // Resolved from DI via property injection — keeps derived controllers clean
-    [FromServices]
-    public IErrorLocalizer ErrorLocalizer { get; set; } = null!;
-
     protected IActionResult HandleResult<T>(Result<T> result)
     {
         if (result.IsSuccess)
@@ -237,7 +226,10 @@ public abstract class BaseApiController : ControllerBase
 
     private IActionResult HandleError(Error error)
     {
-        var localizedError = ErrorLocalizer.Localize(error);   // ← only change
+        // Resolve IErrorLocalizer from the request's service provider
+        // rather than using property injection, to keep the base controller clean.
+        var localizer = HttpContext.RequestServices.GetRequiredService<IErrorLocalizer>();
+        var localizedError = localizer.Localize(error);
         var errorResponse = new ApiResponse<object>(false, null, localizedError);
 
         return localizedError.Code switch
@@ -252,17 +244,18 @@ public abstract class BaseApiController : ControllerBase
 }
 ```
 
-Note: `[FromServices]` on a property is the standard way to inject a service into a base controller
-without forcing every derived controller to pass it through their constructors.
-
 ---
 
 ### Step 8 — Localize in ExceptionMiddleware (PATH 2)
 
+> ⚠️ The existing `HandleExceptionAsync` is `private static`. It must become a **non-static**
+> instance method so it can access the injected `_localizer` field. Remove the `static`
+> keyword when making these changes.
+
 **Modify: `HrSystemApp.Api/Middleware/ExceptionMiddleware.cs`**
 
 ```csharp
-using HrSystemApp.Application.Localization;
+using HrSystemApp.Application.Resources;
 // ... existing usings
 
 public class ExceptionMiddleware
@@ -306,7 +299,7 @@ public class ExceptionMiddleware
         }
     }
 
-    private Task HandleExceptionAsync(HttpContext context, Exception exception)
+    private Task HandleExceptionAsync(HttpContext context, Exception exception)  // ← removed static
     {
         var (statusCode, error) = MapExceptionToError(exception);
         var localizedError = _localizer.Localize(error);   // ← localize before serializing
@@ -324,17 +317,61 @@ public class ExceptionMiddleware
 
 ---
 
-### Step 9 — Create the resource files
+### Step 9 — Create the resource files and add to .csproj
 
-These live in `HrSystemApp.Application/Resources/`. Visual Studio manages `.resx` files through
-the XML editor. In Rider/VS Code you edit the XML directly.
+The `.resx` files must be added to `HrSystemApp.Application.csproj` with
+`<EmbeddedResource>` build action, otherwise they won't be compiled into the assembly
+and the localizer will silently fall back to English at runtime.
 
-**`HrSystemApp.Application/Resources/ErrorMessages.resx`** (English — default fallback)
+**Add to `HrSystemApp.Application/HrSystemApp.Application.csproj`** inside the existing
+`<Project>` element:
+
+```xml
+<ItemGroup>
+  <EmbeddedResource Include="Resources\ErrorMessages.resx" />
+  <EmbeddedResource Include="Resources\ErrorMessages.ar.resx" />
+</ItemGroup>
+```
+
+**`HrSystemApp.Application/Resources/ErrorMessages.resx`** (English — default fallback):
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
 <root>
-  <xsd:schema ...><!-- standard resx schema header --></xsd:schema>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+    xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter</value></resheader>
 
   <!-- Auth -->
   <data name="Auth.InvalidCredentials" xml:space="preserve">
@@ -368,9 +405,6 @@ the XML editor. In Rider/VS Code you edit the XML directly.
     <value>The refresh token has expired.</value>
   </data>
   <data name="Auth.RefreshTokenRevoked" xml:space="preserve">
-    <value>The refresh token has been revoked.</value>
-  </data>
-  <data name="Auth.RefreshTokenReused" xml:space="preserve">
     <value>Suspicious activity detected: Refresh token reuse. All sessions revoked.</value>
   </data>
   <data name="Auth.ResetFailed" xml:space="preserve">
@@ -381,6 +415,12 @@ the XML editor. In Rider/VS Code you edit the XML directly.
   </data>
   <data name="Auth.ForcedChangeNotRequired" xml:space="preserve">
     <value>User is not required to change their password via this endpoint.</value>
+  </data>
+  <data name="Auth.InvalidOtp" xml:space="preserve">
+    <value>Invalid OTP code provided.</value>
+  </data>
+  <data name="Auth.Forbidden" xml:space="preserve">
+    <value>You are not authorized to access this resource.</value>
   </data>
 
   <!-- User -->
@@ -451,7 +491,7 @@ the XML editor. In Rider/VS Code you edit the XML directly.
 
   <!-- LeaveBalance -->
   <data name="LeaveBalance.NotFound" xml:space="preserve">
-    <value>Leave balance record was not found for this employee and year.</value>
+    <value>No leave balance found for this employee and year.</value>
   </data>
   <data name="LeaveBalance.AlreadyInitialized" xml:space="preserve">
     <value>Leave balance for this type and year already exists.</value>
@@ -528,10 +568,10 @@ the XML editor. In Rider/VS Code you edit the XML directly.
     <value>The referenced company role was not found.</value>
   </data>
   <data name="Request.MissingLevelsUp" xml:space="preserve">
-    <value>A HierarchyLevel step must specify LevelsUp >= 1.</value>
+    <value>A HierarchyLevel step must specify LevelsUp greater than or equal to 1.</value>
   </data>
   <data name="Request.InvalidStartFromLevel" xml:space="preserve">
-    <value>StartFromLevel must be >= 1.</value>
+    <value>StartFromLevel must be greater than or equal to 1.</value>
   </data>
   <data name="Request.UnexpectedFieldsOnHierarchyLevelStep" xml:space="preserve">
     <value>HierarchyLevel steps must not have OrgNodeId, DirectEmployeeId, or BypassHierarchyCheck.</value>
@@ -627,7 +667,7 @@ the XML editor. In Rider/VS Code you edit the XML directly.
     <value>The company hierarchy has not been configured yet.</value>
   </data>
   <data name="Hierarchy.InvalidRole" xml:space="preserve">
-    <value>One or more roles are not valid for the company hierarchy.</value>
+    <value>One or more roles are not valid for the company hierarchy. SuperAdmin is not allowed.</value>
   </data>
   <data name="Hierarchy.DuplicateRole" xml:space="preserve">
     <value>Each role can only appear once in the hierarchy configuration.</value>
@@ -693,16 +733,16 @@ the XML editor. In Rider/VS Code you edit the XML directly.
     <value>Only pending requests can be handled.</value>
   </data>
   <data name="ProfileUpdate.EmployeeNotFound" xml:space="preserve">
-    <value>Employee not found.</value>
+    <value>Employee not found. Data may be corrupted.</value>
   </data>
   <data name="ProfileUpdate.EmptyChanges" xml:space="preserve">
-    <value>No changes were provided.</value>
+    <value>ChangesJson is empty for approved request. Cannot apply changes.</value>
   </data>
   <data name="ProfileUpdate.DeserializationFailed" xml:space="preserve">
-    <value>Failed to process the changes payload.</value>
+    <value>Failed to deserialize ChangesJson for request.</value>
   </data>
   <data name="ProfileUpdate.UnknownField" xml:space="preserve">
-    <value>An unknown field was found in the changes payload.</value>
+    <value>Unknown field in ChangesJson.</value>
   </data>
   <data name="ProfileUpdate.HasPending" xml:space="preserve">
     <value>You already have a pending profile update request.</value>
@@ -711,13 +751,13 @@ the XML editor. In Rider/VS Code you edit the XML directly.
     <value>Field is not allowed for update.</value>
   </data>
   <data name="ProfileUpdate.NoChanges" xml:space="preserve">
-    <value>No new or valid changes provided.</value>
+    <value>No new or valid changes provided. The entered values map to your existing profile.</value>
   </data>
   <data name="ProfileUpdate.MalformedChanges" xml:space="preserve">
-    <value>One or more fields in the changes payload are malformed.</value>
+    <value>One or more fields in the changes payload are missing the required 'newValue' key.</value>
   </data>
   <data name="ProfileUpdate.InvalidLocationId" xml:space="preserve">
-    <value>Invalid location ID provided.</value>
+    <value>Invalid CompanyLocationId provided.</value>
   </data>
 
   <!-- Hr -->
@@ -758,70 +798,19 @@ the XML editor. In Rider/VS Code you edit the XML directly.
 </root>
 ```
 
-> **For `ErrorMessages.ar.resx`** — same structure, Arabic values. See Arabic translation table at the end of this document.
-
----
-
-### Step 10 — Add the resx schema header
-
-Every `.resx` file needs the standard XML schema header. Use this exact header at the top of both
-`ErrorMessages.resx` and `ErrorMessages.ar.resx` (Visual Studio adds it automatically when you
-create the file through the IDE):
-
-```xml
-<?xml version="1.0" encoding="utf-8"?>
-<root>
-  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema"
-    xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
-    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
-    <xsd:element name="root" msdata:IsDataSet="true">
-      <xsd:complexType>
-        <xsd:choice maxOccurs="unbounded">
-          <xsd:element name="data">
-            <xsd:complexType>
-              <xsd:sequence>
-                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
-                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
-              </xsd:sequence>
-              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
-              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
-              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
-              <xsd:attribute ref="xml:space" />
-            </xsd:complexType>
-          </xsd:element>
-          <xsd:element name="resheader">
-            <xsd:complexType>
-              <xsd:sequence>
-                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
-              </xsd:sequence>
-              <xsd:attribute name="name" type="xsd:string" use="required" />
-            </xsd:complexType>
-          </xsd:element>
-        </xsd:choice>
-      </xsd:complexType>
-    </xsd:element>
-  </xsd:schema>
-  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
-  <resheader name="version"><value>2.0</value></resheader>
-  <resheader name="reader"><value>System.Resources.ResXResourceReader</value></resheader>
-  <resheader name="writer"><value>System.Resources.ResXResourceWriter</value></resheader>
-
-  <!-- data entries go here -->
-
-</root>
-```
+> For `ErrorMessages.ar.resx` — same XML structure, Arabic values. See Arabic translation table below.
 
 ---
 
 ## Phase 2 — Validation Messages (FluentValidation)
 
-The problem: validators use `WithMessage(Messages.Validation.EmailRequired)` where the string
-constant is baked in at validator construction time (inside the constructor), not at validation
-execution time. Changing the culture at request time has no effect on it.
+**Scope:** ~25 validator files with ~80+ individual rules. This is a large change and should be
+completed separately from Phase 1.
 
-### The fix — add a validation code to every rule and localize at the exception boundary
+### Step A — Add `.WithErrorCode()` to every validator rule
 
-**Step A — Add `.WithErrorCode()` to every validator rule alongside `.WithMessage()`**
+Every FluentValidation rule needs an error code alongside (or instead of) its English `.WithMessage()`.
+The code becomes the localization key; the message becomes the English fallback.
 
 ```csharp
 // Before:
@@ -835,20 +824,17 @@ RuleFor(x => x.Email)
     .EmailAddress().WithErrorCode("Val.ValidEmailRequired").WithMessage(Messages.Validation.ValidEmailRequired);
 ```
 
-The `ErrorCode` is a stable key like an `Error.Code`. The `WithMessage()` is now just an
-English fallback. The code is what gets looked up in the resx.
-
-**Step B — Add `IStringLocalizer<ValidationMessages>` to `ExceptionMiddleware`**
+### Step B — Localize validation errors in ExceptionMiddleware
 
 ```csharp
-private string GetValidationMessage(ValidationException validationEx)
+// In ExceptionMiddleware — replace GetValidationMessage with this:
+private string GetValidationMessage(ValidationException validationEx, IStringLocalizer<ValidationMessages> localizer)
 {
     var messages = validationEx.Errors.Select(e =>
     {
-        // Try to look up via error code; fall back to English message
         if (!string.IsNullOrEmpty(e.ErrorCode))
         {
-            var localized = _validationLocalizer[e.ErrorCode];
+            var localized = localizer[e.ErrorCode];
             if (!localized.ResourceNotFound)
                 return localized.Value;
         }
@@ -859,9 +845,13 @@ private string GetValidationMessage(ValidationException validationEx)
 }
 ```
 
-**Step C — Create `ValidationMessages.resx` and `ValidationMessages.ar.resx`**
+Inject `IStringLocalizer<ValidationMessages>` into the middleware constructor alongside `IErrorLocalizer`.
 
-Keys are the `Val.*` codes you added in Step A. Same resx format as `ErrorMessages.resx`.
+### Step C — Create ValidationMessages.resx and ValidationMessages.ar.resx
+
+Same `.resx` format as `ErrorMessages`. Keys are the `Val.*` codes added in Step A.
+Arabic translations need to be populated (not included in this plan — translate all
+`Messages.Validation.*` constants).
 
 ---
 
@@ -884,6 +874,8 @@ Keys are the `Val.*` codes you added in Step A. Same resx format as `ErrorMessag
 | Auth.ResetFailed | فشل إعادة تعيين كلمة المرور. |
 | Auth.PasswordChangeFailed | فشل تغيير كلمة المرور. |
 | Auth.ForcedChangeNotRequired | المستخدم غير مطالب بتغيير كلمة المرور عبر هذه النقطة. |
+| Auth.InvalidOtp | رمز التحقق المُدخل غير صالح. |
+| Auth.Forbidden | غير مصرح لك بالوصول إلى هذا المورد. |
 | User.NotFound | لم يتم العثور على المستخدم. |
 | User.AlreadyExists | مستخدم بهذا البريد الإلكتروني موجود مسبقاً. |
 | User.UpdateFailed | فشل تحديث المستخدم. |
@@ -916,7 +908,22 @@ Keys are the `Val.*` codes you added in Step A. Same resx format as `ErrorMessag
 | Request.Locked | الطلب ليس في حالة تسمح بالموافقة أو المعالجة. |
 | Request.InvalidDuration | يجب أن تكون المدة أكبر من صفر. |
 | Request.NoActiveManagersAtStep | لا يوجد مديرون نشطون معينون لخطوة سير العمل هذه. |
+| Request.InvalidWorkflowChain | خطوة سير العمل تشير إلى عقدة غير موجودة في سلسلة الموافقة. |
 | Request.NotPendingApproval | هذا الطلب لا ينتظر الموافقة حالياً. |
+| Request.StepOrderExceeded | ترتيب الخطوة يتجاوز عدد خطوات سير العمل. |
+| Request.OrgNodeNotInCompany | عقدة التنظيم المُشار إليها لا تنتمي إلى هذه الشركة. |
+| Request.DirectEmployeeNotInCompany | الموظف المُحيل لا ينتمي إلى هذه الشركة. |
+| Request.DirectEmployeeNotActive | الموظف المُحيل غير نشط. |
+| Request.MissingDirectEmployeeId | خطوة الموظف المباشر يجب أن تحدد DirectEmployeeId. |
+| Request.MissingOrgNodeId | خطوة عقدة التنظيم يجب أن تحدد OrgNodeId. |
+| Request.MissingCompanyRoleId | خطوة دور الشركة يجب أن تحدد CompanyRoleId. |
+| Request.RoleNotInCompany | الدور المُشار إليه لا ينتمي إلى هذه الشركة. |
+| Request.RoleNotFound | لم يتم العثور على دور الشركة المُشار إليه. |
+| Request.MissingLevelsUp | خطوة مستوى الهيكل يجب أن تحدد LevelsUp أكبر من أو يساوي 1. |
+| Request.InvalidStartFromLevel | StartFromLevel يجب أن يكون أكبر من أو يساوي 1. |
+| Request.UnexpectedFieldsOnHierarchyLevelStep | خطوات مستوى الهيكل يجب ألا تحتوي على OrgNodeId أو DirectEmployeeId أو BypassHierarchyCheck. |
+| Request.HierarchyLevelFieldsOnNonHierarchyStep | StartFromLevel و LevelsUp صالحان فقط في خطوات مستوى الهيكل. |
+| Request.HierarchyRangesOverlap | نطاقات خطوات مستوى الهيكل يجب ألا تتداخل. |
 | Notification.NotFound | لم يتم العثور على الإشعار. |
 | Notification.Forbidden | غير مسموح لك بالوصول إلى هذا الإشعار. |
 | Notification.SendFailed | فشل إرسال الإشعار. |
@@ -933,21 +940,25 @@ Keys are the `Val.*` codes you added in Step A. Same resx format as `ErrorMessag
 | OrgNode.CircularReference | لا يمكن إنشاء مرجع هرمي دائري. |
 | OrgNode.DuplicateAssignment | هذا الموظف معين مسبقاً لهذه العقدة. |
 | OrgNode.AssignmentNotFound | لم يتم العثور على التعيين. |
+| OrgNode.InvalidHierarchyConfiguration | تم اكتشاف تكوين هيكل تنظيمي غير صالح. |
 | Roles.NotFound | لم يتم العثور على الدور. |
 | Roles.NameAlreadyExists | دور بهذا الاسم موجود مسبقاً في الشركة. |
 | Roles.InUseByWorkflow | لا يمكن حذف هذا الدور لأنه مستخدم في تعريف سير عمل نشط. |
 | Roles.AlreadyAssigned | هذا الدور معين مسبقاً للموظف. |
 | Roles.AssignmentNotFound | هذا التعيين غير موجود. |
+| Roles.InvalidPermission | واحد أو أكثر من الأذونات غير صالحة. راجع AppPermissions للقيم المسموح بها. |
 | Hierarchy.NotConfigured | لم يتم إعداد هيكل الشركة التنظيمي بعد. |
 | Hierarchy.InvalidRole | أحد الأدوار أو أكثر غير صالح في الهيكل التنظيمي للشركة. |
 | Hierarchy.DuplicateRole | يمكن لكل دور أن يظهر مرة واحدة فقط في إعداد الهيكل التنظيمي. |
 | Hierarchy.MultipleCeos | يمكن تكوين منصب رئيس تنفيذي واحد فقط لكل شركة. |
+| Hierarchy.WorkflowRoleNotInHierarchy | أحد أدوار خطوات سير العمل أو أكثر غير مُعد في هيكل الشركة التنظيمي. |
+| Hierarchy.InvalidStepOrder | خطوات سير العمل يجب أن ترتقي بصرامة في ترتيب السلطة. |
 | Hierarchy.RoleInUse | لا يمكن إزالة الدور لأنه مستخدم حالياً في تعريفات طلبات نشطة. |
 | Storage.BucketNotFound | لم يتم العثور على حاوية التخزين. |
 | Storage.ObjectNotFound | لم يتم العثور على الملف في التخزين. |
 | Storage.UploadFailed | فشل رفع الملف إلى التخزين. |
 | Storage.DeleteFailed | فشل حذف الملف من التخزين. |
-| Storage.UploadFailed | فشل رفع الملف. |
+| Storage.ListFailed | فشل سرد الملفات في التخزين. |
 | Storage.PresignedUrlFailed | فشل توليد رابط التحميل. |
 | ContactAdmin.NotFound | لم يتم العثور على طلب التواصل مع المسؤول. |
 | ContactAdmin.AlreadyProcessed | تمت معالجة هذا الطلب مسبقاً. |
@@ -957,8 +968,15 @@ Keys are the `Val.*` codes you added in Step A. Same resx format as `ErrorMessag
 | ContactAdmin.CompanyNameAlreadyTaken | اسم الشركة هذا مستخدم مسبقاً. |
 | ProfileUpdate.NotFound | لم يتم العثور على الطلب. |
 | ProfileUpdate.NotPending | يمكن معالجة الطلبات المعلقة فقط. |
+| ProfileUpdate.EmployeeNotFound | الموظف غير موجود. قد تكون البيانات تالفة. |
+| ProfileUpdate.EmptyChanges | ChangesJson فارغ للطلب المعتمد. لا يمكن تطبيق التغييرات. |
+| ProfileUpdate.DeserializationFailed | فشل إلغاء تسلسل ChangesJson للطلب. |
+| ProfileUpdate.UnknownField | حقل غير معروف في ChangesJson. |
 | ProfileUpdate.HasPending | لديك بالفعل طلب تحديث ملف شخصي معلق. |
-| ProfileUpdate.NoChanges | لم يتم تقديم تغييرات جديدة أو صالحة. |
+| ProfileUpdate.InvalidField | الحقل غير مسموح بتحديثه. |
+| ProfileUpdate.NoChanges | لم يتم تقديم تغييرات جديدة أو صالحة. القيم المدخلة مطابقة لملفك الحالي. |
+| ProfileUpdate.MalformedChanges | واحد أو أكثر من الحقول في حمولة التغييرات يفتقد مفتاح 'newValue' المطلوب. |
+| ProfileUpdate.InvalidLocationId | CompanyLocationId غير صالح. |
 | Hr.EmployeeNotFound | المستخدم الحالي لا يمتلك سجل موظف. |
 | General.ServerError | حدث خطأ غير متوقع. |
 | General.ValidationError | حدث خطأ في التحقق من صحة البيانات. |
@@ -987,6 +1005,24 @@ If the client sends nothing, or sends `Accept-Language: en`, all responses are i
 
 ---
 
+## Verifying localization works
+
+After implementing Phase 1, test with:
+
+```bash
+curl -H "Accept-Language: ar" https://localhost:5001/api/auth/login \
+  -d '{"email":"x","password":"y"}' -H "Content-Type: application/json"
+```
+
+Expected: `"message": "البريد الإلكتروني أو كلمة المرور غير صحيحة."`
+
+If you see the English message instead, check:
+1. `UseRequestLocalization()` is before all other middleware in the pipeline
+2. `ErrorMessages.ar.resx` is included in the `.csproj` with `<EmbeddedResource>`
+3. `IErrorLocalizer` is registered as `AddScoped`
+
+---
+
 ## Summary — what changes and what does not
 
 | | Changed? |
@@ -996,9 +1032,9 @@ If the client sends nothing, or sends `Accept-Language: en`, all responses are i
 | All handlers (`Result.Failure(...)`) | ❌ No change |
 | `Error.cs` record | ❌ No change |
 | `ApiResponse.cs` | ❌ No change |
-| `BaseApiController.HandleError()` | ✅ One line — `ErrorLocalizer.Localize(error)` |
-| `ExceptionMiddleware` | ✅ Inject + one line — `_localizer.Localize(error)` |
-| `Program.cs` | ✅ Two blocks — `AddLocalization()` + `UseRequestLocalization()` |
-| `Application.csproj` | ✅ One NuGet package |
-| New: `IErrorLocalizer`, `ErrorLocalizer` | ✅ New files |
-| New: `ErrorMessages.resx` / `.ar.resx` | ✅ New files — translation work |
+| `BaseApiController.HandleError()` | ✅ Resolve `IErrorLocalizer` from `HttpContext.RequestServices` + one localize call |
+| `ExceptionMiddleware` | ✅ Inject `IErrorLocalizer`, remove `static`, call `_localizer.Localize()` |
+| `Program.cs` | ✅ `AddLocalization()` + `UseRequestLocalization()` before all middleware |
+| `Application.csproj` | ✅ `Microsoft.Extensions.Localization.Abstractions` NuGet + `<EmbeddedResource>` for resx files |
+| New: `IErrorLocalizer`, `ErrorLocalizer` | ✅ New files in `HrSystemApp.Application/Resources/` |
+| New: `ErrorMessages.cs`, `ErrorMessages.resx`, `ErrorMessages.ar.resx` | ✅ New files |

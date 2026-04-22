@@ -8,7 +8,7 @@ public class CreateOrgNodeCommandValidator : AbstractValidator<CreateOrgNodeComm
     public CreateOrgNodeCommandValidator()
     {
         RuleFor(x => x.Name)
-            .NotEmpty().WithMessage(Messages.Validation.FieldRequired)
-            .MaximumLength(200).WithMessage("Name cannot exceed 200 characters.");
+            .NotEmpty().WithErrorCode(ErrorCodes.FieldRequired).WithMessage(Messages.Validation.FieldRequired)
+            .MaximumLength(200).WithErrorCode(ErrorCodes.OrgNodeNameMaxLength).WithMessage(Messages.Validation.OrgNodeNameMaxLength);
     }
 }

@@ -4,6 +4,8 @@ using FluentValidation;
 using HrSystemApp.Application.Common;
 using HrSystemApp.Application.Errors;
 using HrSystemApp.Application.Common.Logging;
+using HrSystemApp.Application.Resources;
+using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Options;
 using System.Security.Claims;
 
@@ -24,7 +26,11 @@ public class ExceptionMiddleware
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase
     };
 
-    public ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddleware> logger, IHostEnvironment env, IOptions<LoggingOptions> loggingOptions)
+    public ExceptionMiddleware(
+        RequestDelegate next,
+        ILogger<ExceptionMiddleware> logger,
+        IHostEnvironment env,
+        IOptions<LoggingOptions> loggingOptions)
     {
         _next = next;
         _logger = logger;
@@ -40,8 +46,6 @@ public class ExceptionMiddleware
         }
         catch (Exception ex)
         {
-            var userId = context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "Anonymous";
-            var correlationId = context.Response.Headers["X-Correlation-ID"].ToString();
             var lastKnownState = new { Path = context.Request.Path.Value, Method = context.Request.Method };
 
             _logger.LogActionFailure(
@@ -55,23 +59,29 @@ public class ExceptionMiddleware
         }
     }
 
-    private static Task HandleExceptionAsync(HttpContext context, Exception exception)
+    private async Task HandleExceptionAsync(HttpContext context, Exception exception)
     {
-        var (statusCode, error) = MapExceptionToError(exception);
+        // Resolve scoped services from the current request scope
+        var localizer = context.RequestServices.GetRequiredService<IErrorLocalizer>();
+        var validationLocalizer = context.RequestServices.GetRequiredService<IStringLocalizer<ValidationMessages>>();
+
+        var (statusCode, error) = MapExceptionToError(exception, validationLocalizer);
+        var localizedError = localizer.Localize(error);
+
         context.Response.ContentType = "application/json";
         context.Response.StatusCode = (int)statusCode;
 
-        var response = new ApiResponse<object>(false, null, error);
-        return context.Response.WriteAsync(JsonSerializer.Serialize(response, JsonOptions));
+        var response = new ApiResponse<object>(false, null, localizedError);
+        await context.Response.WriteAsync(JsonSerializer.Serialize(response, JsonOptions));
     }
 
-    private static (HttpStatusCode statusCode, Error error) MapExceptionToError(Exception exception)
+    private (HttpStatusCode statusCode, Error error) MapExceptionToError(Exception exception, IStringLocalizer<ValidationMessages> validationLocalizer)
     {
         return exception switch
         {
             ValidationException validationEx => (
                 HttpStatusCode.BadRequest,
-                DomainErrors.General.ValidationError with { Message = GetValidationMessage(validationEx) }
+                DomainErrors.General.ValidationError with { Message = GetValidationMessage(validationEx, validationLocalizer) }
             ),
             UnauthorizedAccessException => (
                 HttpStatusCode.Unauthorized,
@@ -96,12 +106,19 @@ public class ExceptionMiddleware
         };
     }
 
-    private static string GetValidationMessage(ValidationException validationEx)
+    private static string GetValidationMessage(ValidationException validationEx, IStringLocalizer<ValidationMessages> localizer)
     {
-        var messages = validationEx.Errors
-            .Select(e => e.ErrorMessage)
-            .ToList();
+        var messages = validationEx.Errors.Select(e =>
+        {
+            if (!string.IsNullOrEmpty(e.ErrorCode))
+            {
+                var localized = localizer[e.ErrorCode];
+                if (!localized.ResourceNotFound)
+                    return localized.Value;
+            }
+            return e.ErrorMessage;
+        });
 
         return string.Join("; ", messages);
     }
-}
+}

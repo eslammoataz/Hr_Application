@@ -1,0 +1,460 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+    xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter</value></resheader>
+
+  <!-- Auth -->
+  <data name="Auth.InvalidCredentials" xml:space="preserve">
+    <value>البريد الإلكتروني أو كلمة المرور غير صحيحة.</value>
+  </data>
+  <data name="Auth.UserNotFound" xml:space="preserve">
+    <value>لم يتم العثور على المستخدم.</value>
+  </data>
+  <data name="Auth.AccountInactive" xml:space="preserve">
+    <value>حسابك غير نشط. يرجى التواصل مع الموارد البشرية.</value>
+  </data>
+  <data name="Auth.CompanyInactive" xml:space="preserve">
+    <value>حساب شركتك غير نشط حالياً. يرجى التواصل مع الدعم.</value>
+  </data>
+  <data name="Auth.TokenNotFound" xml:space="preserve">
+    <value>لم يتم العثور على رمز المصادقة.</value>
+  </data>
+  <data name="Auth.TokenExpired" xml:space="preserve">
+    <value>انتهت صلاحية رمز المصادقة.</value>
+  </data>
+  <data name="Auth.Unauthorized" xml:space="preserve">
+    <value>غير مصرح لك بتنفيذ هذا الإجراء.</value>
+  </data>
+  <data name="Auth.EmployeeBlockedStatus" xml:space="preserve">
+    <value>حسابك غير نشط. يرجى التواصل مع الموارد البشرية.</value>
+  </data>
+  <data name="Auth.InvalidRefreshToken" xml:space="preserve">
+    <value>رمز التحديث غير صالح.</value>
+  </data>
+  <data name="Auth.RefreshTokenExpired" xml:space="preserve">
+    <value>انتهت صلاحية رمز التحديث.</value>
+  </data>
+  <data name="Auth.RefreshTokenRevoked" xml:space="preserve">
+    <value>تم رصد نشاط مشبوه: إعادة استخدام رمز التحديث. تم إلغاء جميع الجلسات.</value>
+  </data>
+  <data name="Auth.ResetFailed" xml:space="preserve">
+    <value>فشل إعادة تعيين كلمة المرور.</value>
+  </data>
+  <data name="Auth.PasswordChangeFailed" xml:space="preserve">
+    <value>فشل تغيير كلمة المرور.</value>
+  </data>
+  <data name="Auth.ForcedChangeNotRequired" xml:space="preserve">
+    <value>المستخدم غير مطالب بتغيير كلمة المرور عبر هذه النقطة.</value>
+  </data>
+  <data name="Auth.InvalidOtp" xml:space="preserve">
+    <value>رمز التحقق المُدخل غير صالح.</value>
+  </data>
+  <data name="Auth.Forbidden" xml:space="preserve">
+    <value>غير مصرح لك بالوصول إلى هذا المورد.</value>
+  </data>
+
+  <!-- User -->
+  <data name="User.NotFound" xml:space="preserve">
+    <value>لم يتم العثور على المستخدم.</value>
+  </data>
+  <data name="User.AlreadyExists" xml:space="preserve">
+    <value>مستخدم بهذا البريد الإلكتروني موجود مسبقاً.</value>
+  </data>
+  <data name="User.UpdateFailed" xml:space="preserve">
+    <value>فشل تحديث المستخدم.</value>
+  </data>
+  <data name="User.DeleteFailed" xml:space="preserve">
+    <value>فشل حذف المستخدم.</value>
+  </data>
+  <data name="User.InvalidOtp" xml:space="preserve">
+    <value>رمز التحقق المُدخل غير صالح.</value>
+  </data>
+  <data name="User.OtpMaxAttemptsReached" xml:space="preserve">
+    <value>تم الوصول إلى الحد الأقصى لمحاولات التحقق. يرجى طلب رمز جديد.</value>
+  </data>
+
+  <!-- Employee -->
+  <data name="Employee.NotFound" xml:space="preserve">
+    <value>لم يتم العثور على الموظف.</value>
+  </data>
+  <data name="Employee.AlreadyExists" xml:space="preserve">
+    <value>موظف بهذا البريد أو رقم الهاتف موجود مسبقاً.</value>
+  </data>
+  <data name="Employee.CreationFailed" xml:space="preserve">
+    <value>فشل إنشاء حساب الموظف. يرجى المحاولة مجدداً.</value>
+  </data>
+  <data name="Employee.AlreadyInactive" xml:space="preserve">
+    <value>الموظف غير نشط مسبقاً.</value>
+  </data>
+  <data name="Employee.InvalidEmploymentStatus" xml:space="preserve">
+    <value>قيمة حالة التوظيف غير صالحة.</value>
+  </data>
+
+  <!-- Company -->
+  <data name="Company.NotFound" xml:space="preserve">
+    <value>لم يتم العثور على الشركة.</value>
+  </data>
+
+  <!-- Department -->
+  <data name="Department.NotFound" xml:space="preserve">
+    <value>لم يتم العثور على القسم.</value>
+  </data>
+  <data name="Department.AlreadyExists" xml:space="preserve">
+    <value>قسم بهذا الاسم موجود مسبقاً في الشركة.</value>
+  </data>
+
+  <!-- Unit -->
+  <data name="Unit.NotFound" xml:space="preserve">
+    <value>لم يتم العثور على الوحدة.</value>
+  </data>
+  <data name="Unit.AlreadyExists" xml:space="preserve">
+    <value>وحدة بهذا الاسم موجودة مسبقاً في القسم.</value>
+  </data>
+
+  <!-- Team -->
+  <data name="Team.NotFound" xml:space="preserve">
+    <value>لم يتم العثور على الفريق.</value>
+  </data>
+  <data name="Team.AlreadyExists" xml:space="preserve">
+    <value>فريق بهذا الاسم موجود مسبقاً في الوحدة.</value>
+  </data>
+
+  <!-- LeaveBalance -->
+  <data name="LeaveBalance.NotFound" xml:space="preserve">
+    <value>لم يتم العثور على سجل رصيد الإجازة لهذا الموظف والسنة.</value>
+  </data>
+  <data name="LeaveBalance.AlreadyInitialized" xml:space="preserve">
+    <value>رصيد الإجازة لهذا النوع والسنة موجود مسبقاً.</value>
+  </data>
+  <data name="LeaveBalance.Insufficient" xml:space="preserve">
+    <value>رصيد الإجازة غير كافٍ للمدة المطلوبة.</value>
+  </data>
+  <data name="LeaveBalance.InvalidDuration" xml:space="preserve">
+    <value>يجب أن تكون المدة أكبر من صفر.</value>
+  </data>
+
+  <!-- Request -->
+  <data name="Request.NotFound" xml:space="preserve">
+    <value>لم يتم العثور على الطلب.</value>
+  </data>
+  <data name="Request.TypeDisabled" xml:space="preserve">
+    <value>نوع الطلب المحدد غير متاح لشركتك.</value>
+  </data>
+  <data name="Request.NotPending" xml:space="preserve">
+    <value>يمكن تعديل أو حذف الطلبات المعلقة فقط.</value>
+  </data>
+  <data name="Request.ModificationLocked" xml:space="preserve">
+    <value>الطلب مقفل بعد بدء عملية الموافقة.</value>
+  </data>
+  <data name="Request.DefinitionNotFound" xml:space="preserve">
+    <value>لم يتم العثور على إعداد الطلب لهذا النوع.</value>
+  </data>
+  <data name="Request.DefinitionAlreadyExists" xml:space="preserve">
+    <value>تعريف طلب لهذا النوع موجود مسبقاً لهذه الشركة.</value>
+  </data>
+  <data name="Request.Unauthorized" xml:space="preserve">
+    <value>لست المعتمد المخصص لهذا الطلب في هذه المرحلة.</value>
+  </data>
+  <data name="Request.Locked" xml:space="preserve">
+    <value>الطلب ليس في حالة تسمح بالموافقة أو المعالجة.</value>
+  </data>
+  <data name="Request.InvalidDuration" xml:space="preserve">
+    <value>يجب أن تكون المدة أكبر من صفر.</value>
+  </data>
+  <data name="Request.NoActiveManagersAtStep" xml:space="preserve">
+    <value>لا يوجد مديرون نشطون معينون لخطوة سير العمل هذه.</value>
+  </data>
+  <data name="Request.InvalidWorkflowChain" xml:space="preserve">
+    <value>خطوة سير العمل تشير إلى عقدة غير موجودة في سلسلة الموافقة.</value>
+  </data>
+  <data name="Request.NotPendingApproval" xml:space="preserve">
+    <value>هذا الطلب لا ينتظر الموافقة حالياً.</value>
+  </data>
+  <data name="Request.StepOrderExceeded" xml:space="preserve">
+    <value>ترتيب الخطوة يتجاوز عدد خطوات سير العمل.</value>
+  </data>
+  <data name="Request.OrgNodeNotInCompany" xml:space="preserve">
+    <value>عقدة التنظيم المُشار إليها لا تنتمي إلى هذه الشركة.</value>
+  </data>
+  <data name="Request.DirectEmployeeNotInCompany" xml:space="preserve">
+    <value>الموظف المُحيل لا ينتمي إلى هذه الشركة.</value>
+  </data>
+  <data name="Request.DirectEmployeeNotActive" xml:space="preserve">
+    <value>الموظف المُحيل غير نشط.</value>
+  </data>
+  <data name="Request.MissingDirectEmployeeId" xml:space="preserve">
+    <value>خطوة الموظف المباشر يجب أن تحدد DirectEmployeeId.</value>
+  </data>
+  <data name="Request.MissingOrgNodeId" xml:space="preserve">
+    <value>خطوة عقدة التنظيم يجب أن تحدد OrgNodeId.</value>
+  </data>
+  <data name="Request.MissingCompanyRoleId" xml:space="preserve">
+    <value>خطوة دور الشركة يجب أن تحدد CompanyRoleId.</value>
+  </data>
+  <data name="Request.RoleNotInCompany" xml:space="preserve">
+    <value>الدور المُشار إليه لا ينتمي إلى هذه الشركة.</value>
+  </data>
+  <data name="Request.RoleNotFound" xml:space="preserve">
+    <value>لم يتم العثور على دور الشركة المُشار إليه.</value>
+  </data>
+  <data name="Request.MissingLevelsUp" xml:space="preserve">
+    <value>خطوة مستوى الهيكل يجب أن تحدد LevelsUp أكبر من أو يساوي 1.</value>
+  </data>
+  <data name="Request.InvalidStartFromLevel" xml:space="preserve">
+    <value>StartFromLevel يجب أن يكون أكبر من أو يساوي 1.</value>
+  </data>
+  <data name="Request.UnexpectedFieldsOnHierarchyLevelStep" xml:space="preserve">
+    <value>خطوات مستوى الهيكل يجب ألا تحتوي على OrgNodeId أو DirectEmployeeId أو BypassHierarchyCheck.</value>
+  </data>
+  <data name="Request.HierarchyLevelFieldsOnNonHierarchyStep" xml:space="preserve">
+    <value>StartFromLevel و LevelsUp صالحان فقط في خطوات مستوى الهيكل.</value>
+  </data>
+  <data name="Request.HierarchyRangesOverlap" xml:space="preserve">
+    <value>نطاقات خطوات مستوى الهيكل يجب ألا تتداخل.</value>
+  </data>
+
+  <!-- Notification -->
+  <data name="Notification.NotFound" xml:space="preserve">
+    <value>لم يتم العثور على الإشعار.</value>
+  </data>
+  <data name="Notification.Forbidden" xml:space="preserve">
+    <value>غير مسموح لك بالوصول إلى هذا الإشعار.</value>
+  </data>
+  <data name="Notification.SendFailed" xml:space="preserve">
+    <value>فشل إرسال الإشعار.</value>
+  </data>
+  <data name="Notification.TokenMissing" xml:space="preserve">
+    <value>الموظف المستهدف لا يمتلك رمز FCM صالح.</value>
+  </data>
+
+  <!-- Attendance -->
+  <data name="Attendance.NotFound" xml:space="preserve">
+    <value>لم يتم العثور على سجل الحضور.</value>
+  </data>
+  <data name="Attendance.AlreadyClockedIn" xml:space="preserve">
+    <value>الموظف لديه سجل حضور مفتوح مسبقاً.</value>
+  </data>
+  <data name="Attendance.ClockInRequired" xml:space="preserve">
+    <value>يجب على الموظف تسجيل الحضور قبل تسجيل الانصراف.</value>
+  </data>
+  <data name="Attendance.AlreadyClockedOut" xml:space="preserve">
+    <value>سجّل الموظف انصرافه مسبقاً.</value>
+  </data>
+  <data name="Attendance.InvalidClockOut" xml:space="preserve">
+    <value>وقت الانصراف يجب أن يكون بعد وقت الحضور.</value>
+  </data>
+  <data name="Attendance.OverrideReasonRequired" xml:space="preserve">
+    <value>سبب التجاوز مطلوب.</value>
+  </data>
+
+  <!-- Workflow -->
+  <data name="Workflow.NotFound" xml:space="preserve">
+    <value>لا يوجد سير موافقة محدد لهذا النوع من الطلبات.</value>
+  </data>
+  <data name="Workflow.InvalidStep" xml:space="preserve">
+    <value>خطوة سير العمل لم تعد صالحة أو تغيرت.</value>
+  </data>
+
+  <!-- OrgNode -->
+  <data name="OrgNode.NotFound" xml:space="preserve">
+    <value>لم يتم العثور على العقدة التنظيمية المطلوبة.</value>
+  </data>
+  <data name="OrgNode.CircularReference" xml:space="preserve">
+    <value>لا يمكن إنشاء مرجع هرمي دائري.</value>
+  </data>
+  <data name="OrgNode.DuplicateAssignment" xml:space="preserve">
+    <value>هذا الموظف معين مسبقاً لهذه العقدة.</value>
+  </data>
+  <data name="OrgNode.AssignmentNotFound" xml:space="preserve">
+    <value>لم يتم العثور على التعيين.</value>
+  </data>
+  <data name="OrgNode.InvalidHierarchyConfiguration" xml:space="preserve">
+    <value>تم اكتشاف تكوين هيكل تنظيمي غير صالح.</value>
+  </data>
+
+  <!-- Roles -->
+  <data name="Roles.NotFound" xml:space="preserve">
+    <value>لم يتم العثور على الدور.</value>
+  </data>
+  <data name="Roles.NameAlreadyExists" xml:space="preserve">
+    <value>دور بهذا الاسم موجود مسبقاً في الشركة.</value>
+  </data>
+  <data name="Roles.InUseByWorkflow" xml:space="preserve">
+    <value>لا يمكن حذف هذا الدور لأنه مستخدم في تعريف سير عمل نشط.</value>
+  </data>
+  <data name="Roles.AlreadyAssigned" xml:space="preserve">
+    <value>هذا الدور معين مسبقاً للموظف.</value>
+  </data>
+  <data name="Roles.AssignmentNotFound" xml:space="preserve">
+    <value>هذا التعيين غير موجود.</value>
+  </data>
+  <data name="Roles.InvalidPermission" xml:space="preserve">
+    <value>واحد أو أكثر من الأذونات غير صالحة. راجع AppPermissions للقيم المسموح بها.</value>
+  </data>
+
+  <!-- Hierarchy -->
+  <data name="Hierarchy.NotConfigured" xml:space="preserve">
+    <value>لم يتم إعداد هيكل الشركة التنظيمي بعد.</value>
+  </data>
+  <data name="Hierarchy.InvalidRole" xml:space="preserve">
+    <value>أحد الأدوار أو أكثر غير صالح في الهيكل التنظيمي للشركة.</value>
+  </data>
+  <data name="Hierarchy.DuplicateRole" xml:space="preserve">
+    <value>يمكن لكل دور أن يظهر مرة واحدة فقط في إعداد الهيكل التنظيمي.</value>
+  </data>
+  <data name="Hierarchy.MultipleCeos" xml:space="preserve">
+    <value>يمكن تكوين منصب رئيس تنفيذي واحد فقط لكل شركة.</value>
+  </data>
+  <data name="Hierarchy.WorkflowRoleNotInHierarchy" xml:space="preserve">
+    <value>أحد أدوار خطوات سير العمل أو أكثر غير مُعد في هيكل الشركة التنظيمي.</value>
+  </data>
+  <data name="Hierarchy.InvalidStepOrder" xml:space="preserve">
+    <value>خطوات سير العمل يجب أن ترتقي بصرامة في ترتيب السلطة.</value>
+  </data>
+  <data name="Hierarchy.RoleInUse" xml:space="preserve">
+    <value>لا يمكن إزالة الدور لأنه مستخدم حالياً في تعريفات طلبات نشطة.</value>
+  </data>
+
+  <!-- Storage -->
+  <data name="Storage.BucketNotFound" xml:space="preserve">
+    <value>لم يتم العثور على حاوية التخزين.</value>
+  </data>
+  <data name="Storage.ObjectNotFound" xml:space="preserve">
+    <value>لم يتم العثور على الملف في التخزين.</value>
+  </data>
+  <data name="Storage.UploadFailed" xml:space="preserve">
+    <value>فشل رفع الملف إلى التخزين.</value>
+  </data>
+  <data name="Storage.DeleteFailed" xml:space="preserve">
+    <value>فشل حذف الملف من التخزين.</value>
+  </data>
+  <data name="Storage.ListFailed" xml:space="preserve">
+    <value>فشل سرد الملفات في التخزين.</value>
+  </data>
+  <data name="Storage.PresignedUrlFailed" xml:space="preserve">
+    <value>فشل توليد رابط التحميل.</value>
+  </data>
+
+  <!-- ContactAdmin -->
+  <data name="ContactAdmin.NotFound" xml:space="preserve">
+    <value>لم يتم العثور على طلب التواصل مع المسؤول.</value>
+  </data>
+  <data name="ContactAdmin.AlreadyProcessed" xml:space="preserve">
+    <value>تمت معالجة هذا الطلب مسبقاً.</value>
+  </data>
+  <data name="ContactAdmin.DuplicatePendingRequest" xml:space="preserve">
+    <value>يوجد طلب معلق بهذا البريد أو اسم الشركة مسبقاً.</value>
+  </data>
+  <data name="ContactAdmin.PhoneNumberAlreadyTaken" xml:space="preserve">
+    <value>رقم الهاتف هذا مستخدم مسبقاً.</value>
+  </data>
+  <data name="ContactAdmin.EmailAlreadyTaken" xml:space="preserve">
+    <value>البريد الإلكتروني هذا مستخدم مسبقاً.</value>
+  </data>
+  <data name="ContactAdmin.CompanyNameAlreadyTaken" xml:space="preserve">
+    <value>اسم الشركة هذا مستخدم مسبقاً.</value>
+  </data>
+
+  <!-- ProfileUpdate -->
+  <data name="ProfileUpdate.NotFound" xml:space="preserve">
+    <value>لم يتم العثور على الطلب.</value>
+  </data>
+  <data name="ProfileUpdate.NotPending" xml:space="preserve">
+    <value>يمكن معالجة الطلبات المعلقة فقط.</value>
+  </data>
+  <data name="ProfileUpdate.EmployeeNotFound" xml:space="preserve">
+    <value>الموظف غير موجود. قد تكون البيانات تالفة.</value>
+  </data>
+  <data name="ProfileUpdate.EmptyChanges" xml:space="preserve">
+    <value>ChangesJson فارغ للطلب المعتمد. لا يمكن تطبيق التغييرات.</value>
+  </data>
+  <data name="ProfileUpdate.DeserializationFailed" xml:space="preserve">
+    <value>فشل إلغاء تسلسل ChangesJson للطلب.</value>
+  </data>
+  <data name="ProfileUpdate.UnknownField" xml:space="preserve">
+    <value>حقل غير معروف في ChangesJson.</value>
+  </data>
+  <data name="ProfileUpdate.HasPending" xml:space="preserve">
+    <value>لديك بالفعل طلب تحديث ملف شخصي معلق.</value>
+  </data>
+  <data name="ProfileUpdate.InvalidField" xml:space="preserve">
+    <value>الحقل غير مسموح بتحديثه.</value>
+  </data>
+  <data name="ProfileUpdate.NoChanges" xml:space="preserve">
+    <value>لم يتم تقديم تغييرات جديدة أو صالحة. القيم المدخلة مطابقة لملفك الحالي.</value>
+  </data>
+  <data name="ProfileUpdate.MalformedChanges" xml:space="preserve">
+    <value>واحد أو أكثر من الحقول في حمولة التغييرات يفتقد مفتاح 'newValue' المطلوب.</value>
+  </data>
+  <data name="ProfileUpdate.InvalidLocationId" xml:space="preserve">
+    <value>CompanyLocationId غير صالح.</value>
+  </data>
+
+  <!-- Hr -->
+  <data name="Hr.EmployeeNotFound" xml:space="preserve">
+    <value>المستخدم الحالي لا يمتلك سجل موظف.</value>
+  </data>
+
+  <!-- General -->
+  <data name="General.ServerError" xml:space="preserve">
+    <value>حدث خطأ غير متوقع.</value>
+  </data>
+  <data name="General.ValidationError" xml:space="preserve">
+    <value>حدث خطأ في التحقق من صحة البيانات.</value>
+  </data>
+  <data name="General.NotFound" xml:space="preserve">
+    <value>المورد المطلوب غير موجود.</value>
+  </data>
+  <data name="General.ArgumentError" xml:space="preserve">
+    <value>تم تقديم معامل غير صالح.</value>
+  </data>
+  <data name="General.InvalidOperation" xml:space="preserve">
+    <value>العملية المطلوبة غير صالحة في الحالة الحالية.</value>
+  </data>
+  <data name="General.Forbidden" xml:space="preserve">
+    <value>غير مصرح لك بالوصول إلى هذا المورد.</value>
+  </data>
+
+  <!-- Validation -->
+  <data name="Validation.FieldRequired" xml:space="preserve">
+    <value>حقل مطلوب مفقود.</value>
+  </data>
+  <data name="Validation.InvalidType" xml:space="preserve">
+    <value>نوع البيانات غير صالح.</value>
+  </data>
+  <data name="Validation.Error" xml:space="preserve">
+    <value>حدث خطأ أثناء التحقق.</value>
+  </data>
+</root>

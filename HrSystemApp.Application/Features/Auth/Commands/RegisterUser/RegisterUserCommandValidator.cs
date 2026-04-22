@@ -9,22 +9,22 @@ public class RegisterUserCommandValidator : AbstractValidator<RegisterUserComman
     public RegisterUserCommandValidator()
     {
         RuleFor(x => x.Email)
-            .NotEmpty().WithMessage(Messages.Validation.EmailRequired)
-            .EmailAddress().WithMessage(Messages.Validation.ValidEmailRequired);
+            .NotEmpty().WithErrorCode(ErrorCodes.EmailRequired).WithMessage(Messages.Validation.EmailRequired)
+            .EmailAddress().WithErrorCode(ErrorCodes.ValidEmailRequired).WithMessage(Messages.Validation.ValidEmailRequired);
 
         RuleFor(x => x.Name)
-            .NotEmpty().WithMessage(Messages.Validation.NameRequired)
-            .MaximumLength(100).WithMessage(Messages.Validation.NameMaxLength);
+            .NotEmpty().WithErrorCode(ErrorCodes.NameRequired).WithMessage(Messages.Validation.NameRequired)
+            .MaximumLength(100).WithErrorCode(ErrorCodes.NameMaxLength).WithMessage(Messages.Validation.NameMaxLength);
 
         RuleFor(x => x.PhoneNumber)
-            .NotEmpty().WithMessage(Messages.Validation.PhoneRequired);
+            .NotEmpty().WithErrorCode(ErrorCodes.PhoneRequired).WithMessage(Messages.Validation.PhoneRequired);
 
         RuleFor(x => x.Password)
-            .NotEmpty().WithMessage(Messages.Validation.PasswordRequired)
-            .MinimumLength(6).WithMessage(Messages.Validation.PasswordMinLength);
+            .NotEmpty().WithErrorCode(ErrorCodes.PasswordRequired).WithMessage(Messages.Validation.PasswordRequired)
+            .MinimumLength(6).WithErrorCode(ErrorCodes.PasswordMinLength).WithMessage(Messages.Validation.PasswordMinLength);
 
         RuleFor(x => x.Role)
-            .IsInEnum().WithMessage(Messages.Validation.InvalidRole)
-            .NotEqual(UserRole.SuperAdmin).WithMessage(Messages.Validation.CannotAssignSuperAdminRegistration);
+            .IsInEnum().WithErrorCode(ErrorCodes.InvalidRole).WithMessage(Messages.Validation.InvalidRole)
+            .NotEqual(UserRole.SuperAdmin).WithErrorCode(ErrorCodes.CannotAssignSuperAdminRegistration).WithMessage(Messages.Validation.CannotAssignSuperAdminRegistration);
     }
 }

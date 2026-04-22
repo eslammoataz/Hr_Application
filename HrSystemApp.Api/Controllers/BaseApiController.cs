@@ -1,4 +1,5 @@
 using HrSystemApp.Application.Common;
+using HrSystemApp.Application.Resources;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HrSystemApp.Api.Controllers;
@@ -42,9 +43,11 @@ public abstract class BaseApiController : ControllerBase
     /// </summary>
     private IActionResult HandleError(Error error)
     {
-        var errorResponse = new ApiResponse<object>(false, null, error);
+        var localizer = HttpContext.RequestServices.GetRequiredService<IErrorLocalizer>();
+        var localizedError = localizer.Localize(error);
+        var errorResponse = new ApiResponse<object>(false, null, localizedError);
 
-        return error.Code switch
+        return localizedError.Code switch
         {
             "Auth.InvalidCredentials" or "Auth.InvalidOtp" => Unauthorized(errorResponse),
             "Auth.Unauthorized" => Unauthorized(errorResponse),

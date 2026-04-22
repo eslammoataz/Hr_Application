@@ -14,29 +14,29 @@ public class BulkSetupOrgNodesCommandValidator : AbstractValidator<BulkSetupOrgN
     public BulkSetupOrgNodesCommandValidator()
     {
         RuleFor(x => x.Request)
-            .NotNull().WithMessage("Request cannot be null.");
+            .NotNull().WithErrorCode(ErrorCodes.BulkSetupRequestCannotBeNull).WithMessage(Messages.Validation.BulkSetupRequestCannotBeNull);
 
         RuleFor(x => x.Request.Nodes)
-            .NotEmpty().WithMessage("At least one node is required.")
+            .NotEmpty().WithErrorCode(ErrorCodes.BulkSetupAtLeastOneNode).WithMessage(Messages.Validation.BulkSetupAtLeastOneNode)
             .Must(nodes => nodes.Select(n => n.TempId).Distinct().Count() == nodes.Count)
-            .WithMessage("All tempIds must be unique.");
+            .WithErrorCode(ErrorCodes.BulkSetupTempIdsUnique).WithMessage(Messages.Validation.BulkSetupTempIdsUnique);
 
         RuleFor(x => x.Request.Nodes)
             .Must(nodes => nodes.All(n => string.IsNullOrEmpty(n.ParentTempId) || nodes.Any(n2 => n2.TempId == n.ParentTempId)))
-            .WithMessage("ParentTempId must reference a valid TempId in the request.");
+            .WithErrorCode(ErrorCodes.BulkSetupParentTempIdInvalid).WithMessage(Messages.Validation.BulkSetupParentTempIdInvalid);
 
         RuleForEach(x => x.Request.Nodes).ChildRules(node =>
         {
             node.RuleFor(n => n.TempId)
-                .NotEmpty().WithMessage(Messages.Validation.FieldRequired);
+                .NotEmpty().WithErrorCode(ErrorCodes.FieldRequired).WithMessage(Messages.Validation.FieldRequired);
 
             node.RuleFor(n => n.Name)
-                .NotEmpty().WithMessage(Messages.Validation.FieldRequired);
+                .NotEmpty().WithErrorCode(ErrorCodes.FieldRequired).WithMessage(Messages.Validation.FieldRequired);
 
             node.RuleForEach(n => n.Assignments).ChildRules(assignment =>
             {
                 assignment.RuleFor(a => a.EmployeeId)
-                    .NotEmpty().WithMessage(Messages.Validation.FieldRequired);
+                    .NotEmpty().WithErrorCode(ErrorCodes.FieldRequired).WithMessage(Messages.Validation.FieldRequired);
             });
         });
     }

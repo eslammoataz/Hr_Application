@@ -1,4 +1,5 @@
 using FluentValidation;
+using HrSystemApp.Application.Resources;
 
 namespace HrSystemApp.Application.Features.Attendance.Commands.ClockIn;
 
@@ -8,6 +9,7 @@ public class ClockInCommandValidator : AbstractValidator<ClockInCommand>
     {
         RuleFor(x => x.TimestampUtc)
             .Must(ts => ts == null || ts.Value <= DateTime.UtcNow.AddMinutes(5))
-            .WithMessage("Clock-in timestamp cannot be in the future.");
+            .WithErrorCode(ErrorCodes.ClockInFutureTimestamp)
+            .WithMessage(Messages.Validation.ClockInFutureTimestamp);
     }
 }

@@ -11,6 +11,8 @@ using Hangfire.PostgreSql;
 using Elastic.Serilog.Sinks;
 using Elastic.Ingest.Elasticsearch;
 using HrSystemApp.Infrastructure.Services;
+using Microsoft.AspNetCore.Localization;
+using HrSystemApp.Api.Localization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -70,6 +72,22 @@ builder.Services.AddApi(builder.Configuration);
 // Add Application layer services
 builder.Services.AddApplication();
 builder.Services.Configure<LoggingOptions>(builder.Configuration.GetSection("LoggingOptions"));
+
+// Localization — supports Accept-Language header (en, ar)
+builder.Services.AddLocalization();
+builder.Services.Configure<RequestLocalizationOptions>(options =>
+{
+    var supportedCultures = new[] { "en", "ar" };
+    options.SetDefaultCulture("en")
+           .AddSupportedCultures(supportedCultures)
+           .AddSupportedUICultures(supportedCultures);
+
+    options.RequestCultureProviders = new List<IRequestCultureProvider>
+    {
+        new AcceptLanguageHeaderRequestCultureProvider(),
+        new UserLanguageRequestCultureProvider()
+    };
+});
 
 // Add Infrastructure layer services
 builder.Services.AddInfrastructure(builder.Configuration);
@@ -165,6 +183,9 @@ app.UseSwaggerUI(options =>
 });
 
 // ── Middleware pipeline ───────────────────────────────────────────────────────
+
+// Localization — must be first to set CultureInfo.CurrentUICulture per request.
+app.UseRequestLocalization();
 
 // CorrelationId: assigns/propagates X-Correlation-ID and pushes it to LogContext.
 app.UseMiddleware<CorrelationIdMiddleware>();
