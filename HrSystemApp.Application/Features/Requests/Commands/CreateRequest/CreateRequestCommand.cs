@@ -188,19 +188,37 @@ public class CreateRequestCommandHandler : IRequestHandler<CreateRequestCommand,
         _logger.LogBusinessFlow(_loggingOptions, LogAction.Workflow.CreateRequest, LogStage.Processing,
             "PlannedStepsResolved", new { StepCount = plannedSteps.Count });
 
+        bool isEmptyChain = plannedSteps.Count == 0;
+        var requestStatus = isEmptyChain ? RequestStatus.Approved : RequestStatus.Submitted;
+        var currentStepOrder = isEmptyChain ? 0 : 1;
+
         var newRequest = new Request
         {
             EmployeeId = employee.Id,
             RequestType = request.RequestType,
-            Status = RequestStatus.Submitted,
+            Status = requestStatus,
             Data = jsonData,
             Details = request.Details,
             PlannedStepsJson = JsonSerializer.Serialize(plannedSteps),
-            CurrentStepOrder = 1,
-            CurrentStepApproverIds = plannedSteps.Count > 0
+            CurrentStepOrder = currentStepOrder,
+            CurrentStepApproverIds = !isEmptyChain && plannedSteps.Count > 0
                 ? string.Join(",", plannedSteps[0].Approvers.Select(a => a.EmployeeId.ToString()))
                 : null
         };
+
+        if (isEmptyChain)
+        {
+            _logger.LogDecision(_loggingOptions, LogAction.Workflow.CreateRequest, LogStage.Processing,
+                "EmptyChainAutoApproved", new { EmployeeId = employee.Id, RequestId = newRequest.Id });
+
+            newRequest.ApprovalHistory.Add(new RequestApprovalHistory
+            {
+                RequestId = newRequest.Id,
+                ApproverId = employee.Id,
+                Status = RequestStatus.Approved,
+                Comment = "Auto-approved: workflow chain produced no approvers"
+            });
+        }
 
         await _unitOfWork.Requests.AddAsync(newRequest, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
