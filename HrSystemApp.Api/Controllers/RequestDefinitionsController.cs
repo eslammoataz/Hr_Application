@@ -30,6 +30,7 @@ public class RequestDefinitionsController : BaseApiController
     /// <summary>
     /// Create a new workflow definition for a request type
     /// </summary>
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = Roles.ExecutiveOrAbove)]
     [HttpPost]
     public async Task<IActionResult> Create(CreateRequestDefinitionCommand command)
     {
@@ -39,6 +40,8 @@ public class RequestDefinitionsController : BaseApiController
     /// <summary>
     /// Update an existing workflow definition
     /// </summary>
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = Roles.ExecutiveOrAbove)]
+
     [HttpPut("{id}")]
     public async Task<IActionResult> Update(Guid id, UpdateRequestDefinitionCommand command)
     {
@@ -49,6 +52,8 @@ public class RequestDefinitionsController : BaseApiController
     /// <summary>
     /// Delete a workflow definition
     /// </summary>
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = Roles.ExecutiveOrAbove)]
+
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(Guid id)
     {
