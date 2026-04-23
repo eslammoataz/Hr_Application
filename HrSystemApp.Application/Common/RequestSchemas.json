@@ -1,55 +1,226 @@
 {
-  "Schemas": {
-     "Leave": [
-        { "name": "leaveSubType", "type": "number", "label": "Leave Sub-Type", "isRequired": true, "enum": [0,1,2,3,4,5,6,7], "enumNames": ["Annual", "Emergency", "Unpaid", "Permission", "Sick", "Maternity", "Paternity", "Other"] },
-        { "name": "startDateTime", "type": "date", "label": "Start Date/Time", "isRequired": true },
-        { "name": "endDateTime", "type": "date", "label": "End Date/Time", "isRequired": true },
-        { "name": "duration", "type": "number", "label": "Duration", "isRequired": true },
-        { "name": "isHourly", "type": "boolean", "label": "Is Hourly Permission?", "isRequired": false }
-     ],
-     "Permission": [
-        { "name": "permissionDate", "type": "date", "label": "Permission Date", "isRequired": true },
-        { "name": "startTime", "type": "string", "label": "Start Time", "isRequired": true },
-        { "name": "endTime", "type": "string", "label": "End Time", "isRequired": true },
-        { "name": "duration", "type": "number", "label": "Duration (Hours)", "isRequired": true }
-     ],
-     "SalarySlip": [
-        { "name": "month", "type": "number", "label": "Month", "isRequired": true },
-        { "name": "year", "type": "number", "label": "Year", "isRequired": true }
-     ],
-     "HRLetter": [
-        { "name": "addressedTo", "type": "string", "label": "Addressed To", "isRequired": true },
-        { "name": "purpose", "type": "string", "label": "Purpose", "isRequired": true }
-     ],
-     "Resignation": [
-        { "name": "lastWorkingDay", "type": "date", "label": "Last Working Day", "isRequired": true },
-        { "name": "reason", "type": "string", "label": "Reason", "isRequired": true }
-     ],
-     "EndOfService": [
-        { "name": "lastWorkingDay", "type": "date", "label": "Last Working Day", "isRequired": true },
-        { "name": "notes", "type": "string", "label": "Notes", "isRequired": false }
-     ],
-     "PurchaseOrder": [
-        { "name": "totalEstimate", "type": "number", "label": "Total Estimated Amount", "isRequired": true },
-        { "name": "items", "type": "list", "label": "Order Items", "isRequired": true }
-     ],
-     "Asset": [
-        { "name": "assetType", "type": "string", "label": "Asset Type", "isRequired": true },
-        { "name": "assetCode", "type": "string", "label": "Asset Serial/Code", "isRequired": true },
-        { "name": "action", "type": "number", "label": "Action (Issue/Return/Repair)", "isRequired": true, "enum": [0,1,2,3], "enumNames": ["Issue", "Return", "Replace", "Damage"] }
-     ],
-     "Loan": [
-        { "name": "amount", "type": "number", "label": "Loan Amount", "isRequired": true },
-        { "name": "installments", "type": "number", "label": "Number of Installments", "isRequired": true }
-     ],
-     "Assignment": [
-        { "name": "destination", "type": "string", "label": "Destination", "isRequired": true },
-        { "name": "startDate", "type": "date", "label": "Start Date", "isRequired": true },
-        { "name": "endDate", "type": "date", "label": "End Date", "isRequired": false },
-        { "name": "purpose", "type": "string", "label": "Purpose", "isRequired": true }
-     ],
-     "Other": [
-        { "name": "description", "type": "string", "label": "Request Details", "isRequired": true }
-     ]
-  }
+   "Schemas": {
+      "Leave": [
+         {
+            "name": "leaveSubType",
+            "type": "number",
+            "label": "Leave Sub-Type",
+            "isRequired": true,
+            "enum": [
+               0,
+               1,
+               2,
+               3,
+               4,
+               5,
+               6,
+               7
+            ],
+            "enumNames": [
+               "Annual",
+               "Emergency",
+               "Unpaid",
+               "Permission",
+               "Sick",
+               "Maternity",
+               "Paternity",
+               "Other"
+            ]
+         },
+         {
+            "name": "startDateTime",
+            "type": "datetime",
+            "label": "Start Date/Time",
+            "isRequired": true
+         },
+         {
+            "name": "duration",
+            "type": "number",
+            "label": "Duration",
+            "isRequired": true
+         },
+         {
+            "name": "isHourly",
+            "type": "boolean",
+            "label": "Is Hourly Permission?",
+            "isRequired": false
+         }
+      ],
+      "Permission": [
+         {
+            "name": "permissionDate",
+            "type": "date",
+            "label": "Permission Date",
+            "isRequired": true
+         },
+         {
+            "name": "startTime",
+            "type": "string",
+            "label": "Start Time",
+            "isRequired": true
+         },
+         {
+            "name": "endTime",
+            "type": "string",
+            "label": "End Time",
+            "isRequired": true
+         },
+         {
+            "name": "duration",
+            "type": "number",
+            "label": "Duration (Hours)",
+            "isRequired": true
+         }
+      ],
+      "SalarySlip": [
+         {
+            "name": "month",
+            "type": "number",
+            "label": "Month",
+            "isRequired": true
+         },
+         {
+            "name": "year",
+            "type": "number",
+            "label": "Year",
+            "isRequired": true
+         }
+      ],
+      "HRLetter": [
+         {
+            "name": "addressedTo",
+            "type": "string",
+            "label": "Addressed To",
+            "isRequired": true
+         },
+         {
+            "name": "purpose",
+            "type": "string",
+            "label": "Purpose",
+            "isRequired": true
+         }
+      ],
+      "Resignation": [
+         {
+            "name": "lastWorkingDay",
+            "type": "date",
+            "label": "Last Working Day",
+            "isRequired": true
+         },
+         {
+            "name": "reason",
+            "type": "string",
+            "label": "Reason",
+            "isRequired": true
+         }
+      ],
+      "EndOfService": [
+         {
+            "name": "lastWorkingDay",
+            "type": "date",
+            "label": "Last Working Day",
+            "isRequired": true
+         },
+         {
+            "name": "notes",
+            "type": "string",
+            "label": "Notes",
+            "isRequired": false
+         }
+      ],
+      "PurchaseOrder": [
+         {
+            "name": "totalEstimate",
+            "type": "number",
+            "label": "Total Estimated Amount",
+            "isRequired": true
+         },
+         {
+            "name": "items",
+            "type": "list",
+            "label": "Order Items",
+            "isRequired": true
+         }
+      ],
+      "Asset": [
+         {
+            "name": "assetType",
+            "type": "string",
+            "label": "Asset Type",
+            "isRequired": true
+         },
+         {
+            "name": "assetCode",
+            "type": "string",
+            "label": "Asset Serial/Code",
+            "isRequired": true
+         },
+         {
+            "name": "action",
+            "type": "number",
+            "label": "Action (Issue/Return/Repair)",
+            "isRequired": true,
+            "enum": [
+               0,
+               1,
+               2,
+               3
+            ],
+            "enumNames": [
+               "Issue",
+               "Return",
+               "Replace",
+               "Damage"
+            ]
+         }
+      ],
+      "Loan": [
+         {
+            "name": "amount",
+            "type": "number",
+            "label": "Loan Amount",
+            "isRequired": true
+         },
+         {
+            "name": "installments",
+            "type": "number",
+            "label": "Number of Installments",
+            "isRequired": true
+         }
+      ],
+      "Assignment": [
+         {
+            "name": "destination",
+            "type": "string",
+            "label": "Destination",
+            "isRequired": true
+         },
+         {
+            "name": "startDate",
+            "type": "date",
+            "label": "Start Date",
+            "isRequired": true
+         },
+         {
+            "name": "endDate",
+            "type": "date",
+            "label": "End Date",
+            "isRequired": false
+         },
+         {
+            "name": "purpose",
+            "type": "string",
+            "label": "Purpose",
+            "isRequired": true
+         }
+      ],
+      "Other": [
+         {
+            "name": "description",
+            "type": "string",
+            "label": "Request Details",
+            "isRequired": true
+         }
+      ]
+   }
 }
