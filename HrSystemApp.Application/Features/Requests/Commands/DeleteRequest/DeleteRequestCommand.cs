@@ -65,10 +65,10 @@ public class DeleteRequestCommandHandler : IRequestHandler<DeleteRequestCommand,
             return Result.Failure<bool>(DomainErrors.Auth.Unauthorized);
         }
 
-        if (existingRequest.Status == RequestStatus.Approved)
+        if (existingRequest.Status != RequestStatus.Submitted && existingRequest.Status != RequestStatus.Cancelled)
         {
             _logger.LogDecision(_loggingOptions, LogAction.Workflow.DeleteRequest, LogStage.Validation,
-                "RequestAlreadyApproved", new { RequestId = request.Id });
+                "InvalidStatusForDelete", new { RequestId = request.Id, CurrentStatus = existingRequest.Status.ToString() });
             return Result.Failure<bool>(DomainErrors.Requests.ModificationLocked);
         }
 

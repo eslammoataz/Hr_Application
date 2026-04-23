@@ -172,6 +172,9 @@ public static class DomainErrors
 
         public static readonly Error InvalidDuration = new(
             "Request.InvalidDuration", Messages.Errors.InvalidDuration);
+
+        public static readonly Error InvalidStatusForOperation = new(
+            "Request.InvalidStatusForOperation", "The request status does not allow this operation.");
     }
 
     public static class LeaveBalance

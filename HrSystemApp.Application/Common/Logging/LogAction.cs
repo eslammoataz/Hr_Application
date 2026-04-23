@@ -9,6 +9,7 @@ public static class LogAction
         public const string RejectRequest               = "RejectRequest";
         public const string UpdateRequest               = "UpdateRequest";
         public const string DeleteRequest               = "DeleteRequest";
+        public const string CancelRequest               = "CancelRequest";
         public const string CreateRequestDefinition     = "CreateRequestDefinition";
         public const string UpdateRequestDefinition     = "UpdateRequestDefinition";
         public const string DeleteRequestDefinition     = "DeleteRequestDefinition";

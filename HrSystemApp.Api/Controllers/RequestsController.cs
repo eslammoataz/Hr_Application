@@ -2,6 +2,7 @@ using HrSystemApp.Application.Common;
 using HrSystemApp.Application.DTOs;
 using HrSystemApp.Application.Features.Requests.Commands.ApproveRequest;
 using HrSystemApp.Application.Features.Requests.Commands.CreateRequest;
+using HrSystemApp.Application.Features.Requests.Commands.CancelRequest;
 using HrSystemApp.Application.Features.Requests.Commands.DeleteRequest;
 using HrSystemApp.Application.Features.Requests.Commands.RejectRequest;
 using HrSystemApp.Application.Features.Requests.Commands.UpdateRequest;
@@ -75,6 +76,15 @@ public class RequestsController : BaseApiController
     public async Task<IActionResult> Delete(Guid id)
     {
         return HandleResult(await _sender.Send(new DeleteRequestCommand(id)));
+    }
+
+    /// <summary>
+    /// Cancel a pending/in-progress request (only by requester)
+    /// </summary>
+    [HttpPost("me/{id}/cancel")]
+    public async Task<IActionResult> Cancel(Guid id)
+    {
+        return HandleResult(await _sender.Send(new CancelRequestCommand(id)));
     }
 
 
