@@ -75,7 +75,7 @@ public class AttendanceController : BaseApiController
 
     /// <summary>
     /// Returns the individual clock-in/clock-out session pairs for a specific attendance record.
-    /// Any authenticated user can call this; business logic should restrict employees to their own records.
+    /// Employees can only view their own records; HR+ can view any record.
     /// </summary>
     [HttpGet("{attendanceId:guid}/sessions")]
     public async Task<IActionResult> GetAttendanceSessions(
