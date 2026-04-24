@@ -76,20 +76,6 @@ public class TokenService : ITokenService
         return result.IsValid;
     }
 
-    public string? GetUserIdFromToken(string token)
-    {
-        var handler = new JsonWebTokenHandler();
-        try
-        {
-            var jwtToken = handler.ReadJsonWebToken(token);
-            return jwtToken.Claims.FirstOrDefault(c => c.Type == AppClaimTypes.Subject)?.Value;
-        }
-        catch
-        {
-            return null;
-        }
-    }
-
     public string GenerateRefreshToken()
     {
         var randomNumber = new byte[32];

@@ -16,6 +16,11 @@ public interface IOrgNodeAssignmentRepository : IRepository<OrgNodeAssignment>
     Task<IReadOnlyList<Employee>> GetManagersByNodeAsync(Guid orgNodeId, CancellationToken ct);
 
     /// <summary>
+    /// Gets managers for multiple nodes in a single query. Returns a dictionary mapping OrgNodeId to its managers.
+    /// </summary>
+    Task<Dictionary<Guid, IReadOnlyList<Employee>>> GetManagersByNodesAsync(IEnumerable<Guid> orgNodeIds, CancellationToken ct);
+
+    /// <summary>
     /// Checks if an employee has OrgRole = Manager at a specific node (excludes IsDeleted).
     /// </summary>
     Task<bool> IsManagerAtNodeAsync(Guid employeeId, Guid orgNodeId, CancellationToken ct = default);
