@@ -74,9 +74,11 @@ public class WorkflowResolutionService : IWorkflowResolutionService
 
             foreach (var step in sortedSteps)
             {
-                var resolver = _resolverFactory.Get(step.StepType);
-                var result = await resolver.ResolveAsync(step, context.Value, state, ct);
+                var resolverResult = _resolverFactory.Get(step.StepType);
+                if (resolverResult.IsFailure)
+                    return Result.Failure<List<PlannedStepDto>>(resolverResult.Error);
 
+                var result = await resolverResult.Value.ResolveAsync(step, context.Value, state, ct);
                 if (result.IsFailure)
                     return result;
             }
