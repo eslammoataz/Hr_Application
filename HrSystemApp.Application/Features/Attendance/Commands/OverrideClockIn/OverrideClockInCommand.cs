@@ -45,6 +45,16 @@ public class OverrideClockInCommandHandler : IRequestHandler<OverrideClockInComm
             return Result.Failure<AttendanceResponse>(DomainErrors.Attendance.InvalidClockOut);
         }
 
+        var callerUserId = _currentUserService.UserId;
+        var callerEmployee = await _unitOfWork.Employees.GetByUserIdAsync(callerUserId, cancellationToken);
+
+        var targetEmployee = await _unitOfWork.Employees.GetByIdAsync(request.EmployeeId, cancellationToken);
+        if (targetEmployee == null)
+            return Result.Failure<AttendanceResponse>(DomainErrors.Employee.NotFound);
+
+        if (callerEmployee?.CompanyId != targetEmployee.CompanyId)
+            return Result.Failure<AttendanceResponse>(DomainErrors.Auth.Unauthorized);
+
         var normalizedClockIn = DateTime.SpecifyKind(request.ClockInUtc, DateTimeKind.Utc);
         var rules = await _attendanceRulesProvider.GetRulesAsync(request.EmployeeId, request.Date, cancellationToken);
 

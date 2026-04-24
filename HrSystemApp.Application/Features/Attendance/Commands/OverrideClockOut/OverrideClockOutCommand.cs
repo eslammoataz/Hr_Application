@@ -40,6 +40,16 @@ public class OverrideClockOutCommandHandler : IRequestHandler<OverrideClockOutCo
             return Result.Failure<AttendanceResponse>(DomainErrors.Attendance.OverrideReasonRequired);
         }
 
+        var callerUserId = _currentUserService.UserId;
+        var callerEmployee = await _unitOfWork.Employees.GetByUserIdAsync(callerUserId, cancellationToken);
+
+        var targetEmployee = await _unitOfWork.Employees.GetByIdAsync(request.EmployeeId, cancellationToken);
+        if (targetEmployee == null)
+            return Result.Failure<AttendanceResponse>(DomainErrors.Employee.NotFound);
+
+        if (callerEmployee?.CompanyId != targetEmployee.CompanyId)
+            return Result.Failure<AttendanceResponse>(DomainErrors.Auth.Unauthorized);
+
         var attendance = await _unitOfWork.Attendances.GetByEmployeeAndDateAsync(request.EmployeeId, request.Date, cancellationToken);
         if (attendance is null)
         {
