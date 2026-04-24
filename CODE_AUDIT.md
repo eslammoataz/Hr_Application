@@ -500,14 +500,14 @@ The first check is entirely covered by `FilterApprovers`. Can be removed.
 | H-1 | 🟠 High | Application | 4 query handlers | All matching rows loaded to memory, paginated in-process | ✅ Fixed |
 | H-2 | 🟠 High | Application | `CreateRequestCommand` | N+1 DB calls in step validation loop | ✅ Fixed |
 | H-3 | 🟠 High | Application | `OverrideClockInCommand` | Wrong error code returned for future clock-in timestamp | ✅ Fixed |
-| M-1 | 🟡 Medium | Application | 3 query handlers | No `PageSize` upper bound | Not fixed |
-| M-2 | 🟡 Medium | Infrastructure | `DependencyInjection` | Deprecated `WorkflowService` still registered in DI | Not fixed |
-| M-3 | 🟡 Medium | Application | Clock commands | Multiple `SaveChangesAsync` per transaction | Not fixed |
+| M-1 | 🟡 Medium | Application | 3 query handlers | No `PageSize` upper bound | ✅ Fixed |
+| M-2 | 🟡 Medium | Infrastructure | `DependencyInjection` | Deprecated `WorkflowService` still registered in DI | ✅ Fixed |
+| M-3 | 🟡 Medium | Application | Clock commands | Multiple `SaveChangesAsync` per transaction | ✅ Fixed |
 | M-4 | 🟡 Medium | Application | `GetRequestByIdQuery` | `Data` field typed as `object` — untyped, unvalidated | Not fixed |
 | L-1 | 🔵 Low | API | `DependencyInjection` | `RequireHttpsMetadata = false` not environment-gated | Not fixed |
 | L-2 | 🔵 Low | API | `Program.cs` | CORS `AllowAll` accepts any origin | Not fixed |
 | L-3 | 🔵 Low | Infrastructure | `DependencyInjection` | `TokenService` should be `AddSingleton` | Not fixed |
-| L-4 | 🔵 Low | Infrastructure | `WorkflowService` | Dead code — interface, implementation, and DI registration | Not fixed |
+| L-4 | 🔵 Low | Infrastructure | `WorkflowService` | Dead code — interface, implementation, and DI registration | ✅ Fixed |
 | WF-1 | ✅ Fixed | Infrastructure | `WorkflowResolutionService` | `CompanyRole` holders keyed by employee ID instead of role ID | ✅ Fixed |
 | WF-2 | ✅ Fixed | Infrastructure | `WorkflowResolutionContext` | `TryAddStep` partial-write on approver collision | ✅ Fixed |
 | WF-3 | 🔵 Low | Infrastructure | `WorkflowResolutionContext` | `SeenApproverIds` publicly mutable — bypasses `TryAddStep` invariant | Not fixed |
@@ -520,4 +520,4 @@ The first check is entirely covered by `FilterApprovers`. Can be removed.
 
 ---
 
-*Total: 5 Critical (ALL FIXED) · 3 High (ALL FIXED) · 4 Medium · 4 Low · 9 Workflow items (2 fixed)*
+*Total: 5 Critical (ALL FIXED) · 3 High (ALL FIXED) · 4 Medium (3 fixed) · 4 Low · 9 Workflow items (2 fixed)*
