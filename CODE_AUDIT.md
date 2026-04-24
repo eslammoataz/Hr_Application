@@ -492,9 +492,9 @@ The first check is entirely covered by `FilterApprovers`. Can be removed.
 
 | ID | Severity | Layer | File / Area | Description | Status |
 |---|---|---|---|---|---|
-| C-1 | 🔴 Critical | Application | `GetAttendanceSessionsQuery` | Ownership check compares `EmployeeId` to `UserId` — always false | Not fixed |
+| C-1 | 🔴 Critical | Application | `GetAttendanceSessionsQuery` | Ownership check compares `EmployeeId` to `UserId` — always false | ✅ Fixed |
 | C-2 | 🔴 Critical | Infrastructure | `Repository.GetByIdAsync` | `FindAsync` bypasses global soft-delete filter — systemic | ✅ Fixed |
-| C-3 | 🔴 Critical | API | `RequestsController` | `admin/company-wide` has no role guard | Not fixed |
+| C-3 | 🔴 Critical | API | `RequestsController` | `admin/company-wide` has no role guard | ✅ Fixed |
 | C-4 | 🔴 Critical | Application | `GetRequestByIdQuery` | `isHrOrAbove` has no company scoping — cross-tenant leak | ✅ Fixed |
 | C-5 | 🔴 Critical | Application | `OverrideClockIn/Out` | Target employee not validated to caller's company | ✅ Fixed |
 | H-1 | 🟠 High | Application | 4 query handlers | All matching rows loaded to memory, paginated in-process | ✅ Fixed |
@@ -520,4 +520,4 @@ The first check is entirely covered by `FilterApprovers`. Can be removed.
 
 ---
 
-*Total: 5 Critical (2 fixed) · 3 High (2 fixed) · 4 Medium · 4 Low · 9 Workflow items (2 fixed)*
+*Total: 5 Critical (ALL FIXED) · 3 High (ALL FIXED) · 4 Medium · 4 Low · 9 Workflow items (2 fixed)*
