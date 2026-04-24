@@ -35,8 +35,9 @@ public sealed class OrgNodeStepResolver : WorkflowStepResolverBase
                 return Result.Failure<List<PlannedStepDto>>(DomainErrors.Request.InvalidWorkflowChain);
         }
 
-        OrgNode? stepNode = await _getNodeById(step.OrgNodeId.Value, ct);
-        var nodeName = stepNode?.Name ?? step.OrgNodeId.ToString()!;
+        var nodeName = context.OrgNodesById.TryGetValue(step.OrgNodeId.Value, out var cachedNode)
+            ? cachedNode.Name
+            : (await _getNodeById(step.OrgNodeId.Value, ct))?.Name ?? step.OrgNodeId.ToString()!;
 
         if (!context.ManagersByNodeId.TryGetValue(step.OrgNodeId.Value, out var managers) || managers.Count == 0)
             return Result.Success(new List<PlannedStepDto>());

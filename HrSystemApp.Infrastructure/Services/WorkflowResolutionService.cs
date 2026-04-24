@@ -135,6 +135,10 @@ public class WorkflowResolutionService : IWorkflowResolutionService
             ? await _unitOfWork.OrgNodeAssignments.GetManagersByNodesAsync(nodeIdsToFetch, ct)
             : new Dictionary<Guid, IReadOnlyList<Employee>>();
 
+        var orgNodesById = nodeIdsToFetch.Count > 0
+            ? await _unitOfWork.OrgNodes.GetByIdsAsync(nodeIdsToFetch, ct)
+            : new Dictionary<Guid, OrgNode>();
+
         var (employeesById, rolesById, roleHoldersByRoleId) = await BatchFetchRelatedDataAsync(
             definitionSteps, ct);
 
@@ -146,6 +150,7 @@ public class WorkflowResolutionService : IWorkflowResolutionService
             LevelNodes = levelNodes,
             AncestorIds = ancestorIds,
             ManagersByNodeId = managersByNodeId,
+            OrgNodesById = orgNodesById,
             EmployeesById = employeesById,
             RolesById = rolesById,
             RoleHoldersByRoleId = roleHoldersByRoleId
