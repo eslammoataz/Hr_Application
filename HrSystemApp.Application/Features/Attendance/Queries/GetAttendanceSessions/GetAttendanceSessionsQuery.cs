@@ -3,6 +3,8 @@ using HrSystemApp.Application.DTOs.Attendance;
 using HrSystemApp.Application.Errors;
 using HrSystemApp.Application.Features.Attendance.Common;
 using HrSystemApp.Application.Interfaces;
+using HrSystemApp.Application.Interfaces.Services;
+using HrSystemApp.Domain.Enums;
 using MediatR;
 
 namespace HrSystemApp.Application.Features.Attendance.Queries.GetAttendanceSessions;
@@ -14,10 +16,12 @@ public class GetAttendanceSessionsQueryHandler
     : IRequestHandler<GetAttendanceSessionsQuery, Result<IReadOnlyList<AttendanceSessionDto>>>
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ICurrentUserService _currentUserService;
 
-    public GetAttendanceSessionsQueryHandler(IUnitOfWork unitOfWork)
+    public GetAttendanceSessionsQueryHandler(IUnitOfWork unitOfWork, ICurrentUserService currentUserService)
     {
         _unitOfWork = unitOfWork;
+        _currentUserService = currentUserService;
     }
 
     public async Task<Result<IReadOnlyList<AttendanceSessionDto>>> Handle(
@@ -28,6 +32,19 @@ public class GetAttendanceSessionsQueryHandler
         if (attendance is null)
         {
             return Result.Failure<IReadOnlyList<AttendanceSessionDto>>(DomainErrors.Attendance.NotFound);
+        }
+
+        var currentUserId = _currentUserService.UserId;
+        var currentUserRole = _currentUserService.Role;
+        var isHrOrAbove = currentUserRole is not null &&
+            Enum.TryParse<UserRole>(currentUserRole, out var role) &&
+            role is UserRole.SuperAdmin or UserRole.Executive or UserRole.HR or UserRole.CompanyAdmin;
+
+        var isOwner = attendance.EmployeeId.ToString() == currentUserId;
+
+        if (!isHrOrAbove && !isOwner)
+        {
+            return Result.Failure<IReadOnlyList<AttendanceSessionDto>>(DomainErrors.General.Forbidden);
         }
 
         var logs = await _unitOfWork.AttendanceLogs

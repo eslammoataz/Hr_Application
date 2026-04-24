@@ -4,6 +4,7 @@ using HrSystemApp.Application.Common.Logging;
 using HrSystemApp.Application.DTOs.Requests;
 using HrSystemApp.Application.Errors;
 using HrSystemApp.Application.Interfaces;
+using HrSystemApp.Application.Interfaces.Services;
 using HrSystemApp.Domain.Enums;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -41,15 +42,18 @@ public record ApprovalHistoryDto(string ApproverName, Guid ApproverId, RequestSt
 public class GetRequestByIdQueryHandler : IRequestHandler<GetRequestByIdQuery, Result<RequestDetailDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ICurrentUserService _currentUserService;
     private readonly ILogger<GetRequestByIdQueryHandler> _logger;
     private readonly LoggingOptions _loggingOptions;
 
     public GetRequestByIdQueryHandler(
         IUnitOfWork unitOfWork,
+        ICurrentUserService currentUserService,
         ILogger<GetRequestByIdQueryHandler> logger,
         IOptions<LoggingOptions> loggingOptions)
     {
         _unitOfWork = unitOfWork;
+        _currentUserService = currentUserService;
         _logger = logger;
         _loggingOptions = loggingOptions.Value;
     }
@@ -63,6 +67,23 @@ public class GetRequestByIdQueryHandler : IRequestHandler<GetRequestByIdQuery, R
             _logger.LogDecision(_loggingOptions, LogAction.Workflow.CreateRequest, LogStage.Validation,
                 "RequestNotFound", new { RequestId = request.Id });
             return Result.Failure<RequestDetailDto>(DomainErrors.Requests.NotFound);
+        }
+
+        var userId = _currentUserService.UserId;
+        var currentUserRole = _currentUserService.Role;
+        var isHrOrAbove = currentUserRole is not null &&
+            Enum.TryParse<UserRole>(currentUserRole, out var role) &&
+            role is UserRole.SuperAdmin or UserRole.Executive or UserRole.HR or UserRole.CompanyAdmin;
+
+        var employee = await _unitOfWork.Employees.GetByUserIdAsync(userId, cancellationToken);
+        var isRequester = employee is not null && existingRequest.EmployeeId == employee.Id;
+
+        var plannedSteps = JsonSerializer.Deserialize<List<PlannedStepDto>>(existingRequest.PlannedStepsJson ?? "[]") ?? new List<PlannedStepDto>();
+        var isApprover = plannedSteps.Any(s => s.Approvers.Any(a => a.EmployeeId == employee?.Id));
+
+        if (!isHrOrAbove && !isRequester && !isApprover)
+        {
+            return Result.Failure<RequestDetailDto>(DomainErrors.Auth.Unauthorized);
         }
 
         var dto = new RequestDetailDto
@@ -84,7 +105,7 @@ public class GetRequestByIdQueryHandler : IRequestHandler<GetRequestByIdQuery, R
             )).ToList(),
 
             Data = JsonSerializer.Deserialize<object>(existingRequest.Data) ?? new { },
-            PlannedSteps = JsonSerializer.Deserialize<List<PlannedStepDto>>(existingRequest.PlannedStepsJson ?? "[]") ?? new List<PlannedStepDto>()
+            PlannedSteps = plannedSteps
         };
 
         return Result.Success(dto);
