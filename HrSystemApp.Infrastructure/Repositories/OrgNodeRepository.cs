@@ -241,6 +241,7 @@ public class OrgNodeRepository : Repository<OrgNode>, IOrgNodeRepository
 
     public async Task<Dictionary<Guid, OrgNode>> GetByIdsAsync(IEnumerable<Guid> ids, CancellationToken ct)
     {
+        if (ids is null) return new Dictionary<Guid, OrgNode>();
         var idList = ids.ToList();
         if (idList.Count == 0)
             return new Dictionary<Guid, OrgNode>();

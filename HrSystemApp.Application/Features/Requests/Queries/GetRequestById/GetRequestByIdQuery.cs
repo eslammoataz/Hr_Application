@@ -81,7 +81,7 @@ public class GetRequestByIdQueryHandler : IRequestHandler<GetRequestByIdQuery, R
         var plannedSteps = JsonSerializer.Deserialize<List<PlannedStepDto>>(existingRequest.PlannedStepsJson ?? "[]") ?? new List<PlannedStepDto>();
         var isApprover = plannedSteps.Any(s => s.Approvers.Any(a => a.EmployeeId == employee?.Id));
 
-        if (isHrOrAbove && employee is not null && existingRequest.Employee.CompanyId != employee.CompanyId)
+        if (isHrOrAbove && (employee is null || existingRequest.Employee.CompanyId != employee.CompanyId))
             isHrOrAbove = false;
 
         if (!isHrOrAbove && !isRequester && !isApprover)

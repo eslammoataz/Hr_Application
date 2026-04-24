@@ -56,7 +56,12 @@ public class CompanyRoleRepository : Repository<CompanyRole>, ICompanyRoleReposi
     }
 
     public async Task<Dictionary<Guid, CompanyRole>> GetByIdsAsync(IEnumerable<Guid> ids, CancellationToken ct = default)
-        => await _dbSet.AsNoTracking()
-            .Where(r => ids.Contains(r.Id))
+    {
+        if (ids is null) return new Dictionary<Guid, CompanyRole>();
+        var idList = ids.ToList();
+        if (idList.Count == 0) return new Dictionary<Guid, CompanyRole>();
+        return await _dbSet.AsNoTracking()
+            .Where(r => idList.Contains(r.Id))
             .ToDictionaryAsync(r => r.Id, ct);
+    }
 }

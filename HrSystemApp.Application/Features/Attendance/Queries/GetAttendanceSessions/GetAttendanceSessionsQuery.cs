@@ -43,7 +43,7 @@ public class GetAttendanceSessionsQueryHandler
         var currentEmployee = await _unitOfWork.Employees.GetByUserIdAsync(currentUserId, cancellationToken);
         var isOwner = currentEmployee?.Id == attendance.EmployeeId;
 
-        if (isHrOrAbove && currentEmployee is not null && currentEmployee.CompanyId != attendance.Employee.CompanyId)
+        if (isHrOrAbove && currentEmployee is not null && currentEmployee.CompanyId != attendance.Employee?.CompanyId)
             isHrOrAbove = false;
 
         if (!isHrOrAbove && !isOwner)
