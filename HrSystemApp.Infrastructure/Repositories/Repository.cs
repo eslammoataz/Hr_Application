@@ -76,6 +76,12 @@ public class Repository<T> : IRepository<T> where T : class
             : await _dbSet.CountAsync(predicate, cancellationToken);
     }
 
+    public virtual async Task<int> CountAsync(IQueryable<T> query, CancellationToken cancellationToken = default)
+        => await query.CountAsync(cancellationToken);
+
+    public virtual async Task<IReadOnlyList<T>> ToListAsync(IQueryable<T> query, CancellationToken cancellationToken = default)
+        => await query.ToListAsync(cancellationToken);
+
     public async Task<T?> GetFirstOrDefaultAsync(
      Expression<Func<T, bool>> predicate,
      CancellationToken cancellationToken = default,
