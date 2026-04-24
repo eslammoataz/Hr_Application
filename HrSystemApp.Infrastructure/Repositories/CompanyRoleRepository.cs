@@ -43,6 +43,12 @@ public class CompanyRoleRepository : Repository<CompanyRole>, ICompanyRoleReposi
         _context.Set<CompanyRolePermission>().RemoveRange(permissions);
     }
 
+    /// <summary>
+    /// Replaces all permissions for the specified role with the provided permission strings.
+    /// </summary>
+    /// <param name="roleId">The identifier of the role whose permissions will be replaced.</param>
+    /// <param name="permissions">The permission values to assign to the role; duplicates are ignored.</param>
+    /// <param name="ct">A token to observe while waiting for the operation to complete.</param>
     public async Task ReplacePermissionsAsync(Guid roleId, IEnumerable<string> permissions, CancellationToken ct = default)
     {
         var permsToRemove = await _context.Set<CompanyRolePermission>()
@@ -55,7 +61,13 @@ public class CompanyRoleRepository : Repository<CompanyRole>, ICompanyRoleReposi
         await _context.Set<CompanyRolePermission>().AddRangeAsync(newPerms, ct);
     }
 
-    public async Task<Dictionary<Guid, CompanyRole>> GetByIdsAsync(IEnumerable<Guid> ids, CancellationToken ct = default)
+    /// <summary>
+            /// Retrieves the CompanyRole entities matching the supplied role IDs without change tracking and returns them keyed by their Id.
+            /// </summary>
+            /// <param name="ids">Collection of role identifiers to fetch. Only roles that exist are included in the returned dictionary.</param>
+            /// <param name="ct">Token to observe while waiting for the task to complete.</param>
+            /// <returns>A dictionary mapping each found role's Id to its corresponding CompanyRole.</returns>
+            public async Task<Dictionary<Guid, CompanyRole>> GetByIdsAsync(IEnumerable<Guid> ids, CancellationToken ct = default)
         => await _dbSet.AsNoTracking()
             .Where(r => ids.Contains(r.Id))
             .ToDictionaryAsync(r => r.Id, ct);

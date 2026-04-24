@@ -58,6 +58,15 @@ public class GetCompanyRequestsQueryHandler : IRequestHandler<GetCompanyRequests
         _currentUserService = currentUserService;
     }
 
+    /// <summary>
+    /// Handles GetCompanyRequestsQuery and returns a paged list of admin-facing request DTOs scoped to the caller's company.
+    /// </summary>
+    /// <param name="request">Query parameters including page number, clamped page size, and optional status/type filters.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>
+    /// A Result containing a PagedResult of AdminRequestDto with pagination metadata and the requested page of items;
+    /// returns a failure Result with DomainErrors.Auth.Unauthorized if the caller is not authenticated, or DomainErrors.Employee.NotFound if the caller's employee record is missing.
+    /// </returns>
     public async Task<Result<PagedResult<AdminRequestDto>>> Handle(GetCompanyRequestsQuery request, CancellationToken cancellationToken)
     {
         var userId = _currentUserService.UserId;

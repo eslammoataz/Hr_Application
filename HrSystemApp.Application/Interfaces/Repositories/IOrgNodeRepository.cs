@@ -25,11 +25,20 @@ public interface IOrgNodeRepository : IRepository<OrgNode>
 
     /// <summary>
     /// Gets the root node of the tree containing the given node.
-    /// </summary>
+    /// <summary>
+/// Finds the root node of the organizational tree that contains the specified node.
+/// </summary>
+/// <param name="nodeId">The identifier of the node whose containing root should be retrieved.</param>
+/// <param name="ct">A cancellation token to cancel the operation.</param>
+/// <returns>The root <see cref="OrgNode"/> for the tree containing the specified node, or <c>null</c> if the node does not exist.</returns>
     Task<OrgNode> GetRootNodeAsync(Guid nodeId, CancellationToken ct = default);
 
     /// <summary>
     /// Gets multiple nodes by their IDs in a single query.
-    /// </summary>
+    /// <summary>
+/// Retrieves OrgNode instances for the given collection of IDs and returns them keyed by their ID.
+/// </summary>
+/// <param name="ids">The collection of node IDs to retrieve.</param>
+/// <returns>A dictionary mapping each found node's Guid to its corresponding OrgNode; IDs with no matching node are not included.</returns>
     Task<Dictionary<Guid, OrgNode>> GetByIdsAsync(IEnumerable<Guid> ids, CancellationToken ct);
 }

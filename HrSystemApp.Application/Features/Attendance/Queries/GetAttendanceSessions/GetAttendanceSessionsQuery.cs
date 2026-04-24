@@ -24,6 +24,14 @@ public class GetAttendanceSessionsQueryHandler
         _currentUserService = currentUserService;
     }
 
+    /// <summary>
+    /// Handles a request to retrieve session summaries for a specified attendance record.
+    /// </summary>
+    /// <returns>
+    /// A <see cref="Result{T}"/> containing a read-only list of <see cref="AttendanceSessionDto"/> on success;
+    /// a failure result with <c>DomainErrors.Attendance.NotFound</c> if the attendance does not exist,
+    /// or <c>DomainErrors.General.Forbidden</c> if the current user is not authorized to view the attendance.
+    /// </returns>
     public async Task<Result<IReadOnlyList<AttendanceSessionDto>>> Handle(
         GetAttendanceSessionsQuery request, CancellationToken cancellationToken)
     {

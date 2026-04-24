@@ -45,6 +45,11 @@ public class GetPendingApprovalsQueryHandler : IRequestHandler<GetPendingApprova
         _currentUserService = currentUserService;
     }
 
+    /// <summary>
+    /// Handles a GetPendingApprovalsQuery and returns a paged list of pending approval requests for the current user's employee account.
+    /// </summary>
+    /// <param name="request">Query parameters including PageNumber, PageSize (clamped to 1–100), and optional Status and Type filters.</param>
+    /// <returns>A Result containing a PagedResult of PendingRequestDto on success; on failure contains DomainErrors.Auth.Unauthorized when no current user is available or DomainErrors.Employee.NotFound when the user has no associated employee.</returns>
     public async Task<Result<PagedResult<PendingRequestDto>>> Handle(GetPendingApprovalsQuery request, CancellationToken cancellationToken)
     {
         var userId = _currentUserService.UserId;

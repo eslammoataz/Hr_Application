@@ -33,6 +33,12 @@ public class OverrideClockInCommandHandler : IRequestHandler<OverrideClockInComm
         _currentUserService = currentUserService;
     }
 
+    /// <summary>
+    /// Overrides an employee's first clock-in for a given date, creating an admin clock-in log, updating attendance summary fields, recording an adjustment snapshot, and returning the updated attendance view.
+    /// </summary>
+    /// <param name="request">The override request containing EmployeeId, Date, ClockInUtc, and Reason. Reason must be non-empty and ClockInUtc must not be more than five minutes in the future.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>`Result` containing an `AttendanceResponse` with the updated attendance and session information on success, or a failure `Result` with a domain error (validation, authorization, or not-found) on failure.</returns>
     public async Task<Result<AttendanceResponse>> Handle(OverrideClockInCommand request, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(request.Reason))

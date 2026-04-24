@@ -55,6 +55,16 @@ public class GetMyApprovalActionsQueryHandler
         _currentUserService = currentUserService;
     }
 
+    /// <summary>
+    —Retrieves the current user's approval actions as a paged list, optionally filtered by action status and request type.
+    /// </summary>
+    /// <param name="request">Query containing pagination (PageNumber, PageSize) and optional filters: ActionStatus and RequestType.</param>
+    /// <param name="cancellationToken">Token to cancel the operation.</param>
+    /// <returns>
+    /// A Result containing a PagedResult of ApprovalActionDto on success; a failure Result with
+    /// DomainErrors.Auth.Unauthorized if the current user is not authenticated, or DomainErrors.Employee.NotFound
+    /// if the employee record for the current user cannot be found.
+    /// </returns>
     public async Task<Result<PagedResult<ApprovalActionDto>>> Handle(
         GetMyApprovalActionsQuery request, CancellationToken cancellationToken)
     {

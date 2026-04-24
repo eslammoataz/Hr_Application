@@ -33,6 +33,14 @@ public class OverrideClockOutCommandHandler : IRequestHandler<OverrideClockOutCo
         _currentUserService = currentUserService;
     }
 
+    /// <summary>
+    /// Overrides an employee's clock-out for the specified date, recalculates attendance summary, records an audit adjustment, and persists the changes.
+    /// </summary>
+    /// <param name="request">Command containing EmployeeId, Date, ClockOutUtc, and Reason for the override.</param>
+    /// <param name="cancellationToken">Token to observe while waiting for the task to complete.</param>
+    /// <returns>
+    /// A Result containing an AttendanceResponse with the updated attendance when successful; a failure Result with a domain error otherwise (for example: missing override reason, employee not found, unauthorized caller, attendance not found, or invalid clock-out timestamp).
+    /// </returns>
     public async Task<Result<AttendanceResponse>> Handle(OverrideClockOutCommand request, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(request.Reason))

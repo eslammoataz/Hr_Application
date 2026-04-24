@@ -26,6 +26,10 @@ namespace HrSystemApp.Infrastructure;
 /// </summary>
 public static class DependencyInjection
 {
+    /// <summary>
+    /// Registers and configures infrastructure services and framework components (data protection, persistence, Identity, repositories, external integrations, authorization policies, and application services) into the provided dependency-injection container.
+    /// </summary>
+    /// <returns>The same <see cref="IServiceCollection"/> instance with infrastructure services registered.</returns>
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
         var dataProtectionSettings = new DataProtectionSettings();

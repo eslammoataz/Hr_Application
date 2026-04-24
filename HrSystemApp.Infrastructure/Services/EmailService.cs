@@ -25,6 +25,12 @@ public class EmailService : IEmailService
         _loggingOptions = loggingOptions.Value;
     }
 
+    /// <summary>
+    /// Sends a password-reset one-time password (OTP) email to the specified recipient using SMTP.
+    /// </summary>
+    /// <param name="toEmail">Recipient email address.</param>
+    /// <param name="otp">The OTP value to include in the message body.</param>
+    /// <param name="cancellationToken">Token to cancel the send operation.</param>
     public async Task SendOtpAsync(string toEmail, string otp, CancellationToken cancellationToken = default)
     {
         var sw = Stopwatch.StartNew();
@@ -75,6 +81,14 @@ public class EmailService : IEmailService
         }
     }
 
+    /// <summary>
+    /// Sends a welcome email containing the new user's login ID and a temporary password.
+    /// </summary>
+    /// <param name="toEmail">Recipient email address used as the login ID and destination for the message.</param>
+    /// <param name="name">Recipient's display name inserted into the email greeting.</param>
+    /// <param name="companyName">Name of the company shown in the welcome message.</param>
+    /// <param name="temporaryPassword">Temporary password included in the email for initial login.</param>
+    /// <param name="cancellationToken">Token to cancel the send operation.</param>
     public async Task SendWelcomeEmailAsync(string toEmail, string name, string companyName, string temporaryPassword, CancellationToken cancellationToken = default)
     {
         var sw = Stopwatch.StartNew();

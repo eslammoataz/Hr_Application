@@ -19,6 +19,11 @@ public class Repository<T> : IRepository<T> where T : class
         _dbSet = context.Set<T>();
     }
 
+    /// <summary>
+    /// Retrieves an entity whose "Id" property matches the given value.
+    /// </summary>
+    /// <param name="id">The value to match against the entity's "Id" property.</param>
+    /// <returns>The matching entity, or `null` if no entity has the specified Id.</returns>
     public virtual async Task<T?> GetByIdAsync(object id, CancellationToken cancellationToken = default)
     {
         return await _dbSet.FirstOrDefaultAsync(
@@ -26,6 +31,11 @@ public class Repository<T> : IRepository<T> where T : class
             cancellationToken);
     }
 
+    /// <summary>
+    /// Retrieves all entities of type T from the underlying data set.
+    /// </summary>
+    /// <param name="cancellationToken">A token to observe while waiting for the query to complete, which may be used to cancel the operation.</param>
+    /// <returns>An <see cref="IReadOnlyList{T}"/> containing all entities from the set.</returns>
     public virtual async Task<IReadOnlyList<T>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         return await _dbSet.ToListAsync(cancellationToken);

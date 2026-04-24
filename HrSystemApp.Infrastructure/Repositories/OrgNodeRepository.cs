@@ -217,6 +217,13 @@ public class OrgNodeRepository : Repository<OrgNode>, IOrgNodeRepository
         return result;
     }
 
+    /// <summary>
+    /// Finds the root ancestor for the specified node (the ancestor whose ParentId is null).
+    /// </summary>
+    /// <param name="nodeId">The identifier of the node to resolve to its root.</param>
+    /// <param name="ct">A cancellation token that can be used to cancel the operation.</param>
+    /// <returns>The root <see cref="OrgNode"/> whose <c>ParentId</c> is null.</returns>
+    /// <exception cref="InvalidOperationException">Thrown if the starting node does not exist or a parent node cannot be found while walking to the root.</exception>
     public async Task<OrgNode> GetRootNodeAsync(Guid nodeId, CancellationToken ct = default)
     {
         var node = await _context.OrgNodes
@@ -239,6 +246,12 @@ public class OrgNodeRepository : Repository<OrgNode>, IOrgNodeRepository
         return node;
     }
 
+    /// <summary>
+    /// Loads OrgNode entities for the specified ids and returns them keyed by id.
+    /// </summary>
+    /// <param name="ids">The collection of OrgNode ids to load.</param>
+    /// <param name="ct">A token to observe while waiting for the task to complete.</param>
+    /// <returns>A dictionary mapping each requested id to its corresponding OrgNode. If no ids are provided, returns an empty dictionary. Each returned OrgNode includes its Assignments and each Assignment's Employee navigation property.</returns>
     public async Task<Dictionary<Guid, OrgNode>> GetByIdsAsync(IEnumerable<Guid> ids, CancellationToken ct)
     {
         var idList = ids.ToList();
