@@ -218,6 +218,9 @@ public static class DomainErrors
         public static readonly Error InvalidClockOut = new(
             "Attendance.InvalidClockOut", Messages.Errors.InvalidClockOut);
 
+        public static readonly Error InvalidClockIn = new(
+            "Attendance.InvalidClockIn", Messages.Errors.InvalidClockIn);
+
         public static readonly Error OverrideReasonRequired = new(
             "Attendance.OverrideReasonRequired", Messages.Errors.OverrideReasonRequired);
     }

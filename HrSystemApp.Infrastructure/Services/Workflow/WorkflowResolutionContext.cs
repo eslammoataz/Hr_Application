@@ -14,6 +14,7 @@ public sealed class WorkflowResolutionContext
     public IReadOnlyDictionary<Guid, Employee> EmployeesById { get; init; } = new Dictionary<Guid, Employee>();
     public IReadOnlyDictionary<Guid, CompanyRole> RolesById { get; init; } = new Dictionary<Guid, CompanyRole>();
     public IReadOnlyDictionary<Guid, IReadOnlyList<Employee>> RoleHoldersByRoleId { get; init; } = new Dictionary<Guid, IReadOnlyList<Employee>>();
+    public IReadOnlyDictionary<Guid, OrgNode> OrgNodesById { get; init; } = new Dictionary<Guid, OrgNode>();
 }
 
 public sealed class WorkflowResolutionState

@@ -27,4 +27,9 @@ public interface IOrgNodeRepository : IRepository<OrgNode>
     /// Gets the root node of the tree containing the given node.
     /// </summary>
     Task<OrgNode> GetRootNodeAsync(Guid nodeId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Gets multiple nodes by their IDs in a single query.
+    /// </summary>
+    Task<Dictionary<Guid, OrgNode>> GetByIdsAsync(IEnumerable<Guid> ids, CancellationToken ct);
 }

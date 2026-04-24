@@ -11,8 +11,22 @@ namespace HrSystemApp.Application.Features.Requests.Queries.GetCompanyRequests;
 
 public record GetCompanyRequestsQuery : IRequest<Result<PagedResult<AdminRequestDto>>>
 {
-    public int PageNumber { get; set; } = 1;
-    public int PageSize { get; set; } = 10;
+    private const int MaxPageSize = 100;
+    private int _pageSize = 10;
+    private int _pageNumber = 1;
+
+    public int PageNumber
+    {
+        get => _pageNumber;
+        set => _pageNumber = value < 1 ? 1 : value;
+    }
+
+    public int PageSize
+    {
+        get => _pageSize;
+        set => _pageSize = value > MaxPageSize ? MaxPageSize : value < 1 ? 1 : value;
+    }
+
     public RequestStatus? Status { get; set; }
     public RequestType? Type { get; set; }
 }
@@ -59,26 +73,20 @@ public class GetCompanyRequestsQueryHandler : IRequestHandler<GetCompanyRequests
         if (admin == null)
             return Result.Failure<PagedResult<AdminRequestDto>>(DomainErrors.Employee.NotFound);
 
-        // Query all requests for the company
-        var requests = await _unitOfWork.Requests.FindAsync(
-            r => r.Employee.CompanyId == admin.CompanyId,
-            cancellationToken);
+        var queryable = _unitOfWork.Requests.QueryByCompanyId(admin.CompanyId);
 
-        var queryable = requests.AsQueryable();
-
-        // Apply filters
         if (request.Status.HasValue)
             queryable = queryable.Where(r => r.Status == request.Status.Value);
 
         if (request.Type.HasValue)
             queryable = queryable.Where(r => r.RequestType == request.Type.Value);
 
-        var totalCount = queryable.Count();
-        var items = queryable
-            .OrderByDescending(r => r.CreatedAt)
-            .Skip((request.PageNumber - 1) * request.PageSize)
-            .Take(request.PageSize)
-            .ToList();
+        var totalCount = await _unitOfWork.Requests.CountAsync(queryable, cancellationToken);
+        var items = await _unitOfWork.Requests.ToListAsync(
+            queryable.OrderByDescending(r => r.CreatedAt)
+                .Skip((request.PageNumber - 1) * request.PageSize)
+                .Take(request.PageSize),
+            cancellationToken);
 
         var dtos = items.Select(r =>
         {

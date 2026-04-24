@@ -238,4 +238,20 @@ public class OrgNodeRepository : Repository<OrgNode>, IOrgNodeRepository
 
         return node;
     }
+
+    public async Task<Dictionary<Guid, OrgNode>> GetByIdsAsync(IEnumerable<Guid> ids, CancellationToken ct)
+    {
+        if (ids is null) return new Dictionary<Guid, OrgNode>();
+        var idList = ids.ToList();
+        if (idList.Count == 0)
+            return new Dictionary<Guid, OrgNode>();
+
+        var nodes = await _context.OrgNodes
+            .AsNoTracking()
+            .Where(n => idList.Contains(n.Id))
+            .Include(n => n.Assignments).ThenInclude(a => a.Employee)
+            .ToListAsync(ct);
+
+        return nodes.ToDictionary(n => n.Id);
+    }
 }

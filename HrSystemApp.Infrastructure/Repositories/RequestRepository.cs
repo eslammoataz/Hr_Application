@@ -54,4 +54,39 @@ public class RequestRepository : Repository<Request>, IRequestRepository
             .OrderByDescending(h => h.CreatedAt)
             .ToListAsync(cancellationToken);
     }
+
+    public IQueryable<Request> QueryByEmployeeId(Guid employeeId)
+        => _dbSet.AsNoTracking().Where(x => x.EmployeeId == employeeId);
+
+    public IQueryable<Request> QueryByCompanyId(Guid companyId)
+        => _dbSet.AsNoTracking().Include(x => x.Employee).Where(x => x.Employee.CompanyId == companyId);
+
+    public IQueryable<Request> QueryPendingApprovals(Guid approverId)
+    {
+        var approverIdString = approverId.ToString();
+        return _dbSet.AsNoTracking()
+            .Include(x => x.Employee)
+            .Where(x => (x.Status == RequestStatus.Submitted || x.Status == RequestStatus.InProgress)
+                        && x.CurrentStepApproverIds != null
+                        && x.CurrentStepApproverIds.Contains(approverIdString));
+    }
+
+    public IQueryable<RequestApprovalHistory> QueryApprovalActions(Guid approverId)
+        => _context.Set<RequestApprovalHistory>()
+            .AsNoTracking()
+            .Include(h => h.Request)
+                .ThenInclude(r => r.Employee)
+            .Where(h => h.ApproverId == approverId);
+
+    public async Task<int> CountAsync(IQueryable<Request> query, CancellationToken cancellationToken = default)
+        => await query.CountAsync(cancellationToken);
+
+    public async Task<List<Request>> ToListAsync(IQueryable<Request> query, CancellationToken cancellationToken = default)
+        => await query.ToListAsync(cancellationToken);
+
+    public async Task<int> CountHistoryAsync(IQueryable<RequestApprovalHistory> query, CancellationToken cancellationToken = default)
+        => await query.CountAsync(cancellationToken);
+
+    public async Task<List<RequestApprovalHistory>> ToListHistoryAsync(IQueryable<RequestApprovalHistory> query, CancellationToken cancellationToken = default)
+        => await query.ToListAsync(cancellationToken);
 }

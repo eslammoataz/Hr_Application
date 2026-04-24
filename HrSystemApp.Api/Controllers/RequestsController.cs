@@ -1,3 +1,4 @@
+using HrSystemApp.Api.Authorization;
 using HrSystemApp.Application.Common;
 using HrSystemApp.Application.DTOs;
 using HrSystemApp.Application.Features.Requests.Commands.ApproveRequest;
@@ -134,6 +135,7 @@ public class RequestsController : BaseApiController
     /// Get ALL requests for the company (For Company Admins/Oversight)
     /// </summary>
     [HttpGet("admin/company-wide")]
+    [Authorize(Roles = Roles.HrOrAbove)]
     public async Task<IActionResult> GetCompanyWideRequests([FromQuery] GetCompanyRequestsQuery query)
     {
         return HandleResult(await _sender.Send(query));

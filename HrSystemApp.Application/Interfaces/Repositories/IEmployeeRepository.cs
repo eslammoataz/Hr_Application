@@ -12,12 +12,6 @@ public interface IEmployeeRepository : IRepository<Employee>
     Task<EmployeeProfileDto?> GetProfileByUserIdAsync(string userId, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<Employee>> GetByCompanyAsync(Guid companyId, CancellationToken cancellationToken = default);
 
-    Task<EmployeesPagedResult> GetPagedForListAsync(
-        Guid? companyId,
-        string? searchTerm,
-        UserRole? role,
-        EmploymentStatus? employmentStatus,
-        int pageNumber,
-        int pageSize,
-        CancellationToken cancellationToken = default);
+    Task<EmployeesPagedResult> GetPagedForListAsync(Guid? companyId, string? searchTerm, UserRole? role, EmploymentStatus? employmentStatus, int pageNumber, int pageSize, CancellationToken cancellationToken = default);
+    Task<Dictionary<Guid, Employee>> GetByIdsAsync(IEnumerable<Guid> ids, CancellationToken ct = default);
 }

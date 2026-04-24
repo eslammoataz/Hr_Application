@@ -40,7 +40,11 @@ public class GetAttendanceSessionsQueryHandler
             Enum.TryParse<UserRole>(currentUserRole, out var role) &&
             role is UserRole.SuperAdmin or UserRole.Executive or UserRole.HR or UserRole.CompanyAdmin;
 
-        var isOwner = attendance.EmployeeId.ToString() == currentUserId;
+        var currentEmployee = await _unitOfWork.Employees.GetByUserIdAsync(currentUserId, cancellationToken);
+        var isOwner = currentEmployee?.Id == attendance.EmployeeId;
+
+        if (isHrOrAbove && currentEmployee is not null && currentEmployee.CompanyId != attendance.Employee?.CompanyId)
+            isHrOrAbove = false;
 
         if (!isHrOrAbove && !isOwner)
         {
