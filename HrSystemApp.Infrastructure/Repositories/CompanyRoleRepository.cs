@@ -54,4 +54,9 @@ public class CompanyRoleRepository : Repository<CompanyRole>, ICompanyRoleReposi
             .Select(p => new CompanyRolePermission { RoleId = roleId, Permission = p });
         await _context.Set<CompanyRolePermission>().AddRangeAsync(newPerms, ct);
     }
+
+    public async Task<Dictionary<Guid, CompanyRole>> GetByIdsAsync(IEnumerable<Guid> ids, CancellationToken ct = default)
+        => await _dbSet.AsNoTracking()
+            .Where(r => ids.Contains(r.Id))
+            .ToDictionaryAsync(r => r.Id, ct);
 }

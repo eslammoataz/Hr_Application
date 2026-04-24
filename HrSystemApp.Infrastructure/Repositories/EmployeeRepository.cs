@@ -176,6 +176,11 @@ public class EmployeeRepository : Repository<Employee>, IEmployeeRepository
         };
     }
 
+    public async Task<Dictionary<Guid, Employee>> GetByIdsAsync(IEnumerable<Guid> ids, CancellationToken ct = default)
+        => await _dbSet.AsNoTracking()
+            .Where(e => ids.Contains(e.Id))
+            .ToDictionaryAsync(e => e.Id, ct);
+
     private sealed class EmployeeListRow
     {
         public Guid Id { get; init; }

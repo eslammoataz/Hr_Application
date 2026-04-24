@@ -66,9 +66,7 @@ public class GetMyApprovalActionsQueryHandler
         if (employee is null)
             return Result.Failure<PagedResult<ApprovalActionDto>>(DomainErrors.Employee.NotFound);
 
-        var historyEntries = await _unitOfWork.Requests.GetApprovalActionsAsync(employee.Id, cancellationToken);
-
-        var queryable = historyEntries.AsQueryable();
+        var queryable = _unitOfWork.Requests.QueryApprovalActions(employee.Id);
 
         if (request.ActionStatus.HasValue)
             queryable = queryable.Where(h => h.Status == request.ActionStatus.Value);
@@ -76,13 +74,13 @@ public class GetMyApprovalActionsQueryHandler
         if (request.RequestType.HasValue)
             queryable = queryable.Where(h => h.Request.RequestType == request.RequestType.Value);
 
-        var totalCount = queryable.Count();
+        var totalCount = await _unitOfWork.Requests.CountHistoryAsync(queryable, cancellationToken);
 
-        var items = queryable
-            .OrderByDescending(h => h.CreatedAt)
-            .Skip((request.PageNumber - 1) * request.PageSize)
-            .Take(request.PageSize)
-            .ToList();
+        var items = await _unitOfWork.Requests.ToListHistoryAsync(
+            queryable.OrderByDescending(h => h.CreatedAt)
+                .Skip((request.PageNumber - 1) * request.PageSize)
+                .Take(request.PageSize),
+            cancellationToken);
 
         var dtos = items.Select(h => new ApprovalActionDto
         {
