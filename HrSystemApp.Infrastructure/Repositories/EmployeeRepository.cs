@@ -54,6 +54,23 @@ public class EmployeeRepository : Repository<Employee>, IEmployeeRepository
             .Where(e => e.CompanyId == companyId)
             .ToListAsync(cancellationToken);
 
+    /// <summary>
+    /// Builds a paged list of employees applying optional filters and returns the page with aggregate counts.
+    /// </summary>
+    /// <param name="companyId">If provided, limits results to employees belonging to the specified company.</param>
+    /// <param name="searchTerm">If provided and not empty, filters employees whose FullName, Email, or EmployeeCode match the term (case-insensitive, partial match).</param>
+    /// <param name="role">If provided, filters employees by their assigned role name.</param>
+    /// <param name="employmentStatus">If provided, filters employees by the given employment status.</param>
+    /// <param name="pageNumber">One-based page number to return.</param>
+    /// <param name="pageSize">Number of items per page.</param>
+    /// <returns>
+    /// An EmployeesPagedResult containing:
+    /// - Items: the paged list of EmployeeResponse items;
+    /// - PageNumber and PageSize: the requested paging parameters;
+    /// - TotalCount: total number of matching employees;
+    /// - TotalActive: count of employees in active-like statuses (Active, Probation, OnLeave);
+    /// - TotalInactive: count of employees in inactive-like statuses (Inactive, Suspended, Terminated).
+    /// </returns>
     public async Task<EmployeesPagedResult> GetPagedForListAsync(
         Guid? companyId,
         string? searchTerm,
@@ -176,7 +193,13 @@ public class EmployeeRepository : Repository<Employee>, IEmployeeRepository
         };
     }
 
-    public async Task<Dictionary<Guid, Employee>> GetByIdsAsync(IEnumerable<Guid> ids, CancellationToken ct = default)
+    /// <summary>
+            /// Fetches Employee entities for the specified identifiers.
+            /// </summary>
+            /// <param name="ids">Sequence of employee <see cref="Guid"/> identifiers to retrieve; only matching employees are included in the result.</param>
+            /// <param name="ct">Token to observe while waiting for the database operation to complete.</param>
+            /// <returns>A dictionary that maps each found employee Id to its corresponding <see cref="Employee"/> entity.</returns>
+            public async Task<Dictionary<Guid, Employee>> GetByIdsAsync(IEnumerable<Guid> ids, CancellationToken ct = default)
         => await _dbSet.AsNoTracking()
             .Where(e => ids.Contains(e.Id))
             .ToDictionaryAsync(e => e.Id, ct);

@@ -44,6 +44,12 @@ public class CreateRequestCommandHandler : IRequestHandler<CreateRequestCommand,
         _loggingOptions = loggingOptions.Value;
     }
 
+    /// <summary>
+    /// Creates a new Request from the given command: validates the current user and employee, resolves the request definition and schema, applies business-rule validation, resolves and validates workflow steps, builds the approval chain, persists the Request (auto-approving if the chain is empty), and returns the new Request's identifier.
+    /// </summary>
+    /// <param name="request">The create request command containing RequestType, Data (JSON payload), and optional Details.</param>
+    /// <param name="cancellationToken">Cancellation token to observe while processing.</param>
+    /// <returns>`Result&lt;Guid&gt;` containing the created Request's Id on success; on failure contains a domain error explaining why creation failed (for example: unauthorized user, employee not found, request type disabled, schema or business-rule validation failure, missing org-node assignment, invalid step references, or approval chain resolution failure).</returns>
     public async Task<Result<Guid>> Handle(CreateRequestCommand request, CancellationToken cancellationToken)
     {
         var userId = _currentUserService.UserId;

@@ -101,6 +101,17 @@ public class WorkflowResolutionService : IWorkflowResolutionService
         }
     }
 
+    /// <summary>
+    /// Assembles and returns all data needed to resolve workflow steps for the specified requester and node.
+    /// </summary>
+    /// <param name="requesterEmployeeId">The requesting employee's identifier.</param>
+    /// <param name="requesterNodeId">The requesting organization node's identifier.</param>
+    /// <param name="definitionSteps">The workflow step definitions to consider when collecting related data.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// A <see cref="Result{WorkflowResolutionContext}"/> containing a populated <see cref="WorkflowResolutionContext"/> on success.
+    /// Returns a failure result when required data cannot be loaded (for example, when the requester node is not found).
+    /// </returns>
     private async Task<Result<WorkflowResolutionContext>> LoadContextAsync(
         Guid requesterEmployeeId,
         Guid requesterNodeId,

@@ -133,7 +133,11 @@ public class RequestsController : BaseApiController
 
     /// <summary>
     /// Get ALL requests for the company (For Company Admins/Oversight)
+    /// <summary>
+    /// Retrieves company-wide employee requests filtered and paged according to the provided query.
     /// </summary>
+    /// <param name="query">Filtering and pagination parameters for the company-wide requests query.</param>
+    /// <returns>The action result containing the query response on success, or an error response.</returns>
     [HttpGet("admin/company-wide")]
     [Authorize(Roles = Roles.HrOrAbove)]
     public async Task<IActionResult> GetCompanyWideRequests([FromQuery] GetCompanyRequestsQuery query)

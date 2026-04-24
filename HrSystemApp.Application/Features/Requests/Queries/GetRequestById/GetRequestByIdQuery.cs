@@ -58,6 +58,15 @@ public class GetRequestByIdQueryHandler : IRequestHandler<GetRequestByIdQuery, R
         _loggingOptions = loggingOptions.Value;
     }
 
+    /// <summary>
+    /// Retrieves a request by its Id and returns its detailed view if the caller is authorized.
+    /// </summary>
+    /// <param name="request">Query containing the identifier of the request to retrieve.</param>
+    /// <returns>
+    /// A Result containing a RequestDetailDto on success; a failure Result with
+    /// DomainErrors.Requests.NotFound if the request does not exist, or
+    /// DomainErrors.Auth.Unauthorized if the caller is not the requester, an approver, or an HR-or-above in the same company.
+    /// </returns>
     public async Task<Result<RequestDetailDto>> Handle(GetRequestByIdQuery request, CancellationToken cancellationToken)
     {
 

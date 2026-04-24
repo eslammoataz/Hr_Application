@@ -17,6 +17,17 @@ public sealed class OrgNodeStepResolver : WorkflowStepResolverBase
 
     public override WorkflowStepType Type => WorkflowStepType.OrgNode;
 
+    /// <summary>
+    /// Resolve an OrgNode workflow step into one or more planned approver steps using hierarchy validation, cached node names, and manager filtering.
+    /// </summary>
+    /// <param name="step">The workflow step DTO containing the target OrgNodeId and hierarchy bypass options.</param>
+    /// <param name="context">Resolution context providing requester info, cached org nodes and managers, and hierarchy data.</param>
+    /// <param name="state">Resolution state used to track and deduplicate already-added planned steps.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// A Result containing a list of PlannedStepDto when successful. The list will be empty if no managers or approvers are applicable, the requester is a manager at their own node (and that condition applies), or the step was already added to the state. 
+    /// Returns failure with DomainErrors.Request.MissingOrgNodeId when the step has no OrgNodeId, or DomainErrors.Request.InvalidWorkflowChain when hierarchy validation fails.
+    /// </returns>
     public override async Task<Result<List<PlannedStepDto>>> ResolveAsync(
         WorkflowStepDto step,
         WorkflowResolutionContext context,

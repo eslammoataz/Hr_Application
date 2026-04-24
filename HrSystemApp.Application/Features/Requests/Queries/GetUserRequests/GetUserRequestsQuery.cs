@@ -56,6 +56,15 @@ public class GetUserRequestsQueryHandler : IRequestHandler<GetUserRequestsQuery,
         _currentUserService = currentUserService;
     }
 
+    /// <summary>
+    /// Handles a GetUserRequestsQuery and returns a paginated list of requests belonging to the current user.
+    /// </summary>
+    /// <param name="request">Query containing optional filters (Status, Type) and pagination settings (PageNumber, PageSize).</param>
+    /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
+    /// <returns>
+    /// A Result containing a PagedResult of RequestDto on success.
+    /// Returns a failure Result with DomainErrors.Auth.Unauthorized if there is no current user, or DomainErrors.Employee.NotFound if the current user has no associated employee.
+    /// </returns>
     public async Task<Result<PagedResult<RequestDto>>> Handle(GetUserRequestsQuery request, CancellationToken cancellationToken)
     {
         var userId = _currentUserService.UserId;

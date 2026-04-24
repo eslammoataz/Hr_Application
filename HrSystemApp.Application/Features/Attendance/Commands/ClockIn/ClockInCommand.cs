@@ -28,6 +28,15 @@ public class ClockInCommandHandler : IRequestHandler<ClockInCommand, Result<Atte
         _attendanceRulesProvider = attendanceRulesProvider;
     }
 
+    /// <summary>
+    /// Records a clock-in for the current authenticated user, creating or updating the attendance record and associated log for the applicable business date.
+    /// </summary>
+    /// <param name="request">The command containing an optional <c>TimestampUtc</c>; when omitted, the current UTC time is used to determine the clock-in moment and business date.</param>
+    /// <param name="cancellationToken">Cancellation token to observe while performing the operation.</param>
+    /// <returns>
+    /// A <c>Result&lt;AttendanceResponse&gt;</c> containing the attendance details and computed sessions on success;
+    /// on failure the result contains a domain error such as unauthorized, employee not found, or already clocked in.
+    /// </returns>
     public async Task<Result<AttendanceResponse>> Handle(ClockInCommand request, CancellationToken cancellationToken)
     {
         var userId = _currentUserService.UserId;
