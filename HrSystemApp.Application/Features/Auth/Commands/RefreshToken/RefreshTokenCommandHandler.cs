@@ -87,6 +87,12 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, R
         await _unitOfWork.RefreshTokens.UpdateAsync(refreshToken, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
+        IReadOnlyList<string> permissions = Array.Empty<string>();
+        if (user.EmployeeId.HasValue)
+        {
+            permissions = await _unitOfWork.EmployeeCompanyRoles.GetPermissionsForEmployeeAsync(user.EmployeeId.Value, cancellationToken);
+        }
+
         return Result.Success(new AuthResponse(
             Token: accessToken,
             RefreshToken: newRefreshToken,
@@ -98,7 +104,8 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, R
             MustChangePassword: false,
             ExpiresAt: expiresAt,
             PhoneNumber: user.PhoneNumber,
-            Language: user.Language
+            Language: user.Language,
+            Permissions: permissions
         ));
     }
 }

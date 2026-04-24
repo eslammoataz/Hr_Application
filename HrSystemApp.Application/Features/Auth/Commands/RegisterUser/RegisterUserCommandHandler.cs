@@ -65,6 +65,12 @@ public class RegisterUserCommandHandler : IRequestHandler<RegisterUserCommand, R
         var (token, expiresAt) = _tokenService.GenerateToken(user, roles);
         await _unitOfWork.Users.SaveTokenAsync(user.Id, token, cancellationToken);
 
+        IReadOnlyList<string> permissions = Array.Empty<string>();
+        if (user.EmployeeId.HasValue)
+        {
+            permissions = await _unitOfWork.EmployeeCompanyRoles.GetPermissionsForEmployeeAsync(user.EmployeeId.Value, cancellationToken);
+        }
+
         return Result.Success(new AuthResponse(
             Token: token,
             RefreshToken: null,
@@ -76,7 +82,8 @@ public class RegisterUserCommandHandler : IRequestHandler<RegisterUserCommand, R
             MustChangePassword: user.MustChangePassword,
             ExpiresAt: expiresAt,
             PhoneNumber: user.PhoneNumber,
-            Language: user.Language
+            Language: user.Language,
+            Permissions: permissions
         ));
     }
 }

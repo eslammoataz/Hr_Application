@@ -28,9 +28,13 @@ public class CompanyRolesController : BaseApiController
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
+    public async Task<IActionResult> GetAll(
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken cancellationToken = default)
     {
-        return HandleResult(await _sender.Send(new GetCompanyRolesQuery(), cancellationToken));
+        return HandleResult(await _sender.Send(
+            new GetCompanyRolesQuery(pageNumber, pageSize), cancellationToken));
     }
 
     [HttpGet("{id:guid}")]

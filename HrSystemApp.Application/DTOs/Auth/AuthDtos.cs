@@ -20,7 +20,8 @@ public record AuthResponse(
     bool MustChangePassword,
     DateTime? ExpiresAt,
     string? PhoneNumber,
-    string? Language);
+    string? Language,
+    IReadOnlyList<string> Permissions);
 
 public record ChangePasswordRequest(
     string CurrentPassword,

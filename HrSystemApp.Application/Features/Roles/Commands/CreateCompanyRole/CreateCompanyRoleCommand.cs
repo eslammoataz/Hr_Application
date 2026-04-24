@@ -37,21 +37,29 @@ public class CreateCompanyRoleCommandHandler : IRequestHandler<CreateCompanyRole
         if (await _unitOfWork.CompanyRoles.ExistsByNameAsync(employee.CompanyId, request.Name, null, cancellationToken))
             return Result.Failure<Guid>(DomainErrors.Roles.NameAlreadyExists);
 
-        var permissions = request.Permissions?
-            .Distinct()
-            .Where(p => AppPermissions.All.Contains(p))
-            .Select(p => new CompanyRolePermission { Permission = p })
-            .ToList() ?? new List<CompanyRolePermission>();
-
         var role = new CompanyRole
         {
             CompanyId = employee.CompanyId,
             Name = request.Name.Trim(),
-            Description = request.Description?.Trim(),
-            Permissions = permissions
+            Description = request.Description?.Trim()
         };
 
         await _unitOfWork.CompanyRoles.AddAsync(role, cancellationToken);
+
+        var permissions = request.Permissions?
+            .Distinct()
+            .Where(p => AppPermissions.All.Contains(p))
+            .Select(p => new CompanyRolePermission { RoleId = role.Id, Permission = p })
+            .ToList() ?? new List<CompanyRolePermission>();
+
+        if (permissions.Count > 0)
+        {
+            foreach (var permission in permissions)
+            {
+                role.Permissions.Add(permission);
+            }
+        }
+
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Result.Success(role.Id);

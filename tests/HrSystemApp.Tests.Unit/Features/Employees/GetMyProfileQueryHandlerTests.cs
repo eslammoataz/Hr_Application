@@ -32,8 +32,10 @@ public class GetMyProfileQueryHandlerTests
     public async Task Handle_WhenProfileExists_ReturnsSuccess()
     {
         var employeeRepo = new Mock<IEmployeeRepository>();
+        var employeeCompanyRoleRepo = new Mock<IEmployeeCompanyRoleRepository>();
         var unitOfWork = new Mock<IUnitOfWork>();
         unitOfWork.SetupGet(x => x.Employees).Returns(employeeRepo.Object);
+        unitOfWork.SetupGet(x => x.EmployeeCompanyRoles).Returns(employeeCompanyRoleRepo.Object);
 
         var dto = new EmployeeProfileDto
         {
@@ -45,6 +47,10 @@ public class GetMyProfileQueryHandlerTests
         employeeRepo
             .Setup(x => x.GetProfileByUserIdAsync("user-1", It.IsAny<CancellationToken>()))
             .ReturnsAsync(dto);
+
+        employeeCompanyRoleRepo
+            .Setup(x => x.GetPermissionsForEmployeeAsync(dto.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<string>());
 
         var sut = new GetMyProfileQueryHandler(unitOfWork.Object);
         var result = await sut.Handle(new GetMyProfileQuery("user-1"), CancellationToken.None);
