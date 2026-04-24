@@ -499,7 +499,7 @@ The first check is entirely covered by `FilterApprovers`. Can be removed.
 | C-5 | 🔴 Critical | Application | `OverrideClockIn/Out` | Target employee not validated to caller's company | ✅ Fixed |
 | H-1 | 🟠 High | Application | 4 query handlers | All matching rows loaded to memory, paginated in-process | ✅ Fixed |
 | H-2 | 🟠 High | Application | `CreateRequestCommand` | N+1 DB calls in step validation loop | ✅ Fixed |
-| H-3 | 🟠 High | Application | `OverrideClockInCommand` | Wrong error code returned for future clock-in timestamp | Not fixed |
+| H-3 | 🟠 High | Application | `OverrideClockInCommand` | Wrong error code returned for future clock-in timestamp | ✅ Fixed |
 | M-1 | 🟡 Medium | Application | 3 query handlers | No `PageSize` upper bound | Not fixed |
 | M-2 | 🟡 Medium | Infrastructure | `DependencyInjection` | Deprecated `WorkflowService` still registered in DI | Not fixed |
 | M-3 | 🟡 Medium | Application | Clock commands | Multiple `SaveChangesAsync` per transaction | Not fixed |

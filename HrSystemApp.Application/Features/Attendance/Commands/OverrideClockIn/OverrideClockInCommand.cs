@@ -42,7 +42,7 @@ public class OverrideClockInCommandHandler : IRequestHandler<OverrideClockInComm
 
         if (request.ClockInUtc > DateTime.UtcNow.AddMinutes(5))
         {
-            return Result.Failure<AttendanceResponse>(DomainErrors.Attendance.InvalidClockOut);
+            return Result.Failure<AttendanceResponse>(DomainErrors.Attendance.InvalidClockIn);
         }
 
         var callerUserId = _currentUserService.UserId;

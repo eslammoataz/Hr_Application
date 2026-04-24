@@ -184,6 +184,7 @@ public static class Messages
         public const string ClockInRequired = "Employee must clock in before clocking out.";
         public const string AlreadyClockedOut = "Employee has already clocked out.";
         public const string InvalidClockOut = "Clock-out time must be after clock-in time.";
+        public const string InvalidClockIn = "Clock-in time cannot be more than 5 minutes in the future.";
         public const string OverrideReasonRequired = "Override reason is required.";
 
         // Workflows

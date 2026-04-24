@@ -275,6 +275,9 @@
   <data name="Attendance.InvalidClockOut" xml:space="preserve">
     <value>Clock-out time must be after clock-in time.</value>
   </data>
+  <data name="Attendance.InvalidClockIn" xml:space="preserve">
+    <value>Clock-in time cannot be more than 5 minutes in the future.</value>
+  </data>
   <data name="Attendance.OverrideReasonRequired" xml:space="preserve">
     <value>Override reason is required.</value>
   </data>
