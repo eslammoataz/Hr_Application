@@ -503,7 +503,7 @@ The first check is entirely covered by `FilterApprovers`. Can be removed.
 | M-1 | 🟡 Medium | Application | 3 query handlers | No `PageSize` upper bound | ✅ Fixed |
 | M-2 | 🟡 Medium | Infrastructure | `DependencyInjection` | Deprecated `WorkflowService` still registered in DI | ✅ Fixed |
 | M-3 | 🟡 Medium | Application | Clock commands | Multiple `SaveChangesAsync` per transaction | ✅ Fixed |
-| M-4 | 🟡 Medium | Application | `GetRequestByIdQuery` | `Data` field typed as `object` — untyped, unvalidated | Not fixed |
+| M-4 | 🟡 Medium | Application | `GetRequestByIdQuery` | `Data` field typed as `object` — untyped, unvalidated | By Design (dynamic request system) |
 | L-1 | 🔵 Low | API | `DependencyInjection` | `RequireHttpsMetadata = false` not environment-gated | Not fixed |
 | L-2 | 🔵 Low | API | `Program.cs` | CORS `AllowAll` accepts any origin | Not fixed |
 | L-3 | 🔵 Low | Infrastructure | `DependencyInjection` | `TokenService` should be `AddSingleton` | Not fixed |
@@ -520,4 +520,4 @@ The first check is entirely covered by `FilterApprovers`. Can be removed.
 
 ---
 
-*Total: 5 Critical (ALL FIXED) · 3 High (ALL FIXED) · 4 Medium (3 fixed) · 4 Low · 9 Workflow items (2 fixed)*
+*Total: 5 Critical (ALL FIXED) · 3 High (ALL FIXED) · 4 Medium (3 fixed, 1 by design) · 4 Low (1 fixed) · 9 Workflow items (2 fixed)*
