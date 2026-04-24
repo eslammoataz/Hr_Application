@@ -8,10 +8,11 @@ using Microsoft.Extensions.Logging;
 
 namespace HrSystemApp.Infrastructure.Services;
 
-public class RequestSchemaValidator : IRequestSchemaValidator
+public class RequestSchemaValidator : IRequestSchemaValidator, IDisposable
 {
     private readonly JsonDocument _globalSchemas;
     private readonly ILogger<RequestSchemaValidator> _logger;
+    private bool _disposed;
 
     public RequestSchemaValidator(IHostEnvironment environment, ILogger<RequestSchemaValidator> logger)
     {
@@ -100,5 +101,14 @@ public class RequestSchemaValidator : IRequestSchemaValidator
             return JsonSerializer.Deserialize<object>(schema.GetRawText())!;
 
         return new List<object>();
+    }
+
+    public void Dispose()
+    {
+        if (!_disposed)
+        {
+            _globalSchemas?.Dispose();
+            _disposed = true;
+        }
     }
 }

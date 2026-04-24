@@ -9,7 +9,6 @@ public interface ITokenService
 {
     (string Token, DateTime ExpiresAt) GenerateToken(ApplicationUser user, IEnumerable<string> roles);
     Task<bool> ValidateTokenAsync(string token);
-    string? GetUserIdFromToken(string token);
     string GenerateRefreshToken();
     string HashToken(string token);
     int RefreshTokenExpirationInDays { get; }
