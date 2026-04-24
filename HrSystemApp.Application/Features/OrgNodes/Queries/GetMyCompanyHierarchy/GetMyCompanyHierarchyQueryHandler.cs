@@ -59,69 +59,80 @@ public class GetMyCompanyHierarchyQueryHandler : IRequestHandler<GetMyCompanyHie
 
         var myNode = assignment.OrgNode;
 
-        var rootNode = await GetRootNodeAsync(myNode.Id, cancellationToken);
+        var rootNodeResult = await GetRootNodeAsync(myNode.Id, cancellationToken);
+        if (rootNodeResult.IsFailure)
+            return Result.Failure<List<OrgNodeTreeResponse>>(rootNodeResult.Error);
+
+        var rootNode = rootNodeResult.Value;
 
         var depth = request.Depth ?? 10;
         _logger.LogDecision(_loggingOptions, LogAction.OrgNode.GetMyCompanyHierarchy, LogStage.Processing,
             "BuildingHierarchy", new { RootNodeId = rootNode.Id, Depth = depth });
 
         var result = new List<OrgNodeTreeResponse>();
-        await BuildTreeAsync(rootNode, depth - 1, result, cancellationToken);
+        await BuildTreeAsync(new[] { rootNode }, depth - 1, result, cancellationToken);
 
         return Result.Success(result);
     }
 
-    private async Task<OrgNode> GetRootNodeAsync(Guid nodeId, CancellationToken ct)
+    private async Task<Result<OrgNode>> GetRootNodeAsync(Guid nodeId, CancellationToken ct)
     {
         var node = await _unitOfWork.OrgNodes.GetByIdAsync(nodeId, ct);
         if (node == null)
-            throw new InvalidOperationException($"Node {nodeId} not found.");
+            return Result.Failure<OrgNode>(DomainErrors.OrgNode.NotFound);
 
         while (node.ParentId.HasValue)
         {
-            node = await _unitOfWork.OrgNodes.GetByIdAsync(node.ParentId.Value, ct);
+            var parentId = node.ParentId.Value;
+            node = await _unitOfWork.OrgNodes.GetByIdAsync(parentId, ct);
             if (node == null)
-                throw new InvalidOperationException($"Parent node {node.ParentId} not found.");
+                return Result.Failure<OrgNode>(DomainErrors.OrgNode.NotFound);
         }
 
-        return node;
+        return Result.Success(node);
     }
 
     private async Task BuildTreeAsync(
-        OrgNode node,
+        IReadOnlyList<OrgNode> nodes,
         int remainingDepth,
         List<OrgNodeTreeResponse> accumulator,
         CancellationToken ct)
     {
-        var childCount = await _unitOfWork.OrgNodes.GetChildCountAsync(node.Id, ct);
+        if (nodes.Count == 0) return;
 
-        var assignments = await _unitOfWork.OrgNodeAssignments.GetByNodeAsync(node.Id, ct);
-        var assignmentResponses = assignments.Select(a => new OrgNodeAssignmentResponse(
-            a.Id,
-            a.EmployeeId,
-            a.Employee?.FullName ?? string.Empty,
-            a.Employee?.Email,
-            a.Role,
-            a.Role.ToString()
-        )).ToList();
+        // Batch-fetch child counts for all nodes at this level in a single query
+        var nodeIds = nodes.Select(n => n.Id).ToList();
+        var childCounts = await _unitOfWork.OrgNodes.GetChildCountsAsync(nodeIds, ct);
 
-        var response = new OrgNodeTreeResponse(
-            node.Id,
-            node.Name,
-            childCount > 0,
-            new List<OrgNodeTreeResponse>(),
-            node.Type,
-            assignmentResponses);
-
-        if (remainingDepth > 0 && childCount > 0)
+        foreach (var node in nodes)
         {
-            var children = await _unitOfWork.OrgNodes.GetChildrenAsync(node.Id, ct);
-            foreach (var child in children)
-            {
-                await BuildTreeAsync(child, remainingDepth - 1, response.Children, ct);
-            }
-        }
+            var childCount = childCounts.TryGetValue(node.Id, out var count) ? count : 0;
 
-        accumulator.Add(response);
+            var assignments = await _unitOfWork.OrgNodeAssignments.GetByNodeAsync(node.Id, ct);
+            var assignmentResponses = assignments.Select(a => new OrgNodeAssignmentResponse(
+                a.Id,
+                a.EmployeeId,
+                a.Employee?.FullName ?? string.Empty,
+                a.Employee?.Email,
+                a.Role,
+                a.Role.ToString()
+            )).ToList();
+
+            var response = new OrgNodeTreeResponse(
+                node.Id,
+                node.Name,
+                childCount > 0,
+                new List<OrgNodeTreeResponse>(),
+                node.Type,
+                assignmentResponses);
+
+            if (remainingDepth > 0 && childCount > 0)
+            {
+                var children = await _unitOfWork.OrgNodes.GetChildrenAsync(node.Id, ct);
+                await BuildTreeAsync(children, remainingDepth - 1, response.Children, ct);
+            }
+
+            accumulator.Add(response);
+        }
     }
 }
