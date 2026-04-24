@@ -19,7 +19,7 @@ public abstract class WorkflowStepResolverBase : IWorkflowStepResolver
     protected static List<ApproverDto> FilterApprovers(
         IEnumerable<Employee> employees,
         Guid requesterEmployeeId,
-        HashSet<Guid> seenApproverIds)
+        IReadOnlySet<Guid> seenApproverIds)
     {
         return employees
             .Where(e => e.Id != requesterEmployeeId && !seenApproverIds.Contains(e.Id))

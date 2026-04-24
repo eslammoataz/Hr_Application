@@ -1,4 +1,6 @@
+using HrSystemApp.Application.Common;
 using HrSystemApp.Application.DTOs.Requests;
+using HrSystemApp.Application.Errors;
 using HrSystemApp.Domain.Enums;
 
 namespace HrSystemApp.Infrastructure.Services.Workflow.Resolvers;
@@ -12,12 +14,10 @@ public sealed class WorkflowStepResolverFactory
         _resolvers = resolvers.ToDictionary(r => r.Type);
     }
 
-    public IWorkflowStepResolver Get(WorkflowStepType type)
+    public Result<IWorkflowStepResolver> Get(WorkflowStepType type)
     {
         return _resolvers.TryGetValue(type, out var resolver)
-            ? resolver
-            : throw new ArgumentException($"No resolver found for step type: {type}");
+            ? Result.Success(resolver)
+            : Result.Failure<IWorkflowStepResolver>(DomainErrors.Workflows.InvalidStep);
     }
-
-    public bool HasResolver(WorkflowStepType type) => _resolvers.ContainsKey(type);
 }

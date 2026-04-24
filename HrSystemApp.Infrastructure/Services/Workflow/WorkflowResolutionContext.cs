@@ -19,8 +19,10 @@ public sealed class WorkflowResolutionContext
 
 public sealed class WorkflowResolutionState
 {
+    private readonly HashSet<Guid> _seenApproverIds = new();
+
     public List<PlannedStepDto> PlannedSteps { get; } = [];
-    public HashSet<Guid> SeenApproverIds { get; } = new();
+    public IReadOnlySet<Guid> SeenApproverIds => _seenApproverIds;
 
     public bool TryAddStep(PlannedStepDto step)
     {
@@ -29,11 +31,11 @@ public sealed class WorkflowResolutionState
 
         // Validate all approvers before mutating state, so a partial collision
         // never leaves SeenApproverIds in an inconsistent state.
-        if (step.Approvers.Any(a => SeenApproverIds.Contains(a.EmployeeId)))
+        if (step.Approvers.Any(a => _seenApproverIds.Contains(a.EmployeeId)))
             return false;
 
         foreach (var approver in step.Approvers)
-            SeenApproverIds.Add(approver.EmployeeId);
+            _seenApproverIds.Add(approver.EmployeeId);
 
         step.SortOrder = PlannedSteps.Count + 1;
         PlannedSteps.Add(step);
