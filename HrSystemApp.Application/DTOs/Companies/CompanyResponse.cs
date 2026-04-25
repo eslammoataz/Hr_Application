@@ -12,4 +12,5 @@ public record CompanyResponse(
     int GraceMinutes,
     string TimeZoneId,
     string Status,
+    DateTime CreatedAt,
     IReadOnlyList<CompanyLocationResponse> Locations);
