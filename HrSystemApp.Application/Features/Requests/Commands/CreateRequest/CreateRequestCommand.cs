@@ -124,12 +124,42 @@ public class CreateRequestCommandHandler : IRequestHandler<CreateRequestCommand,
         _logger.LogDecision(_loggingOptions, LogAction.Workflow.CreateRequest, LogStage.Processing,
             "DefinitionStepsMapped", new { StepCount = definitionSteps.Count });
 
+        var orgNodeIds = definitionSteps
+            .Where(s => s.StepType == WorkflowStepType.OrgNode && s.OrgNodeId.HasValue)
+            .Select(s => s.OrgNodeId!.Value)
+            .Distinct()
+            .ToList();
+        var directEmployeeIds = definitionSteps
+            .Where(s => s.StepType == WorkflowStepType.DirectEmployee && s.DirectEmployeeId.HasValue)
+            .Select(s => s.DirectEmployeeId!.Value)
+            .Distinct()
+            .ToList();
+        var companyRoleIds = definitionSteps
+            .Where(s => s.StepType == WorkflowStepType.CompanyRole && s.CompanyRoleId.HasValue)
+            .Select(s => s.CompanyRoleId!.Value)
+            .Distinct()
+            .ToList();
+
+        var orgNodesTask = orgNodeIds.Count > 0
+            ? _unitOfWork.OrgNodes.GetByIdsAsync(orgNodeIds, cancellationToken)
+            : Task.FromResult<Dictionary<Guid, OrgNode>>(new Dictionary<Guid, OrgNode>());
+        var employeesTask = directEmployeeIds.Count > 0
+            ? _unitOfWork.Employees.GetByIdsAsync(directEmployeeIds, cancellationToken)
+            : Task.FromResult<Dictionary<Guid, Employee>>(new Dictionary<Guid, Employee>());
+        var rolesTask = companyRoleIds.Count > 0
+            ? _unitOfWork.CompanyRoles.GetByIdsAsync(companyRoleIds, cancellationToken)
+            : Task.FromResult<Dictionary<Guid, CompanyRole>>(new Dictionary<Guid, CompanyRole>());
+
+        await Task.WhenAll(orgNodesTask, employeesTask, rolesTask);
+        var orgNodes = orgNodesTask.Result;
+        var employees = employeesTask.Result;
+        var roles = rolesTask.Result;
+
         foreach (var step in definitionSteps)
         {
             if (step.StepType == WorkflowStepType.OrgNode && step.OrgNodeId.HasValue)
             {
-                var node = await _unitOfWork.OrgNodes.GetByIdAsync(step.OrgNodeId.Value, cancellationToken);
-                if (node == null || node.CompanyId != employee.CompanyId)
+                if (!orgNodes.TryGetValue(step.OrgNodeId.Value, out var node) || node.CompanyId != employee.CompanyId)
                 {
                     _logger.LogDecision(_loggingOptions, LogAction.Workflow.CreateRequest, LogStage.Validation,
                         "OrgNodeInvalid", new { NodeId = step.OrgNodeId });
@@ -138,8 +168,7 @@ public class CreateRequestCommandHandler : IRequestHandler<CreateRequestCommand,
             }
             else if (step.StepType == WorkflowStepType.DirectEmployee && step.DirectEmployeeId.HasValue)
             {
-                var directEmp = await _unitOfWork.Employees.GetByIdAsync(step.DirectEmployeeId.Value, cancellationToken);
-                if (directEmp == null || directEmp.CompanyId != employee.CompanyId)
+                if (!employees.TryGetValue(step.DirectEmployeeId.Value, out var directEmp) || directEmp.CompanyId != employee.CompanyId)
                 {
                     _logger.LogDecision(_loggingOptions, LogAction.Workflow.CreateRequest, LogStage.Validation,
                         "DirectEmployeeInvalid", new { DirectEmployeeId = step.DirectEmployeeId });
@@ -157,8 +186,7 @@ public class CreateRequestCommandHandler : IRequestHandler<CreateRequestCommand,
                 if (!step.CompanyRoleId.HasValue)
                     return Result.Failure<Guid>(DomainErrors.Request.MissingCompanyRoleId);
 
-                var role = await _unitOfWork.CompanyRoles.GetByIdAsync(step.CompanyRoleId.Value, cancellationToken);
-                if (role is null || role.IsDeleted || role.CompanyId != employee.CompanyId)
+                if (!roles.TryGetValue(step.CompanyRoleId.Value, out var role) || role.IsDeleted || role.CompanyId != employee.CompanyId)
                 {
                     _logger.LogDecision(_loggingOptions, LogAction.Workflow.CreateRequest, LogStage.Validation,
                         "CompanyRoleInvalid", new { CompanyRoleId = step.CompanyRoleId });

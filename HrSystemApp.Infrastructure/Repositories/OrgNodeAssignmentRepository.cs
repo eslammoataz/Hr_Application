@@ -44,6 +44,22 @@ public class OrgNodeAssignmentRepository : Repository<OrgNodeAssignment>, IOrgNo
             .Select(a => a.Employee)
             .ToListAsync(ct);
 
+    public async Task<Dictionary<Guid, IReadOnlyList<Employee>>> GetManagersByNodesAsync(IEnumerable<Guid> orgNodeIds, CancellationToken ct)
+    {
+        var orgNodeIdList = orgNodeIds.ToList();
+        if (orgNodeIdList.Count == 0)
+            return new Dictionary<Guid, IReadOnlyList<Employee>>();
+
+        var assignments = await _context.OrgNodeAssignments
+            .Where(a => orgNodeIdList.Contains(a.OrgNodeId) && a.Role == OrgRole.Manager && !a.IsDeleted)
+            .Include(a => a.Employee)
+            .ToListAsync(ct);
+
+        return assignments
+            .GroupBy(a => a.OrgNodeId)
+            .ToDictionary(g => g.Key, g => (IReadOnlyList<Employee>)g.Select(a => a.Employee).ToList());
+    }
+
     public async Task<bool> IsManagerAtNodeAsync(Guid employeeId, Guid orgNodeId, CancellationToken ct)
         => await _context.OrgNodeAssignments
             .AnyAsync(a => a.EmployeeId == employeeId

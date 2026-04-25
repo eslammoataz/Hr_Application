@@ -9,8 +9,22 @@ namespace HrSystemApp.Application.Features.Requests.Queries.GetPendingApprovals;
 
 public record GetPendingApprovalsQuery : IRequest<Result<PagedResult<PendingRequestDto>>>
 {
-    public int PageNumber { get; set; } = 1;
-    public int PageSize { get; set; } = 10;
+    private const int MaxPageSize = 100;
+    private int _pageSize = 10;
+    private int _pageNumber = 1;
+
+    public int PageNumber
+    {
+        get => _pageNumber;
+        set => _pageNumber = value < 1 ? 1 : value;
+    }
+
+    public int PageSize
+    {
+        get => _pageSize;
+        set => _pageSize = value > MaxPageSize ? MaxPageSize : value < 1 ? 1 : value;
+    }
+
     public RequestStatus? Status { get; set; }
     public RequestType? Type { get; set; }
 }
@@ -46,22 +60,20 @@ public class GetPendingApprovalsQueryHandler : IRequestHandler<GetPendingApprova
         if (employee == null)
             return Result.Failure<PagedResult<PendingRequestDto>>(DomainErrors.Employee.NotFound);
 
-        var pendingRequests = await _unitOfWork.Requests.GetPendingApprovalsAsync(employee.Id, cancellationToken);
-        var queryable = pendingRequests.AsQueryable();
+        var queryable = _unitOfWork.Requests.QueryPendingApprovals(employee.Id);
 
-        // Apply filters
         if (request.Status.HasValue)
             queryable = queryable.Where(r => r.Status == request.Status.Value);
-        
+
         if (request.Type.HasValue)
             queryable = queryable.Where(r => r.RequestType == request.Type.Value);
 
-        var totalCount = queryable.Count();
-        var items = queryable
-            .OrderByDescending(r => r.CreatedAt)
-            .Skip((request.PageNumber - 1) * request.PageSize)
-            .Take(request.PageSize)
-            .ToList();
+        var totalCount = await _unitOfWork.Requests.CountAsync(queryable, cancellationToken);
+        var items = await _unitOfWork.Requests.ToListAsync(
+            queryable.OrderByDescending(r => r.CreatedAt)
+                .Skip((request.PageNumber - 1) * request.PageSize)
+                .Take(request.PageSize),
+            cancellationToken);
 
         var dtos = items.Select(r => new PendingRequestDto
         {

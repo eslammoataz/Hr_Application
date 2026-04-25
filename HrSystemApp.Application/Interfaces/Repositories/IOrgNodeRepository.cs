@@ -27,4 +27,15 @@ public interface IOrgNodeRepository : IRepository<OrgNode>
     /// Gets the root node of the tree containing the given node.
     /// </summary>
     Task<OrgNode> GetRootNodeAsync(Guid nodeId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Gets multiple nodes by their IDs in a single query.
+    /// </summary>
+    Task<Dictionary<Guid, OrgNode>> GetByIdsAsync(IEnumerable<Guid> ids, CancellationToken ct);
+
+    /// <summary>
+    /// Returns child counts for the given node IDs in a single GROUP BY query.
+    /// Nodes with no children are not present in the result — treat missing keys as count 0.
+    /// </summary>
+    Task<Dictionary<Guid, int>> GetChildCountsAsync(IEnumerable<Guid> nodeIds, CancellationToken ct);
 }

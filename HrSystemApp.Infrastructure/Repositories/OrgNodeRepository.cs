@@ -238,4 +238,34 @@ public class OrgNodeRepository : Repository<OrgNode>, IOrgNodeRepository
 
         return node;
     }
+
+    public async Task<Dictionary<Guid, OrgNode>> GetByIdsAsync(IEnumerable<Guid> ids, CancellationToken ct)
+    {
+        if (ids is null) return new Dictionary<Guid, OrgNode>();
+        var idList = ids.ToList();
+        if (idList.Count == 0)
+            return new Dictionary<Guid, OrgNode>();
+
+        var nodes = await _context.OrgNodes
+            .AsNoTracking()
+            .Where(n => idList.Contains(n.Id))
+            .Include(n => n.Assignments).ThenInclude(a => a.Employee)
+            .ToListAsync(ct);
+
+        return nodes.ToDictionary(n => n.Id);
+    }
+
+    public async Task<Dictionary<Guid, int>> GetChildCountsAsync(IEnumerable<Guid> nodeIds, CancellationToken ct)
+    {
+        var idList = nodeIds.ToList();
+        if (idList.Count == 0)
+            return new Dictionary<Guid, int>();
+
+        return await _context.OrgNodes
+            .AsNoTracking()
+            .Where(n => n.ParentId != null && idList.Contains(n.ParentId.Value))
+            .GroupBy(n => n.ParentId!.Value)
+            .Select(g => new { NodeId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.NodeId, x => x.Count, ct);
+    }
 }

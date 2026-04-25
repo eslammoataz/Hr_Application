@@ -9,8 +9,21 @@ namespace HrSystemApp.Application.Features.Requests.Queries.GetMyApprovalActions
 
 public record GetMyApprovalActionsQuery : IRequest<Result<PagedResult<ApprovalActionDto>>>
 {
-    public int PageNumber { get; set; } = 1;
-    public int PageSize { get; set; } = 10;
+    private const int MaxPageSize = 100;
+    private int _pageSize = 10;
+    private int _pageNumber = 1;
+
+    public int PageNumber
+    {
+        get => _pageNumber;
+        set => _pageNumber = value < 1 ? 1 : value;
+    }
+
+    public int PageSize
+    {
+        get => _pageSize;
+        set => _pageSize = value > MaxPageSize ? MaxPageSize : value < 1 ? 1 : value;
+    }
 
     /// <summary>Filter by the action the approver took (Approved / Rejected). Null = all.</summary>
     public RequestStatus? ActionStatus { get; set; }
@@ -66,9 +79,7 @@ public class GetMyApprovalActionsQueryHandler
         if (employee is null)
             return Result.Failure<PagedResult<ApprovalActionDto>>(DomainErrors.Employee.NotFound);
 
-        var historyEntries = await _unitOfWork.Requests.GetApprovalActionsAsync(employee.Id, cancellationToken);
-
-        var queryable = historyEntries.AsQueryable();
+        var queryable = _unitOfWork.Requests.QueryApprovalActions(employee.Id);
 
         if (request.ActionStatus.HasValue)
             queryable = queryable.Where(h => h.Status == request.ActionStatus.Value);
@@ -76,13 +87,13 @@ public class GetMyApprovalActionsQueryHandler
         if (request.RequestType.HasValue)
             queryable = queryable.Where(h => h.Request.RequestType == request.RequestType.Value);
 
-        var totalCount = queryable.Count();
+        var totalCount = await _unitOfWork.Requests.CountHistoryAsync(queryable, cancellationToken);
 
-        var items = queryable
-            .OrderByDescending(h => h.CreatedAt)
-            .Skip((request.PageNumber - 1) * request.PageSize)
-            .Take(request.PageSize)
-            .ToList();
+        var items = await _unitOfWork.Requests.ToListHistoryAsync(
+            queryable.OrderByDescending(h => h.CreatedAt)
+                .Skip((request.PageNumber - 1) * request.PageSize)
+                .Take(request.PageSize),
+            cancellationToken);
 
         var dtos = items.Select(h => new ApprovalActionDto
         {

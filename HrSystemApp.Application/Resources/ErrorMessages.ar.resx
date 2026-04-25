@@ -273,7 +273,10 @@
     <value>سجّل الموظف انصرافه مسبقاً.</value>
   </data>
   <data name="Attendance.InvalidClockOut" xml:space="preserve">
-    <value>وقت الانصراف يجب أن يكون بعد وقت الحضور.</value>
+    <value>يجب أن يكون وقت تسجيل الخروج بعد وقت تسجيل الدخول.</value>
+  </data>
+  <data name="Attendance.InvalidClockIn" xml:space="preserve">
+    <value>لا يمكن أن يكون وقت تسجيل الدخول أكثر من 5 دقائق في المستقبل.</value>
   </data>
   <data name="Attendance.OverrideReasonRequired" xml:space="preserve">
     <value>سبب التجاوز مطلوب.</value>

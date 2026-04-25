@@ -12,5 +12,7 @@ public enum RequestType
     Asset = 7,
     Loan = 8,
     Assignment = 9,
-    Other = 10
+    Other = 10,
+    Survey = 11,
+    Complaint = 12
 }

@@ -21,7 +21,9 @@ public class Repository<T> : IRepository<T> where T : class
 
     public virtual async Task<T?> GetByIdAsync(object id, CancellationToken cancellationToken = default)
     {
-        return await _dbSet.FindAsync(new object?[] { id }, cancellationToken);
+        return await _dbSet.FirstOrDefaultAsync(
+            e => EF.Property<object>(e, "Id").Equals(id),
+            cancellationToken);
     }
 
     public virtual async Task<IReadOnlyList<T>> GetAllAsync(CancellationToken cancellationToken = default)
@@ -73,6 +75,12 @@ public class Repository<T> : IRepository<T> where T : class
             ? await _dbSet.CountAsync(cancellationToken)
             : await _dbSet.CountAsync(predicate, cancellationToken);
     }
+
+    public virtual async Task<int> CountAsync(IQueryable<T> query, CancellationToken cancellationToken = default)
+        => await query.CountAsync(cancellationToken);
+
+    public virtual async Task<IReadOnlyList<T>> ToListAsync(IQueryable<T> query, CancellationToken cancellationToken = default)
+        => await query.ToListAsync(cancellationToken);
 
     public async Task<T?> GetFirstOrDefaultAsync(
      Expression<Func<T, bool>> predicate,

@@ -37,7 +37,8 @@ public class EmailService : IEmailService
             using var client = new SmtpClient(_settings.SmtpHost, _settings.SmtpPort)
             {
                 Credentials = new NetworkCredential(_settings.SenderEmail, _settings.AppPassword),
-                EnableSsl = true
+                EnableSsl = true,
+                Timeout = 30000
             };
 
             using var mailMessage = new MailMessage
@@ -86,7 +87,8 @@ public class EmailService : IEmailService
             using var client = new SmtpClient(_settings.SmtpHost, _settings.SmtpPort)
             {
                 Credentials = new NetworkCredential(_settings.SenderEmail, _settings.AppPassword),
-                EnableSsl = true
+                EnableSsl = true,
+                Timeout = 30000
             };
 
             using var mailMessage = new MailMessage

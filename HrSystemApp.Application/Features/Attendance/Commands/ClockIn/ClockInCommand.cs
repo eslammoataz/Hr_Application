@@ -66,12 +66,11 @@ public class ClockInCommandHandler : IRequestHandler<ClockInCommand, Result<Atte
                     Date = businessDate
                 };
                 await _unitOfWork.Attendances.AddAsync(attendance, cancellationToken);
-                await _unitOfWork.SaveChangesAsync(cancellationToken);
             }
 
             var log = new AttendanceLog
             {
-                AttendanceId = attendance.Id,
+                Attendance = attendance,
                 EmployeeId = employee.Id,
                 TimestampUtc = clockInUtc,
                 Type = AttendanceLogType.ClockIn,
@@ -80,22 +79,16 @@ public class ClockInCommandHandler : IRequestHandler<ClockInCommand, Result<Atte
             };
 
             await _unitOfWork.AttendanceLogs.AddAsync(log, cancellationToken);
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            // Only point FirstClockInLogId at the very first clock-in of the day.
-            // Subsequent clock-ins (after a clock-out break) must not overwrite it.
             if (attendance.FirstClockInUtc is null)
             {
                 attendance.FirstClockInLogId = log.Id;
             }
 
-            // Re-open the attendance record so GetOpenAttendanceAsync can find it again.
-            // TotalHours is intentionally kept so accumulated time from previous sessions is preserved.
             attendance.LastClockOutUtc = null;
             attendance.LastClockOutLogId = null;
 
             AttendanceSummaryCalculator.ApplyClockIn(attendance, clockInUtc, rules.LateThresholdUtc);
-            await _unitOfWork.Attendances.UpdateAsync(attendance, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
             await _unitOfWork.CommitTransactionAsync(cancellationToken);
 

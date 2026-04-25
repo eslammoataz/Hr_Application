@@ -139,7 +139,13 @@
             "name": "items",
             "type": "list",
             "label": "Order Items",
-            "isRequired": true
+            "isRequired": true,
+            "itemSchema": {
+               "name": { "type": "string", "label": "Item Name", "isRequired": true },
+               "qty": { "type": "number", "label": "Quantity", "isRequired": true },
+               "unitPrice": { "type": "number", "label": "Unit Price", "isRequired": true },
+               "justification": { "type": "string", "label": "Justification", "isRequired": false }
+            }
          }
       ],
       "Asset": [
@@ -220,6 +226,46 @@
             "type": "string",
             "label": "Request Details",
             "isRequired": true
+         }
+      ],
+      "Survey": [
+         {
+            "name": "title",
+            "type": "string",
+            "label": "Survey Title",
+            "isRequired": true
+         },
+         {
+            "name": "description",
+            "type": "string",
+            "label": "Description",
+            "isRequired": false
+         },
+         {
+            "name": "questions",
+            "type": "list",
+            "label": "Questions",
+            "isRequired": true
+         }
+      ],
+      "Complaint": [
+         {
+            "name": "category",
+            "type": "string",
+            "label": "Category",
+            "isRequired": true
+         },
+         {
+            "name": "description",
+            "type": "string",
+            "label": "Description",
+            "isRequired": true
+         },
+         {
+            "name": "attachments",
+            "type": "list",
+            "label": "Attachments",
+            "isRequired": false
          }
       ]
    }

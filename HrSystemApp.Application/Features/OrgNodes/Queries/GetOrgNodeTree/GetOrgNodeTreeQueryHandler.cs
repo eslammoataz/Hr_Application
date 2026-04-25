@@ -61,10 +61,15 @@ public class GetOrgNodeTreeQueryHandler : IRequestHandler<GetOrgNodeTreeQuery, R
         List<OrgNodeTreeResponse> accumulator,
         CancellationToken ct)
     {
+        if (nodes.Count == 0) return;
+
+        // Batch-fetch child counts for all nodes at this level in a single query
+        var nodeIds = nodes.Select(n => n.Id).ToList();
+        var childCounts = await _unitOfWork.OrgNodes.GetChildCountsAsync(nodeIds, ct);
+
         foreach (var node in nodes)
         {
-            // Get child count for HasChildren flag
-            var childCount = await _unitOfWork.OrgNodes.GetChildCountAsync(node.Id, ct);
+            var childCount = childCounts.TryGetValue(node.Id, out var count) ? count : 0;
 
             // Map assignments from already-loaded node.Assignments
             var assignmentResponses = node.Assignments?.Select(a => new OrgNodeAssignmentResponse(

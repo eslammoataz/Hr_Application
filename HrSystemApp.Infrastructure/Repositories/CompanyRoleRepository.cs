@@ -54,4 +54,14 @@ public class CompanyRoleRepository : Repository<CompanyRole>, ICompanyRoleReposi
             .Select(p => new CompanyRolePermission { RoleId = roleId, Permission = p });
         await _context.Set<CompanyRolePermission>().AddRangeAsync(newPerms, ct);
     }
+
+    public async Task<Dictionary<Guid, CompanyRole>> GetByIdsAsync(IEnumerable<Guid> ids, CancellationToken ct = default)
+    {
+        if (ids is null) return new Dictionary<Guid, CompanyRole>();
+        var idList = ids.ToList();
+        if (idList.Count == 0) return new Dictionary<Guid, CompanyRole>();
+        return await _dbSet.AsNoTracking()
+            .Where(r => idList.Contains(r.Id))
+            .ToDictionaryAsync(r => r.Id, ct);
+    }
 }
