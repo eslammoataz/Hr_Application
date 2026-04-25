@@ -14,4 +14,5 @@ public class EmployeeProfileDto
     public string? MedicalClass { get; set; }
     public string CompanyLocationName { get; set; } = string.Empty;
     public DateTime? ContractEndDate { get; set; }
+    public IReadOnlyList<string> Permissions { get; set; } = Array.Empty<string>();
 }

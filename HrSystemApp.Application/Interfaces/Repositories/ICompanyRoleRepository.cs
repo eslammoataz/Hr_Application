@@ -9,6 +9,9 @@ public interface ICompanyRoleRepository : IRepository<CompanyRole>
     Task<bool> ExistsByNameAsync(Guid companyId, string name, Guid? excludeId, CancellationToken ct = default);
     Task ClearPermissionsAsync(Guid roleId, CancellationToken ct = default);
     Task ReplacePermissionsAsync(Guid roleId, IEnumerable<string> permissions, CancellationToken ct = default);
-
     Task<Dictionary<Guid, CompanyRole>> GetByIdsAsync(IEnumerable<Guid> ids, CancellationToken ct = default);
+
+    IQueryable<CompanyRole> QueryByCompanyId(Guid companyId);
+    Task<int> CountAsync(IQueryable<CompanyRole> query, CancellationToken ct = default);
+    Task<IReadOnlyList<CompanyRole>> ToListAsync(IQueryable<CompanyRole> query, CancellationToken ct = default);
 }

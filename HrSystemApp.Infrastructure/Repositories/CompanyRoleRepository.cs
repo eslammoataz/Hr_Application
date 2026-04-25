@@ -64,4 +64,15 @@ public class CompanyRoleRepository : Repository<CompanyRole>, ICompanyRoleReposi
             .Where(r => idList.Contains(r.Id))
             .ToDictionaryAsync(r => r.Id, ct);
     }
+
+    public IQueryable<CompanyRole> QueryByCompanyId(Guid companyId)
+        => _dbSet.AsNoTracking()
+            .Include(r => r.Permissions)
+            .Where(r => r.CompanyId == companyId);
+
+    public async Task<int> CountAsync(IQueryable<CompanyRole> query, CancellationToken ct = default)
+        => await query.CountAsync(ct);
+
+    public async Task<IReadOnlyList<CompanyRole>> ToListAsync(IQueryable<CompanyRole> query, CancellationToken ct = default)
+        => await query.ToListAsync(ct);
 }

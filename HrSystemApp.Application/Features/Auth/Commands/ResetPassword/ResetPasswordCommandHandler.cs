@@ -91,6 +91,12 @@ public class ResetPasswordCommandHandler : IRequestHandler<ResetPasswordCommand,
         var roles = await _userRepository.GetRolesAsync(user);
         var (token, expiresAt) = _tokenService.GenerateToken(user, roles);
 
+        IReadOnlyList<string> permissions = Array.Empty<string>();
+        if (user.EmployeeId.HasValue)
+        {
+            permissions = await _unitOfWork.EmployeeCompanyRoles.GetPermissionsForEmployeeAsync(user.EmployeeId.Value, cancellationToken);
+        }
+
         return Result.Success(new AuthResponse(
             Token: token,
             RefreshToken: null,
@@ -102,7 +108,8 @@ public class ResetPasswordCommandHandler : IRequestHandler<ResetPasswordCommand,
             MustChangePassword: user.MustChangePassword,
             ExpiresAt: expiresAt,
             PhoneNumber: user.PhoneNumber,
-            Language: user.Language
+            Language: user.Language,
+            Permissions: permissions
         ));
     }
 }

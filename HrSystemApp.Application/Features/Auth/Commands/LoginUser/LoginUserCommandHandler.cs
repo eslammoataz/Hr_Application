@@ -83,6 +83,12 @@ public class LoginUserCommandHandler : IRequestHandler<LoginUserCommand, Result<
 
         var roles = await _unitOfWork.Users.GetRolesAsync(user);
 
+        IReadOnlyList<string> permissions = Array.Empty<string>();
+        if (user.EmployeeId.HasValue)
+        {
+            permissions = await _unitOfWork.EmployeeCompanyRoles.GetPermissionsForEmployeeAsync(user.EmployeeId.Value, cancellationToken);
+        }
+
         if (user.MustChangePassword)
         {
             _logger.LogDecision(_loggingOptions, LogAction.Auth.LoginUser, LogStage.Authorization,
@@ -98,7 +104,8 @@ public class LoginUserCommandHandler : IRequestHandler<LoginUserCommand, Result<
                 MustChangePassword: true,
                 ExpiresAt: null,
                 PhoneNumber: user.PhoneNumber,
-                Language: user.Language
+                Language: user.Language,
+                Permissions: permissions
             ));
         }
 
@@ -133,7 +140,8 @@ public class LoginUserCommandHandler : IRequestHandler<LoginUserCommand, Result<
             MustChangePassword: false,
             ExpiresAt: expiresAt,
             PhoneNumber: user.PhoneNumber,
-            Language: user.Language
+            Language: user.Language,
+            Permissions: permissions
         ));
     }
 }

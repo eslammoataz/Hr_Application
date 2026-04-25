@@ -22,6 +22,9 @@ public class GetMyProfileQueryHandler : IRequestHandler<GetMyProfileQuery, Resul
         if (profile is null)
             return Result.Failure<EmployeeProfileDto>(DomainErrors.Employee.NotFound);
 
+        var permissions = await _unitOfWork.EmployeeCompanyRoles.GetPermissionsForEmployeeAsync(profile.Id, cancellationToken);
+        profile.Permissions = permissions;
+
         return Result.Success(profile);
     }
 }

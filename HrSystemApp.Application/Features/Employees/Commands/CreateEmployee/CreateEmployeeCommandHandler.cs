@@ -77,16 +77,12 @@ public class CreateEmployeeCommandHandler : IRequestHandler<CreateEmployeeComman
             EmploymentStatus = EmploymentStatus.Active,
             UserId = user.Id
         };
-
-        await _unitOfWork.BeginTransactionAsync(cancellationToken);
-
         try
         {
-            var tempPassword = $"{request.PhoneNumber}!Aa1";
+            var tempPassword = request.PhoneNumber;
             var created = await _unitOfWork.Users.CreateUserAsync(user, tempPassword, request.Role, cancellationToken);
             if (!created)
             {
-                await _unitOfWork.RollbackTransactionAsync(cancellationToken);
                 _logger.LogDecision(_loggingOptions, LogAction.OrgNode.CreateEmployee, LogStage.Processing,
                     "UserCreationFailed", new { EmailDomain = request.Email.Split('@').Last() });
                 return Result.Failure<CreateEmployeeResponse>(DomainErrors.Employee.CreationFailed);
@@ -105,7 +101,6 @@ public class CreateEmployeeCommandHandler : IRequestHandler<CreateEmployeeComman
             await _unitOfWork.LeaveBalances.AddAsync(initialBalance, cancellationToken);
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
-            await _unitOfWork.CommitTransactionAsync(cancellationToken);
 
             return Result.Success(new CreateEmployeeResponse
             {
@@ -121,7 +116,6 @@ public class CreateEmployeeCommandHandler : IRequestHandler<CreateEmployeeComman
         }
         catch (Exception ex)
         {
-            await _unitOfWork.RollbackTransactionAsync(cancellationToken);
             _logger.LogActionFailure(_loggingOptions, LogAction.OrgNode.CreateEmployee, LogStage.Processing, ex,
                 new { EmailDomain = request.Email.Split('@').Last() });
             return Result.Failure<CreateEmployeeResponse>(DomainErrors.General.ServerError);
