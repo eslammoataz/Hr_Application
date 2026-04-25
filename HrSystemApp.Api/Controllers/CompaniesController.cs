@@ -114,7 +114,6 @@ public class CompaniesController : BaseApiController
 
     /// <summary>Get the company of the currently logged in user.</summary>
     [HttpGet("me")]
-    [Authorize(Roles = Roles.CompanyAdmins)]
     [ProducesResponseType(typeof(CompanyResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
