@@ -38,7 +38,10 @@ public class WorkflowResolutionService : IWorkflowResolutionService
         var resolvers = new IWorkflowStepResolver[]
         {
             new DirectEmployeeStepResolver(
-                (id, ct) => _unitOfWork.Employees.GetByIdAsync(id, ct)),
+                (id, ct) => _unitOfWork.Employees.GetByIdAsync(id, ct),
+                _logger,
+                _loggingOptions,
+                _logAction),
 
             new HierarchyLevelStepResolver(
                 _logger,
@@ -46,10 +49,16 @@ public class WorkflowResolutionService : IWorkflowResolutionService
                 _logAction),
 
             new CompanyRoleStepResolver(
-                (id, ct) => _unitOfWork.CompanyRoles.GetByIdAsync(id, ct)),
+                (id, ct) => _unitOfWork.CompanyRoles.GetByIdAsync(id, ct),
+                _logger,
+                _loggingOptions,
+                _logAction),
 
             new OrgNodeStepResolver(
-                (id, ct) => _unitOfWork.OrgNodes.GetByIdAsync(id, ct))
+                (id, ct) => _unitOfWork.OrgNodes.GetByIdAsync(id, ct),
+                _logger,
+                _loggingOptions,
+                _logAction)
         };
 
         return new WorkflowStepResolverFactory(resolvers);
@@ -63,33 +72,61 @@ public class WorkflowResolutionService : IWorkflowResolutionService
     {
         var sw = Stopwatch.StartNew();
 
+        _logger.LogDecision(_loggingOptions, _logAction, LogStage.Processing,
+            "BuildApprovalChain_Start", new { RequesterEmployeeId = requesterEmployeeId, NodeId = requesterNodeId, StepsToResolve = definitionSteps.Count });
+
         try
         {
             var context = await LoadContextAsync(requesterEmployeeId, requesterNodeId, definitionSteps, ct);
             if (context.IsFailure)
+            {
+                _logger.LogDecision(_loggingOptions, _logAction, LogStage.Processing,
+                    "BuildApprovalChain_ContextFailed", new { Error = context.Error.Message });
                 return Result.Failure<List<PlannedStepDto>>(context.Error);
+            }
+
+            _logger.LogDecision(_loggingOptions, _logAction, LogStage.Processing,
+                "BuildApprovalChain_ContextLoaded", new { RoleHolderCount = context.Value.RoleHoldersByRoleId.Count, ManagerCount = context.Value.ManagersByNodeId.Count });
 
             var state = new WorkflowResolutionState();
             var sortedSteps = definitionSteps.OrderBy(s => s.SortOrder).ToList();
 
             foreach (var step in sortedSteps)
             {
+                _logger.LogDecision(_loggingOptions, _logAction, LogStage.Processing,
+                    "BuildApprovalChain_ResolvingStep", new { StepType = step.StepType.ToString(), CompanyRoleId = step.CompanyRoleId, OrgNodeId = step.OrgNodeId, DirectEmployeeId = step.DirectEmployeeId });
+
                 var resolverResult = _resolverFactory.Get(step.StepType);
                 if (resolverResult.IsFailure)
+                {
+                    _logger.LogDecision(_loggingOptions, _logAction, LogStage.Processing,
+                        "BuildApprovalChain_NoResolver", new { StepType = step.StepType.ToString() });
                     return Result.Failure<List<PlannedStepDto>>(resolverResult.Error);
+                }
 
                 var result = await resolverResult.Value.ResolveAsync(step, context.Value, state, ct);
                 if (result.IsFailure)
+                {
+                    _logger.LogDecision(_loggingOptions, _logAction, LogStage.Processing,
+                        "BuildApprovalChain_ResolverFailed", new { StepType = step.StepType.ToString(), Error = result.Error.Message });
                     return result;
+                }
+
+                _logger.LogDecision(_loggingOptions, _logAction, LogStage.Processing,
+                    "BuildApprovalChain_StepResolved", new { StepType = step.StepType.ToString(), StepsCreated = result.Value.Count, TotalStepsSoFar = state.PlannedSteps.Count });
             }
 
             sw.Stop();
-            _logger.LogActionSuccess(_loggingOptions, _logAction, sw.ElapsedMilliseconds);
 
             if (state.PlannedSteps.Count == 0)
             {
                 _logger.LogDecision(_loggingOptions, _logAction, LogStage.Processing,
-                    "EmptyChain", new { EmployeeId = requesterEmployeeId, NodeId = requesterNodeId });
+                    "BuildApprovalChain_EmptyChain", new { RequesterEmployeeId = requesterEmployeeId, NodeId = requesterNodeId });
+            }
+            else
+            {
+                _logger.LogBusinessFlow(_loggingOptions, _logAction, LogStage.Processing,
+                    "BuildApprovalChain_Complete", new { TotalSteps = state.PlannedSteps.Count, DurationMs = sw.ElapsedMilliseconds });
             }
 
             return Result.Success(state.PlannedSteps);
@@ -97,8 +134,7 @@ public class WorkflowResolutionService : IWorkflowResolutionService
         catch (Exception ex)
         {
             sw.Stop();
-            var lastKnownState = new { EmployeeId = requesterEmployeeId, NodeId = requesterNodeId };
-            _logger.LogActionFailure(_loggingOptions, _logAction, LogStage.Processing, ex, lastKnownState);
+            _logger.LogActionFailure(_loggingOptions, _logAction, LogStage.Processing, ex, new { EmployeeId = requesterEmployeeId, NodeId = requesterNodeId });
             throw;
         }
     }

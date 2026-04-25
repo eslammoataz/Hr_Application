@@ -9,12 +9,13 @@ using System.Text.Json;
 
 namespace HrSystemApp.Application.Features.Requests.Queries.GetRequestDefinitions;
 
-public record GetRequestDefinitionsQuery(Guid? CompanyId = null, RequestType? Type = null) : IRequest<Result<List<RequestDefinitionDto>>>;
+public record GetRequestDefinitionsQuery(Guid? CompanyId = null, Guid? RequestTypeId = null) : IRequest<Result<List<RequestDefinitionDto>>>;
 
 public record RequestDefinitionDto
 {
     public Guid Id { get; set; }
-    public RequestType RequestType { get; set; }
+    public Guid RequestTypeId { get; set; }
+    public string RequestTypeName { get; set; } = string.Empty;
     public bool IsActive { get; set; }
     public List<WorkflowStepDto> Steps { get; set; } = new();
     public object? Schema { get; set; }
@@ -59,13 +60,14 @@ public class GetRequestDefinitionsQueryHandler : IRequestHandler<GetRequestDefin
         }
 
         // 2. Fetch Definitions
-        var definitions = await _unitOfWork.RequestDefinitions.GetByCompanyAsync(targetCompanyId, request.Type, cancellationToken);
+        var definitions = await _unitOfWork.RequestDefinitions.GetByCompanyAsync(targetCompanyId, request.RequestTypeId, cancellationToken);
 
         // 3. Map to DTO
         var dtos = definitions.Select(d => new RequestDefinitionDto
         {
             Id = d.Id,
-            RequestType = d.RequestType,
+            RequestTypeId = d.RequestTypeId,
+            RequestTypeName = d.RequestType?.KeyName ?? "Unknown",
             IsActive = d.IsActive,
             Steps = d.WorkflowSteps.Select(s => new WorkflowStepDto
             {
@@ -76,6 +78,7 @@ public class GetRequestDefinitionsQueryHandler : IRequestHandler<GetRequestDefin
                 DirectEmployeeId = s.DirectEmployeeId,
                 StartFromLevel = s.StartFromLevel,
                 LevelsUp = s.LevelsUp,
+                CompanyRoleId = s.CompanyRoleId,
                 SortOrder = s.SortOrder
             }).ToList(),
             Schema = string.Empty
