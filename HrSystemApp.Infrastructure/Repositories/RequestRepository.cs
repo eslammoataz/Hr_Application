@@ -14,6 +14,7 @@ public class RequestRepository : Repository<Request>, IRequestRepository
     {
         return await _dbSet
             .Include(x => x.Employee)
+            .Include(x => x.RequestType)
             .Include(x => x.ApprovalHistory)
                 .ThenInclude(x => x.Approver)
             .Include(x => x.Attachments)
@@ -76,6 +77,8 @@ public class RequestRepository : Repository<Request>, IRequestRepository
             .AsNoTracking()
             .Include(h => h.Request)
                 .ThenInclude(r => r.Employee)
+            .Include(h => h.Request)
+                .ThenInclude(r => r.RequestType)
             .Where(h => h.ApproverId == approverId);
 
     public async Task<int> CountAsync(IQueryable<Request> query, CancellationToken cancellationToken = default)

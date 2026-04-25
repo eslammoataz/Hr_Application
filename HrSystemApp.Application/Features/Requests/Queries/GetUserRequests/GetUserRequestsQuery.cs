@@ -28,13 +28,14 @@ public record GetUserRequestsQuery : IRequest<Result<PagedResult<RequestDto>>>
     }
 
     public RequestStatus? Status { get; set; }
-    public RequestType? Type { get; set; }
+    public Guid? RequestTypeId { get; set; }
 }
 
 public record RequestDto
 {
     public Guid Id { get; set; }
-    public RequestType Type { get; set; }
+    public Guid RequestTypeId { get; set; }
+    public string RequestTypeName { get; set; } = string.Empty;
     public RequestStatus Status { get; set; }
     public DateTime CreatedAt { get; set; }
     public string? Details { get; set; }
@@ -76,8 +77,8 @@ public class GetUserRequestsQueryHandler : IRequestHandler<GetUserRequestsQuery,
         if (request.Status.HasValue)
             queryable = queryable.Where(r => r.Status == request.Status.Value);
 
-        if (request.Type.HasValue)
-            queryable = queryable.Where(r => r.RequestType == request.Type.Value);
+        if (request.RequestTypeId.HasValue)
+            queryable = queryable.Where(r => r.RequestTypeId == request.RequestTypeId.Value);
 
         var totalCount = await _unitOfWork.Requests.CountAsync(queryable, cancellationToken);
         var items = await _unitOfWork.Requests.ToListAsync(
@@ -92,7 +93,8 @@ public class GetUserRequestsQueryHandler : IRequestHandler<GetUserRequestsQuery,
             return new RequestDto
             {
                 Id = r.Id,
-                Type = r.RequestType,
+                RequestTypeId = r.RequestTypeId,
+                RequestTypeName = r.RequestType?.KeyName ?? "Unknown",
                 Status = r.Status,
                 CreatedAt = r.CreatedAt,
                 Details = r.Details,

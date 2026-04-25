@@ -11,7 +11,7 @@ using System.Text.Json;
 
 namespace HrSystemApp.Application.Features.Requests.Commands.UpdateRequest;
 
-public record UpdateRequestCommand(Guid Id, RequestType RequestType, JsonElement Data, string? Details = null) : IRequest<Result<Guid>>;
+public record UpdateRequestCommand(Guid Id, Guid RequestTypeId, JsonElement Data, string? Details = null) : IRequest<Result<Guid>>;
 
 public class UpdateRequestCommandHandler : IRequestHandler<UpdateRequestCommand, Result<Guid>>
 {
@@ -80,8 +80,8 @@ public class UpdateRequestCommandHandler : IRequestHandler<UpdateRequestCommand,
             return Result.Failure<Guid>(DomainErrors.Requests.NotPending);
         }
 
-        existingRequest.RequestType = request.RequestType;
-        existingRequest.Data = request.Data.GetRawText();
+        existingRequest.RequestTypeId = request.RequestTypeId;
+        existingRequest.DynamicDataJson = request.Data.GetRawText();
         existingRequest.Details = request.Details;
         existingRequest.UpdatedAt = DateTime.UtcNow;
 

@@ -76,6 +76,7 @@ public static class DependencyInjection
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
         services.AddScoped<IRequestDefinitionRepository, RequestDefinitionRepository>();
         services.AddScoped<IRequestRepository, RequestRepository>();
+        services.AddScoped<IRequestTypeRepository, RequestTypeRepository>();
         services.AddScoped<ICompanyHierarchyPositionRepository, CompanyHierarchyPositionRepository>();
         services.AddScoped<IAttendanceRepository, AttendanceRepository>();
         services.AddScoped<IAttendanceLogRepository, AttendanceLogRepository>();

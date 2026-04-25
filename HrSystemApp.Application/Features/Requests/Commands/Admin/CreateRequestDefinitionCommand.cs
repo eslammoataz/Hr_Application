@@ -15,7 +15,7 @@ namespace HrSystemApp.Application.Features.Requests.Commands.Admin;
 public record CreateRequestDefinitionCommand : IRequest<Result<Guid>>
 {
     public Guid? CompanyId { get; set; }
-    public RequestType RequestType { get; set; }
+    public Guid RequestTypeId { get; set; }
     public List<WorkflowStepDto> Steps { get; set; } = new();
 }
 
@@ -73,11 +73,11 @@ public class CreateRequestDefinitionCommandHandler : IRequestHandler<CreateReque
             targetCompanyId = employee.CompanyId;
         }
 
-        var existing = await _unitOfWork.RequestDefinitions.GetByTypeAsync(targetCompanyId, request.RequestType, cancellationToken);
+        var existing = await _unitOfWork.RequestDefinitions.GetByTypeAsync(targetCompanyId, request.RequestTypeId, cancellationToken);
         if (existing != null)
         {
             _logger.LogDecision(_loggingOptions, LogAction.Workflow.CreateRequestDefinition, LogStage.Validation,
-                "DefinitionAlreadyExists", new { CompanyId = targetCompanyId, RequestType = request.RequestType.ToString() });
+                "DefinitionAlreadyExists", new { CompanyId = targetCompanyId, RequestTypeId = request.RequestTypeId });
             return Result.Failure<Guid>(DomainErrors.Requests.DefinitionAlreadyExists);
         }
 
@@ -222,7 +222,7 @@ public class CreateRequestDefinitionCommandHandler : IRequestHandler<CreateReque
         var definition = new RequestDefinition
         {
             CompanyId = targetCompanyId,
-            RequestType = request.RequestType,
+            RequestTypeId = request.RequestTypeId,
             IsActive = true
         };
 

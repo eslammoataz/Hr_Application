@@ -128,7 +128,11 @@ public class ApproveRequestCommandHandler : IRequestHandler<ApproveRequestComman
             existingRequest.CurrentStepOrder = 0;
             existingRequest.CurrentStepApproverIds = null;
 
-            var strategy = _strategyFactory.GetStrategy(existingRequest.RequestType);
+            // Get the RequestType's KeyName for strategy resolution
+            var requestType = await _unitOfWork.RequestTypes.GetByIdAsync(existingRequest.RequestTypeId, cancellationToken);
+            var strategy = requestType != null
+                ? _strategyFactory.GetStrategy(requestType.KeyName)
+                : null;
             if (strategy != null)
             {
                 await strategy.OnFinalApprovalAsync(existingRequest, cancellationToken);

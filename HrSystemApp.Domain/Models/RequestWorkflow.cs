@@ -9,17 +9,23 @@ namespace HrSystemApp.Domain.Models;
 public class RequestDefinition : AuditableEntity, IHardDelete
 {
     public Guid CompanyId { get; set; }
-    public RequestType RequestType { get; set; }
+
+    /// <summary>
+    /// Foreign key to the RequestType entity.
+    /// </summary>
+    public Guid RequestTypeId { get; set; }
+
     public bool IsActive { get; set; } = true;
 
     /// <summary>
-    /// Custom JSON schema for this specific request type (if any).
+    /// Custom JSON schema override for this company's request type (if any).
     /// Used for dynamic form validation on the backend and rendering on the frontend.
     /// </summary>
     public string? FormSchemaJson { get; set; }
 
     // Navigation
     public Company Company { get; set; } = null!;
+    public RequestType RequestType { get; set; } = null!;
     public ICollection<RequestWorkflowStep> WorkflowSteps { get; set; } = new List<RequestWorkflowStep>();
 }
 

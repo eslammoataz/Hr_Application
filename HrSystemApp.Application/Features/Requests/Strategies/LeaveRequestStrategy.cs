@@ -42,9 +42,9 @@ public class LeaveRequestStrategy : IRequestBusinessStrategy
     private static LeaveType GetBalanceKey(LeaveType leaveSubType)
         => IsPaidLeaveType(leaveSubType) ? LeaveType.Annual : leaveSubType;
 
-    public RequestType Type => RequestType.Leave;
+    public string TypeKey => "Leave";
 
-    public async Task<Result> ValidateBusinessRulesAsync(Guid employeeId, JsonElement data, CancellationToken ct)
+    public async Task<Result> ValidateBusinessRulesAsync(Guid employeeId, Guid requestTypeId, JsonElement data, CancellationToken ct)
     {
         var sw = Stopwatch.StartNew();
         _logger.LogActionStart(_loggingOptions, LogAction.Workflow.LeaveValidation);
@@ -78,13 +78,13 @@ public class LeaveRequestStrategy : IRequestBusinessStrategy
 
             var allPendingLeave = await _unitOfWork.Requests.FindAsync(r =>
                 r.EmployeeId == employeeId &&
-                r.RequestType == RequestType.Leave &&
+                r.RequestTypeId == requestTypeId &&
                 (r.Status == RequestStatus.Submitted || r.Status == RequestStatus.InProgress), ct);
 
             decimal pendingDuration = 0;
             foreach (var req in allPendingLeave)
             {
-                using var doc = JsonDocument.Parse(req.Data);
+                using var doc = JsonDocument.Parse(req.DynamicDataJson);
                 var reqData = doc.RootElement;
                 var reqIsHourly = reqData.TryGetProperty("isHourly", out var rih) && rih.GetBoolean();
                 if (!reqIsHourly)
