@@ -231,3 +231,5 @@ RecurringJob.AddOrUpdate<AttendanceRecurringJobs>(
     Cron.Daily);
 
 app.Run();
+
+public partial class Program { }

@@ -29,6 +29,23 @@ public class EmployeeCompanyRoleRepository : Repository<EmployeeCompanyRole>, IE
             .ToListAsync(ct);
     }
 
+    public async Task<Dictionary<Guid, IReadOnlyList<Employee>>> GetActiveEmployeesByRoleIdsAsync(IEnumerable<Guid> roleIds, CancellationToken ct = default)
+    {
+        var roleIdList = roleIds.ToList();
+        if (roleIdList.Count == 0)
+            return new Dictionary<Guid, IReadOnlyList<Employee>>();
+
+        var results = await _dbSet
+            .Include(er => er.Employee)
+            .Where(er => roleIdList.Contains(er.RoleId)
+                      && er.Employee.EmploymentStatus == EmploymentStatus.Active)
+            .ToListAsync(ct);
+
+        return results
+            .GroupBy(er => er.RoleId)
+            .ToDictionary(g => g.Key, g => (IReadOnlyList<Employee>)g.Select(er => er.Employee).ToList());
+    }
+
     public async Task<bool> ExistsAsync(Guid employeeId, Guid roleId, CancellationToken ct = default)
     {
         return await _dbSet.AnyAsync(er => er.EmployeeId == employeeId && er.RoleId == roleId, ct);

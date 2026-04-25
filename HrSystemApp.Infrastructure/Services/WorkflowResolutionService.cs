@@ -203,24 +203,17 @@ public class WorkflowResolutionService : IWorkflowResolutionService
             .Distinct()
             .ToList();
 
-        var employeesTask = Task.WhenAll(employeeIds.Select(id => _unitOfWork.Employees.GetByIdAsync(id, ct)));
-        var rolesTask = Task.WhenAll(roleIds.Select(id => _unitOfWork.CompanyRoles.GetByIdAsync(id, ct)));
-        var roleHoldersTask = Task.WhenAll(roleIds.Select(id => _unitOfWork.EmployeeCompanyRoles.GetActiveEmployeesByRoleIdAsync(id, ct)));
+        var employeesById = employeeIds.Count > 0
+            ? await _unitOfWork.Employees.GetByIdsAsync(employeeIds, ct)
+            : new Dictionary<Guid, Employee>();
 
-        await Task.WhenAll(employeesTask, rolesTask, roleHoldersTask);
+        var rolesById = roleIds.Count > 0
+            ? await _unitOfWork.CompanyRoles.GetByIdsAsync(roleIds, ct)
+            : new Dictionary<Guid, CompanyRole>();
 
-        var employeesById = (await employeesTask)
-            .Where(e => e != null)
-            .ToDictionary(e => e!.Id, e => e!);
-
-        var rolesById = (await rolesTask)
-            .Where(r => r != null)
-            .ToDictionary(r => r!.Id, r => r!);
-
-        var holderResults = await roleHoldersTask;
-        var roleHoldersByRoleId = roleIds
-            .Zip(holderResults, (roleId, holders) => (roleId, holders))
-            .ToDictionary(x => x.roleId, x => (IReadOnlyList<Employee>)x.holders);
+        var roleHoldersByRoleId = roleIds.Count > 0
+            ? await _unitOfWork.EmployeeCompanyRoles.GetActiveEmployeesByRoleIdsAsync(roleIds, ct)
+            : new Dictionary<Guid, IReadOnlyList<Employee>>();
 
         return (employeesById, rolesById, roleHoldersByRoleId);
     }
