@@ -147,13 +147,20 @@ public static class DependencyInjection
     {
         using var scope = serviceProvider.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        var logger = serviceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("DbInit");
+        var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("DbInit");
         try
         {
             if (applyMigrations)
             {
                 await context.Database.MigrateAsync();
                 logger.LogInformation("Database migrations applied.");
+            }
+
+            var seedDataOnStartup = scope.ServiceProvider.GetRequiredService<IConfiguration>().GetValue("SeedDataOnStartup", true);
+            if (seedDataOnStartup)
+            {
+                await SeedData.InitializeAsync(scope.ServiceProvider);
+                logger.LogInformation("Database seeding completed.");
             }
         }
         catch (Exception ex)
