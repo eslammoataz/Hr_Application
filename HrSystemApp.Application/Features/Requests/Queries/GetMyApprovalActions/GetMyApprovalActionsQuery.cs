@@ -29,13 +29,13 @@ public record GetMyApprovalActionsQuery : IRequest<Result<PagedResult<ApprovalAc
     public RequestStatus? ActionStatus { get; set; }
 
     /// <summary>Filter by request type. Null = all.</summary>
-    public RequestType? RequestType { get; set; }
+    public Guid? RequestTypeId { get; set; }
 }
 
 public record ApprovalActionDto
 {
     public Guid RequestId { get; set; }
-    public RequestType RequestType { get; set; }
+    public Guid RequestTypeId { get; set; }
     public string RequestTypeName { get; set; } = string.Empty;
 
     public string RequesterName { get; set; } = string.Empty;
@@ -84,8 +84,8 @@ public class GetMyApprovalActionsQueryHandler
         if (request.ActionStatus.HasValue)
             queryable = queryable.Where(h => h.Status == request.ActionStatus.Value);
 
-        if (request.RequestType.HasValue)
-            queryable = queryable.Where(h => h.Request.RequestType == request.RequestType.Value);
+        if (request.RequestTypeId.HasValue)
+            queryable = queryable.Where(h => h.Request.RequestTypeId == request.RequestTypeId.Value);
 
         var totalCount = await _unitOfWork.Requests.CountHistoryAsync(queryable, cancellationToken);
 
@@ -98,8 +98,8 @@ public class GetMyApprovalActionsQueryHandler
         var dtos = items.Select(h => new ApprovalActionDto
         {
             RequestId              = h.RequestId,
-            RequestType            = h.Request.RequestType,
-            RequestTypeName        = h.Request.RequestType.ToString(),
+            RequestTypeId          = h.Request.RequestTypeId,
+            RequestTypeName        = h.Request.RequestType?.KeyName ?? "Unknown",
             RequesterId            = h.Request.EmployeeId,
             RequesterName          = h.Request.Employee?.FullName ?? "Unknown",
             RequesterCode          = h.Request.Employee?.EmployeeCode ?? string.Empty,

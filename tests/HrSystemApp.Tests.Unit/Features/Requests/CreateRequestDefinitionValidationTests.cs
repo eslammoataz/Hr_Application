@@ -25,6 +25,9 @@ public class CreateRequestDefinitionValidationTests
     private readonly Mock<IOrgNodeAssignmentRepository> _assignmentRepoMock;
     private readonly Mock<IRequestDefinitionRepository> _definitionRepoMock;
 
+    // Use a placeholder GUID for testing - in real scenario this would be a valid RequestType Id
+    private static readonly Guid LeaveRequestTypeId = Guid.NewGuid();
+
     public CreateRequestDefinitionValidationTests()
     {
         _unitOfWorkMock = new Mock<IUnitOfWork>();
@@ -63,13 +66,13 @@ public class CreateRequestDefinitionValidationTests
         var companyId = Guid.NewGuid();
         SetupUser(Guid.NewGuid(), companyId);
 
-        _definitionRepoMock.Setup(x => x.GetByTypeAsync(companyId, RequestType.Leave, It.IsAny<CancellationToken>()))
+        _definitionRepoMock.Setup(x => x.GetByTypeAsync(companyId, LeaveRequestTypeId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((RequestDefinition?)null);
 
         var command = new CreateRequestDefinitionCommand
         {
             CompanyId = companyId,
-            RequestType = RequestType.Leave,
+            RequestTypeId = LeaveRequestTypeId,
             Steps = new List<WorkflowStepDto>
             {
                 new() { StepType = WorkflowStepType.HierarchyLevel, StartFromLevel = 1, LevelsUp = 3, SortOrder = 1 },
@@ -93,13 +96,13 @@ public class CreateRequestDefinitionValidationTests
         var companyId = Guid.NewGuid();
         SetupUser(Guid.NewGuid(), companyId);
 
-        _definitionRepoMock.Setup(x => x.GetByTypeAsync(companyId, RequestType.Leave, It.IsAny<CancellationToken>()))
+        _definitionRepoMock.Setup(x => x.GetByTypeAsync(companyId, LeaveRequestTypeId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((RequestDefinition?)null);
 
         var command = new CreateRequestDefinitionCommand
         {
             CompanyId = companyId,
-            RequestType = RequestType.Leave,
+            RequestTypeId = LeaveRequestTypeId,
             Steps = new List<WorkflowStepDto>
             {
                 new() { StepType = WorkflowStepType.HierarchyLevel, LevelsUp = 0, SortOrder = 1 }
@@ -123,13 +126,13 @@ public class CreateRequestDefinitionValidationTests
         var nodeId = Guid.NewGuid();
         SetupUser(Guid.NewGuid(), companyId);
 
-        _definitionRepoMock.Setup(x => x.GetByTypeAsync(companyId, RequestType.Leave, It.IsAny<CancellationToken>()))
+        _definitionRepoMock.Setup(x => x.GetByTypeAsync(companyId, LeaveRequestTypeId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((RequestDefinition?)null);
 
         var command = new CreateRequestDefinitionCommand
         {
             CompanyId = companyId,
-            RequestType = RequestType.Leave,
+            RequestTypeId = LeaveRequestTypeId,
             Steps = new List<WorkflowStepDto>
             {
                 new() { StepType = WorkflowStepType.HierarchyLevel, OrgNodeId = nodeId, LevelsUp = 3, SortOrder = 1 }
@@ -153,7 +156,7 @@ public class CreateRequestDefinitionValidationTests
         var nodeId = Guid.NewGuid();
         SetupUser(Guid.NewGuid(), companyId);
 
-        _definitionRepoMock.Setup(x => x.GetByTypeAsync(companyId, RequestType.Leave, It.IsAny<CancellationToken>()))
+        _definitionRepoMock.Setup(x => x.GetByTypeAsync(companyId, LeaveRequestTypeId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((RequestDefinition?)null);
         _orgNodeRepoMock.Setup(x => x.GetByIdAsync(nodeId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new OrgNode { Id = nodeId, CompanyId = companyId, Name = "Node" });
@@ -161,7 +164,7 @@ public class CreateRequestDefinitionValidationTests
         var command = new CreateRequestDefinitionCommand
         {
             CompanyId = companyId,
-            RequestType = RequestType.Leave,
+            RequestTypeId = LeaveRequestTypeId,
             Steps = new List<WorkflowStepDto>
             {
                 new() { StepType = WorkflowStepType.OrgNode, OrgNodeId = nodeId, LevelsUp = 3, SortOrder = 1 }
@@ -184,7 +187,7 @@ public class CreateRequestDefinitionValidationTests
         var companyId = Guid.NewGuid();
         SetupUser(Guid.NewGuid(), companyId);
 
-        _definitionRepoMock.Setup(x => x.GetByTypeAsync(companyId, RequestType.Leave, It.IsAny<CancellationToken>()))
+        _definitionRepoMock.Setup(x => x.GetByTypeAsync(companyId, LeaveRequestTypeId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((RequestDefinition?)null);
         _definitionRepoMock.Setup(x => x.AddAsync(It.IsAny<RequestDefinition>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((RequestDefinition d, CancellationToken _) => d);
@@ -194,7 +197,7 @@ public class CreateRequestDefinitionValidationTests
         var command = new CreateRequestDefinitionCommand
         {
             CompanyId = companyId,
-            RequestType = RequestType.Leave,
+            RequestTypeId = LeaveRequestTypeId,
             Steps = new List<WorkflowStepDto>
             {
                 new() { StepType = WorkflowStepType.HierarchyLevel, StartFromLevel = 1, LevelsUp = 3, SortOrder = 1 }
@@ -217,7 +220,7 @@ public class CreateRequestDefinitionValidationTests
         var fixedEmployeeId = Guid.NewGuid();
         SetupUser(Guid.NewGuid(), companyId);
 
-        _definitionRepoMock.Setup(x => x.GetByTypeAsync(companyId, RequestType.Leave, It.IsAny<CancellationToken>()))
+        _definitionRepoMock.Setup(x => x.GetByTypeAsync(companyId, LeaveRequestTypeId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((RequestDefinition?)null);
         _employeeRepoMock.Setup(x => x.GetByIdAsync(fixedEmployeeId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new Employee { Id = fixedEmployeeId, CompanyId = companyId, FullName = "Special" });
@@ -229,7 +232,7 @@ public class CreateRequestDefinitionValidationTests
         var command = new CreateRequestDefinitionCommand
         {
             CompanyId = companyId,
-            RequestType = RequestType.Leave,
+            RequestTypeId = LeaveRequestTypeId,
             Steps = new List<WorkflowStepDto>
             {
                 new() { StepType = WorkflowStepType.HierarchyLevel, StartFromLevel = 1, LevelsUp = 2, SortOrder = 1 },

@@ -1,11 +1,10 @@
-using HrSystemApp.Domain.Enums;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HrSystemApp.Application.Features.Requests.Strategies;
 
 public interface IRequestStrategyFactory
 {
-    IRequestBusinessStrategy? GetStrategy(RequestType type);
+    IRequestBusinessStrategy? GetStrategy(string? typeKey);
 }
 
 public class RequestStrategyFactory : IRequestStrategyFactory
@@ -17,8 +16,10 @@ public class RequestStrategyFactory : IRequestStrategyFactory
         _strategies = strategies;
     }
 
-    public IRequestBusinessStrategy? GetStrategy(RequestType type)
+    public IRequestBusinessStrategy? GetStrategy(string? typeKey)
     {
-        return _strategies.FirstOrDefault(s => s.Type == type);
+        if (string.IsNullOrEmpty(typeKey))
+            return null;
+        return _strategies.FirstOrDefault(s => s.TypeKey.Equals(typeKey, StringComparison.OrdinalIgnoreCase));
     }
 }

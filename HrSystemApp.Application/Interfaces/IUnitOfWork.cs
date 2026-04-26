@@ -18,6 +18,7 @@ public interface IUnitOfWork : IAsyncDisposable
     IRefreshTokenRepository RefreshTokens { get; }
     IRequestDefinitionRepository RequestDefinitions { get; }
     IRequestRepository Requests { get; }
+    IRequestTypeRepository RequestTypes { get; }
     ICompanyHierarchyPositionRepository HierarchyPositions { get; }
     IAttendanceRepository Attendances { get; }
     IAttendanceLogRepository AttendanceLogs { get; }

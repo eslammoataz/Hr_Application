@@ -80,14 +80,16 @@ public class RequestDefinitionsController : BaseApiController
     }
 
     /// <summary>
-    /// Get Schema definitions for all request types
+    /// Get Schema definitions for all request types (from RequestSchemas.json).
+    /// Note: This returns schemas for system types only. For custom types, use /api/request-types/{id}/schemas.
     /// </summary>
     [HttpGet("schemas")]
     [AllowAnonymous]
-    public IActionResult GetSchemas([FromServices] IRequestSchemaValidator validator)
+    public IActionResult GetSchemas([FromServices] IRequestSchemaValidator validator, [FromServices] ISender sender)
     {
-        var types = Enum.GetValues<RequestType>();
-        var schemas = types.ToDictionary(t => t.ToString(), t => validator.GetSchema(t));
+        // Get system request types from the enum (for backward compatibility during migration)
+        var typeKeys = Enum.GetNames<HrSystemApp.Domain.Enums.RequestType>();
+        var schemas = typeKeys.ToDictionary(t => t, t => validator.GetSchema(t));
         return Ok(schemas);
     }
 }

@@ -10,11 +10,17 @@ public class RequestWorkflowConfiguration : IEntityTypeConfiguration<RequestDefi
     {
         builder.ToTable("RequestDefinitions");
         builder.HasKey(x => x.Id);
+        builder.HasQueryFilter(x => !x.IsDeleted);
 
         builder.HasOne(x => x.Company)
             .WithMany()
             .HasForeignKey(x => x.CompanyId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasOne(x => x.RequestType)
+            .WithMany()
+            .HasForeignKey(x => x.RequestTypeId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasMany(x => x.WorkflowSteps)
             .WithOne(x => x.RequestDefinition)

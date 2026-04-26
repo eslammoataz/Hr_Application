@@ -32,8 +32,15 @@ public sealed class HierarchyLevelStepResolver : WorkflowStepResolverBase
         WorkflowResolutionState state,
         CancellationToken ct)
     {
+        _logger.LogDecision(_loggingOptions, _logAction, LogStage.Processing,
+            "HierarchyLevelResolver_Start", new { LevelsUp = step.LevelsUp, StartFromLevel = step.StartFromLevel, RequesterId = context.RequesterEmployeeId });
+
         if (!step.LevelsUp.HasValue || step.LevelsUp.Value < 1)
+        {
+            _logger.LogDecision(_loggingOptions, _logAction, LogStage.Processing,
+                "HierarchyLevelResolver_InvalidLevels", new { LevelsUp = step.LevelsUp });
             return Task.FromResult(Result.Failure<List<PlannedStepDto>>(DomainErrors.Request.MissingLevelsUp));
+        }
 
         var startLevel = step.StartFromLevel ?? 1;
         var endLevel = startLevel + step.LevelsUp.Value - 1;
@@ -44,30 +51,40 @@ public sealed class HierarchyLevelStepResolver : WorkflowStepResolverBase
             if (level > context.LevelNodes.Count)
             {
                 _logger.LogDecision(_loggingOptions, _logAction, LogStage.Processing,
-                    "ChainExhausted", new { RequestedLevel = level, AvailableLevels = context.LevelNodes.Count });
+                    "HierarchyLevelResolver_ChainExhausted", new { RequestedLevel = level, AvailableLevels = context.LevelNodes.Count });
                 break;
             }
 
             var node = context.LevelNodes[level - 1];
             if (!context.ManagersByNodeId.TryGetValue(node.Id, out var managers) || managers.Count == 0)
+            {
+                _logger.LogDecision(_loggingOptions, _logAction, LogStage.Processing,
+                    "HierarchyLevelResolver_NoManagers", new { Level = level, NodeName = node.Name });
                 continue;
+            }
 
             var approvers = FilterApprovers(managers, context.RequesterEmployeeId, state.SeenApproverIds);
             if (approvers.Count == 0)
+            {
+                _logger.LogDecision(_loggingOptions, _logAction, LogStage.Processing,
+                    "HierarchyLevelResolver_NoApprovers", new { Level = level, NodeName = node.Name });
                 continue;
+            }
 
-            var plannedStep = CreateStep(
-                WorkflowStepType.HierarchyLevel,
-                node.Name,
-                approvers,
-                nodeId: node.Id,
-                resolvedFromLevel: level);
+            var plannedStep = CreateStep(WorkflowStepType.HierarchyLevel, node.Name, approvers, nodeId: node.Id, resolvedFromLevel: level);
 
             if (!state.TryAddStep(plannedStep))
+            {
+                _logger.LogDecision(_loggingOptions, _logAction, LogStage.Processing,
+                    "HierarchyLevelResolver_Duplicate", new { Level = level, NodeName = node.Name });
                 continue;
+            }
 
             results.Add(plannedStep);
         }
+
+        _logger.LogBusinessFlow(_loggingOptions, _logAction, LogStage.Processing,
+            "HierarchyLevelResolver_Complete", new { StepsCreated = results.Count, TotalLevels = endLevel - startLevel + 1 });
 
         return Task.FromResult(Result.Success(results));
     }

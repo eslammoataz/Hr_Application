@@ -10,23 +10,33 @@ public class RequestDefinitionRepository : Repository<RequestDefinition>, IReque
 {
     public RequestDefinitionRepository(ApplicationDbContext context) : base(context) { }
 
-    public async Task<RequestDefinition?> GetByTypeAsync(Guid companyId, RequestType requestType, CancellationToken cancellationToken = default)
+    // public async Task<RequestDefinition?> GetByTypeAsync(Guid companyId, Guid requestTypeId, CancellationToken cancellationToken = default)
+    // {
+    //     return await _dbSet
+    //         .AsNoTracking()
+    //         .Include(x => x.WorkflowSteps.OrderBy(s => s.SortOrder))
+    //         .FirstOrDefaultAsync(x => x.CompanyId == companyId && x.RequestTypeId == requestTypeId, cancellationToken);
+    // }
+
+    public async Task<RequestDefinition?> GetByTypeAsync(Guid companyId, Guid requestTypeId, CancellationToken cancellationToken = default)
     {
-        return await _dbSet
+        var definition = await _dbSet
             .AsNoTracking()
             .Include(x => x.WorkflowSteps.OrderBy(s => s.SortOrder))
-            .FirstOrDefaultAsync(x => x.CompanyId == companyId && x.RequestType == requestType, cancellationToken);
+            .FirstOrDefaultAsync(x => x.CompanyId == companyId && x.RequestTypeId == requestTypeId, cancellationToken);
+
+        return definition;
     }
 
-    public async Task<List<RequestDefinition>> GetByCompanyAsync(Guid companyId, RequestType? type = null, CancellationToken cancellationToken = default)
+    public async Task<List<RequestDefinition>> GetByCompanyAsync(Guid companyId, Guid? requestTypeId = null, CancellationToken cancellationToken = default)
     {
         var query = _dbSet
             .AsNoTracking()
             .Include(x => x.WorkflowSteps.OrderBy(s => s.SortOrder))
             .Where(x => x.CompanyId == companyId);
 
-        if (type.HasValue)
-            query = query.Where(x => x.RequestType == type.Value);
+        if (requestTypeId.HasValue)
+            query = query.Where(x => x.RequestTypeId == requestTypeId.Value);
 
         return await query.ToListAsync(cancellationToken);
     }

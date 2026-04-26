@@ -26,6 +26,7 @@ public class UnitOfWork : IUnitOfWork
     private IRefreshTokenRepository? _refreshTokenRepository;
     private IRequestDefinitionRepository? _requestDefinitionRepository;
     private IRequestRepository? _requestRepository;
+    private IRequestTypeRepository? _requestTypeRepository;
     private ICompanyHierarchyPositionRepository? _hierarchyPositionRepository;
     private IAttendanceRepository? _attendanceRepository;
     private IAttendanceLogRepository? _attendanceLogRepository;
@@ -72,6 +73,9 @@ public class UnitOfWork : IUnitOfWork
 
     public IRequestRepository Requests =>
         _requestRepository ??= new RequestRepository(_context);
+
+    public IRequestTypeRepository RequestTypes =>
+        _requestTypeRepository ??= new RequestTypeRepository(_context);
 
     public ICompanyHierarchyPositionRepository HierarchyPositions =>
         _hierarchyPositionRepository ??= new CompanyHierarchyPositionRepository(_context);

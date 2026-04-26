@@ -28,7 +28,7 @@ public record GetCompanyRequestsQuery : IRequest<Result<PagedResult<AdminRequest
     }
 
     public RequestStatus? Status { get; set; }
-    public RequestType? Type { get; set; }
+    public Guid? RequestTypeId { get; set; }
 }
 
 public record AdminRequestDto
@@ -36,7 +36,8 @@ public record AdminRequestDto
     public Guid Id { get; set; }
     public string EmployeeName { get; set; } = string.Empty;
     public string EmployeeCode { get; set; } = string.Empty;
-    public RequestType Type { get; set; }
+    public Guid RequestTypeId { get; set; }
+    public string RequestTypeName { get; set; } = string.Empty;
     public RequestStatus Status { get; set; }
     public DateTime CreatedAt { get; set; }
     public string? Details { get; set; }
@@ -78,8 +79,8 @@ public class GetCompanyRequestsQueryHandler : IRequestHandler<GetCompanyRequests
         if (request.Status.HasValue)
             queryable = queryable.Where(r => r.Status == request.Status.Value);
 
-        if (request.Type.HasValue)
-            queryable = queryable.Where(r => r.RequestType == request.Type.Value);
+        if (request.RequestTypeId.HasValue)
+            queryable = queryable.Where(r => r.RequestTypeId == request.RequestTypeId.Value);
 
         var totalCount = await _unitOfWork.Requests.CountAsync(queryable, cancellationToken);
         var items = await _unitOfWork.Requests.ToListAsync(
@@ -96,7 +97,8 @@ public class GetCompanyRequestsQueryHandler : IRequestHandler<GetCompanyRequests
                 Id = r.Id,
                 EmployeeName = r.Employee?.FullName ?? "Unknown",
                 EmployeeCode = r.Employee?.EmployeeCode ?? string.Empty,
-                Type = r.RequestType,
+                RequestTypeId = r.RequestTypeId,
+                RequestTypeName = r.RequestType?.KeyName ?? "Unknown",
                 Status = r.Status,
                 CreatedAt = r.CreatedAt,
                 Details = r.Details,

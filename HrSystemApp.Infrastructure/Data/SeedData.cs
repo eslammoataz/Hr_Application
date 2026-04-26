@@ -34,6 +34,7 @@ public static class SeedData
         var location = await SeedLocationAsync(context, company, logger);
 
         await SeedHierarchyPositionsAsync(context, company, logger);
+        await SeedRequestTypesAsync(context, logger);
         await SeedCompanyAdminAsync(userManager, configuration, context, company, location, logger);
         var employees = await SeedOrganizationalHierarchyAsync(userManager, configuration, context, company, location, logger);
         await SeedOrgNodeHierarchyAsync(context, employees, logger);
@@ -527,6 +528,85 @@ public static class SeedData
         logger.LogInformation("============================================================");
     }
 
+
+    // -------------------------------------------------------------------------
+
+    private static async Task SeedRequestTypesAsync(ApplicationDbContext context, ILogger logger)
+    {
+        if (await context.RequestTypes.AnyAsync(rt => rt.IsSystemType))
+        {
+            logger.LogInformation("System request types already seeded.");
+            return;
+        }
+
+        // Load the RequestSchemas.json to get the schemas
+        var schemaPath = Path.Combine(AppContext.BaseDirectory, "..", "HrSystemApp.Application", "Common", "RequestSchemas.json");
+        if (!File.Exists(schemaPath))
+        {
+            schemaPath = Path.Combine(AppContext.BaseDirectory, "Common", "RequestSchemas.json");
+        }
+
+        string schemaJson = "{}";
+        if (File.Exists(schemaPath))
+        {
+            schemaJson = File.ReadAllText(schemaPath);
+        }
+
+        var systemTypes = new[]
+        {
+            ("Leave", "Leave Request", "{KeyName}-{Year}-{Sequence:0000}", 7),
+            ("Permission", "Permission", "{KeyName}-{Year}-{Sequence:0000}", 1),
+            ("SalarySlip", "Salary Slip Request", "{KeyName}-{Year}-{Sequence:0000}", 3),
+            ("HRLetter", "HR Letter Request", "{KeyName}-{Year}-{Sequence:0000}", 5),
+            ("Resignation", "Resignation Request", "{KeyName}-{Year}-{Sequence:0000}", 14),
+            ("EndOfService", "End of Service Request", "{KeyName}-{Year}-{Sequence:0000}", 30),
+            ("PurchaseOrder", "Purchase Order Request", "{KeyName}-{Year}-{Sequence:0000}", 7),
+            ("Asset", "Asset Request", "{KeyName}-{Year}-{Sequence:0000}", 3),
+            ("Loan", "Loan Request", "{KeyName}-{Year}-{Sequence:0000}", 14),
+            ("Assignment", "Assignment Request", "{KeyName}-{Year}-{Sequence:0000}", 7),
+            ("Other", "Other Request", "{KeyName}-{Year}-{Sequence:0000}", 5),
+            ("Survey", "Survey Request", "{KeyName}-{Year}-{Sequence:0000}", 3),
+            ("Complaint", "Complaint Request", "{KeyName}-{Year}-{Sequence:0000}", 7)
+        };
+
+        // Parse schema JSON to extract schema for each type
+        var schemas = System.Text.Json.JsonDocument.Parse(schemaJson);
+        var schemaDict = new Dictionary<string, string>();
+
+        if (schemas.RootElement.TryGetProperty("Schemas", out var schemasObj))
+        {
+            foreach (var type in systemTypes)
+            {
+                if (schemasObj.TryGetProperty(type.Item1, out var schemaElement))
+                {
+                    schemaDict[type.Item1] = schemaElement.GetRawText();
+                }
+            }
+        }
+
+        foreach (var (keyName, displayName, pattern, slaDays) in systemTypes)
+        {
+            var requestType = new HrSystemApp.Domain.Models.RequestType
+            {
+                Id = Guid.NewGuid(),
+                KeyName = keyName,
+                DisplayName = displayName,
+                IsSystemType = true,
+                IsCustomType = false,
+                CompanyId = null,
+                FormSchemaJson = schemaDict.GetValueOrDefault(keyName),
+                AllowExtraFields = true,
+                RequestNumberPattern = pattern,
+                DefaultSlaDays = slaDays,
+                Version = 1
+            };
+
+            context.RequestTypes.Add(requestType);
+        }
+
+        await context.SaveChangesAsync();
+        logger.LogInformation("Seeded {Count} system request types.", systemTypes.Length);
+    }
 
     // -------------------------------------------------------------------------
 

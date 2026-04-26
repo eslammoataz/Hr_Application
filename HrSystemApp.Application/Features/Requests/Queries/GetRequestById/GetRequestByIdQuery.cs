@@ -17,7 +17,8 @@ public record GetRequestByIdQuery(Guid Id) : IRequest<Result<RequestDetailDto>>;
 public record RequestDetailDto
 {
     public Guid Id { get; set; }
-    public RequestType Type { get; set; }
+    public Guid RequestTypeId { get; set; }
+    public string RequestTypeName { get; set; } = string.Empty;
     public RequestStatus Status { get; set; }
     public DateTime CreatedAt { get; set; }
     public string RequesterName { get; set; } = string.Empty;
@@ -92,7 +93,8 @@ public class GetRequestByIdQueryHandler : IRequestHandler<GetRequestByIdQuery, R
         var dto = new RequestDetailDto
         {
             Id = existingRequest.Id,
-            Type = existingRequest.RequestType,
+            RequestTypeId = existingRequest.RequestTypeId,
+            RequestTypeName = existingRequest.RequestType?.KeyName ?? "Unknown",
             Status = existingRequest.Status,
             CreatedAt = existingRequest.CreatedAt,
             RequesterName = existingRequest.Employee.FullName,
@@ -107,7 +109,7 @@ public class GetRequestByIdQueryHandler : IRequestHandler<GetRequestByIdQuery, R
                 h.Comment
             )).ToList(),
 
-            Data = JsonSerializer.Deserialize<object>(existingRequest.Data) ?? new { },
+            Data = JsonSerializer.Deserialize<object>(existingRequest.DynamicDataJson) ?? new { },
             PlannedSteps = plannedSteps
         };
 
