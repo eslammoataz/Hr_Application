@@ -68,9 +68,14 @@ public class ClockInCommandHandler : IRequestHandler<ClockInCommand, Result<Atte
                 await _unitOfWork.Attendances.AddAsync(attendance, cancellationToken);
             }
 
+            if (attendance.Id == Guid.Empty)
+            {
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
+            }
+
             var log = new AttendanceLog
             {
-                Attendance = attendance,
+                AttendanceId = attendance.Id,
                 EmployeeId = employee.Id,
                 TimestampUtc = clockInUtc,
                 Type = AttendanceLogType.ClockIn,
