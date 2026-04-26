@@ -83,12 +83,13 @@ public class ClockInCommandHandler : IRequestHandler<ClockInCommand, Result<Atte
                 CreatedAtUtc = DateTime.UtcNow
             };
 
-            await _unitOfWork.AttendanceLogs.AddAsync(log, cancellationToken);
-
             if (attendance.FirstClockInUtc is null)
             {
                 attendance.FirstClockInLogId = log.Id;
             }
+
+            await _unitOfWork.AttendanceLogs.AddAsync(log, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             attendance.LastClockOutUtc = null;
             attendance.LastClockOutLogId = null;
